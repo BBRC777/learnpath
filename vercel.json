@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/api/claude/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/revenuecat/webhook/route.ts": {
+      "maxDuration": 10
+    }
+  }
+}
