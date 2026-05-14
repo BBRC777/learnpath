@@ -23,7 +23,7 @@ async function incrementGenerationCount(userId: string) {
   const settings: Record<string, unknown> = data?.voice_settings || {}
   const key = `gen_${today}`
   settings[key] = ((settings[key] as number) || 0) + 1
-  await supabase.from('profiles').update({ voice_settings: settings, updated_at: new Date().toISOString() }).eq('id', userId)
+  // @ts-ignore`n  await supabase.from('profiles').update({ voice_settings: settings, updated_at: new Date().toISOString() }).eq('id', userId)
 }
 
 export async function POST(request: Request) {
@@ -82,3 +82,4 @@ export async function POST(request: Request) {
     return Response.json({ error: err.message || 'Claude API error' }, { status: err.status || 500 })
   }
 }
+
