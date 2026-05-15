@@ -60,7 +60,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
   const doneSessions = Object.values(currProgress).filter(Boolean).length
   const pct = totalSessions ? Math.round((doneSessions/totalSessions)*100) : 0
 
-  const GRID3: React.CSSProperties = { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }
+  const GRID3: React.CSSProperties = { display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }
   const CARD: React.CSSProperties = { background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }
 
   return (
@@ -218,5 +218,6 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
 
 
