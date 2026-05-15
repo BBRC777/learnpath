@@ -1,35 +1,36 @@
 ﻿'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
+import { loadStreak } from '@/lib/db'
 import type { User } from '@supabase/supabase-js'
 
 const NAV = [
-  { id:'home',       label:'Home',             path:'/app',            badge: null,  badgeCls: '' },
-  { id:'lesson',     label:'Current Lesson',   path:'/app/lesson',     badge: null,  badgeCls: '' },
-  { id:'curriculum', label:'New Learning Path', path:'/app/curriculum', badge: null,  badgeCls: '' },
-  { id:'flashcards', label:'Flashcards',        path:'/app/flashcards', badge: '9',   badgeCls: 'red' },
-  { id:'study',      label:'Study Mode',        path:'/app/study',      badge: 'PRO', badgeCls: 'pro', proOnly: true },
-  { id:'progress',   label:'Progress',          path:'/app/progress',   badge: null,  badgeCls: '' },
+  { id:'home',       label:'Home',             path:'/app' },
+  { id:'lesson',     label:'Current Lesson',   path:'/app/lesson' },
+  { id:'curriculum', label:'New Learning Path', path:'/app/curriculum' },
+  { id:'flashcards', label:'Flashcards',        path:'/app/flashcards', badge:'9',   badgeCls:'red' },
+  { id:'study',      label:'Study Mode',        path:'/app/study',      badge:'PRO', badgeCls:'pro', proOnly:true },
+  { id:'progress',   label:'Progress',          path:'/app/progress' },
 ]
 
-const SCREEN_META: Record<string, { title: string; pill?: string }> = {
-  '/app':            { title: 'Home' },
-  '/app/lesson':     { title: 'Current Lesson',    pill: 'Week 1 · Lesson 3' },
-  '/app/curriculum': { title: 'New Learning Path',  pill: 'Step 1 of 4' },
-  '/app/flashcards': { title: 'Flashcards',         pill: '9 due today' },
-  '/app/study':      { title: 'Study Mode',         pill: 'Pro Feature' },
-  '/app/progress':   { title: 'Progress' },
-  '/app/settings':   { title: 'Settings' },
+const SCREEN_META: Record<string,{ title:string; pill?:string }> = {
+  '/app':            { title:'Home' },
+  '/app/lesson':     { title:'Current Lesson',    pill:'Week 1 · Lesson 3' },
+  '/app/curriculum': { title:'New Learning Path',  pill:'Step 1 of 4' },
+  '/app/flashcards': { title:'Flashcards',         pill:'9 due today' },
+  '/app/study':      { title:'Study Mode',         pill:'Pro Feature' },
+  '/app/progress':   { title:'Progress' },
+  '/app/settings':   { title:'Settings' },
 }
 
-function getInitials(profile: any): string {
+function getInitials(profile: any) {
   if (profile?.display_name) return profile.display_name[0].toUpperCase()
   if (profile?.email) return profile.email[0].toUpperCase()
   return 'L'
 }
 
-function getDisplayName(profile: any): string {
+function getDisplayName(profile: any) {
   if (profile?.display_name) return profile.display_name.split(' ')[0]
   if (profile?.email) return profile.email.split('@')[0]
   return 'Learner'
@@ -43,6 +44,7 @@ interface AppShellProps {
 
 export default function AppShell({ user, profile, children }: AppShellProps) {
   const [showSettings, setShowSettings] = useState(false)
+  const [streak, setStreak] = useState(profile?.streak ?? 0)
   const supabase = createClient()
   const router = useRouter()
   const pathname = usePathname()
@@ -51,13 +53,17 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
   const name = getDisplayName(profile)
   const meta = SCREEN_META[pathname] || SCREEN_META['/app']
 
+  useEffect(() => {
+    loadStreak(user.id).then(s => setStreak(s.current_streak || 0)).catch(()=>{})
+  }, [user.id])
+
   const signOut = async () => {
     await supabase.auth.signOut()
     router.push('/auth')
     router.refresh()
   }
 
-  const s: Record<string, React.CSSProperties> = {
+  const s: Record<string,React.CSSProperties> = {
     shell: { display:'flex', height:'100vh', overflow:'hidden' },
     sidebar: { width:236, flexShrink:0, background:'var(--bg2)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' },
     logo: { padding:'17px 15px 13px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 },
@@ -86,28 +92,16 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
         <div style={s.sidebarMid}>
           <div style={s.navSec}>Navigate</div>
           {NAV.map(n => {
-            const locked = n.proOnly && !isPro
+            const locked = (n as any).proOnly && !isPro
             const isActive = pathname === n.path
             return (
               <div key={n.id}
-                onClick={() => { if (!locked) router.push(n.path) }}
+                onClick={() => { if (!locked) { setShowSettings(false); router.push(n.path) } }}
                 title={locked ? 'Upgrade to Pro to unlock Study Mode' : undefined}
-                style={{
-                  display:'flex', alignItems:'center', gap:8, padding:'8px 10px',
-                  margin:'1px 4px', borderRadius:7, cursor: locked ? 'default' : 'pointer',
-                  fontSize:12.5, color: isActive ? 'var(--amber2)' : 'var(--text2)',
-                  background: isActive ? 'var(--amber-bg2)' : 'transparent',
-                  border: `1px solid ${isActive ? 'rgba(212,133,58,0.2)' : 'transparent'}`,
-                  opacity: locked ? 0.45 : 1, transition:'all 0.13s', userSelect:'none' as const,
-                }}>
+                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', margin:'1px 4px', borderRadius:7, cursor:locked?'default':'pointer', fontSize:12.5, color:isActive?'var(--amber2)':'var(--text2)', background:isActive?'var(--amber-bg2)':'transparent', border:`1px solid ${isActive?'rgba(212,133,58,0.2)':'transparent'}`, opacity:locked?0.45:1, transition:'all 0.13s', userSelect:'none' as const }}>
                 <span style={{ flex:1 }}>{n.label}</span>
-                {n.badge && (
-                  <span style={{
-                    fontSize:8.5, fontFamily:'var(--mono)', padding:'1px 5px', borderRadius:3,
-                    background: n.badgeCls === 'red' ? 'var(--red-bg)' : 'var(--amber-bg)',
-                    border: `1px solid ${n.badgeCls === 'red' ? 'var(--red-border)' : 'var(--amber-bg2)'}`,
-                    color: n.badgeCls === 'red' ? 'var(--red-text)' : 'var(--amber2)',
-                  }}>{n.badge}</span>
+                {(n as any).badge && (
+                  <span style={{ fontSize:8.5, fontFamily:'var(--mono)', padding:'1px 5px', borderRadius:3, background:(n as any).badgeCls==='red'?'var(--red-bg)':'var(--amber-bg)', border:`1px solid ${(n as any).badgeCls==='red'?'var(--red-border)':'var(--amber-bg2)'}`, color:(n as any).badgeCls==='red'?'var(--red-text)':'var(--amber2)' }}>{(n as any).badge}</span>
                 )}
               </div>
             )
@@ -115,10 +109,10 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
 
           <div style={{ background:'var(--amber-bg)', border:'1px solid var(--amber-bg2)', borderRadius:8, padding:'9px 11px', margin:'12px 8px 0' }}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber)', fontWeight:500, lineHeight:1 }}>{profile?.streak ?? 0}</div>
+              <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber)', fontWeight:500, lineHeight:1 }}>{streak}</div>
               <div>
                 <div style={{ fontSize:12, fontWeight:500, color:'var(--text2)' }}>Day streak</div>
-                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1 }}>Keep the chain alive!</div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1 }}>{streak > 0 ? 'Keep the chain alive!' : 'Start your streak today!'}</div>
               </div>
             </div>
           </div>
@@ -129,7 +123,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
             <div style={s.avatar}>{initials}</div>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{name}</div>
-              <div style={{ fontSize:8.5, fontFamily:'var(--mono)', color: isPro ? 'var(--amber)' : 'var(--text3)' }}>{isPro ? 'Pro' : 'Free · 1/1 paths'}</div>
+              <div style={{ fontSize:8.5, fontFamily:'var(--mono)', color:isPro?'var(--amber)':'var(--text3)' }}>{isPro?'Pro':'Free · 1/1 paths'}</div>
             </div>
             <div style={{ fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>Settings</div>
           </div>
@@ -139,20 +133,21 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
       <div style={s.main}>
         <div style={s.topbar}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ fontFamily:'var(--serif)', fontSize:15, color:'var(--text)' }}>{meta.title}</div>
-            {meta.pill && <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border2)', borderRadius:4, padding:'2px 6px' }}>{meta.pill}</div>}
+            <div style={{ fontFamily:'var(--serif)', fontSize:15, color:'var(--text)' }}>{showSettings ? 'Settings' : meta.title}</div>
+            {!showSettings && meta.pill && <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border2)', borderRadius:4, padding:'2px 6px' }}>{meta.pill}</div>}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-            {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
-            {pathname === '/app/lesson' && <button style={btnPrimary}>Mark Complete</button>}
-            {pathname === '/app/flashcards' && <button style={btnPrimary}>Review All</button>}
+            {!showSettings && pathname==='/app' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
+            {!showSettings && pathname==='/app/lesson' && <button style={btnPrimary}>Mark Complete</button>}
+            {!showSettings && pathname==='/app/flashcards' && <button style={btnPrimary}>Review All</button>}
+            {showSettings && <button onClick={()=>setShowSettings(false)} style={btnSecondary}>Back</button>}
             <button onClick={signOut} style={btnSecondary}>Sign out</button>
           </div>
         </div>
 
         <div style={s.content}>
           {showSettings ? (
-            <SettingsPanel user={user} profile={profile} onSignOut={signOut} onClose={() => setShowSettings(false)} />
+            <SettingsPanel user={user} profile={profile} onSignOut={signOut} />
           ) : (
             children
           )}
@@ -162,18 +157,10 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
   )
 }
 
-const btnPrimary: React.CSSProperties = {
-  display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px',
-  borderRadius:6, fontSize:12, fontFamily:'var(--sans)', cursor:'pointer',
-  border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontWeight:500,
-}
-const btnSecondary: React.CSSProperties = {
-  display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px',
-  borderRadius:6, fontSize:12, fontFamily:'var(--sans)', cursor:'pointer',
-  border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)',
-}
+const btnPrimary: React.CSSProperties = { display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:6, fontSize:12, fontFamily:'var(--sans)', cursor:'pointer', border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontWeight:500 }
+const btnSecondary: React.CSSProperties = { display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:6, fontSize:12, fontFamily:'var(--sans)', cursor:'pointer', border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)' }
 
-function SettingsPanel({ user, profile, onSignOut, onClose }: { user: User; profile: any; onSignOut: () => void; onClose: () => void }) {
+function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: any; onSignOut: () => void }) {
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -188,38 +175,33 @@ function SettingsPanel({ user, profile, onSignOut, onClose }: { user: User; prof
 
   return (
     <div style={{ maxWidth:560, margin:'0 auto', padding:'24px 26px 60px' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-        <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)' }}>Settings</div>
-        <button onClick={onClose} style={btnSecondary}>Back</button>
-      </div>
       {[
-        { head: 'Account', rows: [
-          { label:'Display name', sub:'', right: (
+        { head:'Account', rows:[
+          { label:'Display name', sub:'', right:(
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-              <input value={displayName} onChange={e => setDisplayName(e.target.value)}
-                style={{ padding:'6px 10px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none' }}/>
-              <button onClick={save} disabled={saving || !displayName.trim()} style={btnPrimary}>{saved ? 'Saved' : saving ? '...' : 'Save'}</button>
+              <input value={displayName} onChange={e=>setDisplayName(e.target.value)} style={{ padding:'6px 10px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none' }}/>
+              <button onClick={save} disabled={saving||!displayName.trim()} style={btnPrimary}>{saved?'Saved':saving?'...':'Save'}</button>
             </div>
           )},
-          { label:'Email', sub: user.email || '', right: <span style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text2)' }}>Verified</span> },
+          { label:'Email', sub:user.email||'', right:<span style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text2)' }}>Verified</span> },
         ]},
-        { head: 'Subscription', rows: [
-          { label:'Current plan', sub: profile?.is_pro ? 'Learnpath Pro' : 'Free — 1 learning path',
-            right: <span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'2px 6px', borderRadius:3, background: profile?.is_pro ? 'var(--amber-bg)' : 'var(--green-bg)', border:`1px solid ${profile?.is_pro ? 'var(--amber-bg2)' : 'var(--green-border)'}`, color: profile?.is_pro ? 'var(--amber2)' : 'var(--green-text)' }}>{profile?.is_pro ? 'PRO' : 'FREE'}</span>
+        { head:'Subscription', rows:[
+          { label:'Current plan', sub:profile?.is_pro?'Learnpath Pro':'Free — 1 learning path',
+            right:<span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'2px 6px', borderRadius:3, background:profile?.is_pro?'var(--amber-bg)':'var(--green-bg)', border:`1px solid ${profile?.is_pro?'var(--amber-bg2)':'var(--green-border)'}`, color:profile?.is_pro?'var(--amber2)':'var(--green-text)' }}>{profile?.is_pro?'PRO':'FREE'}</span>
           },
-          ...(!profile?.is_pro ? [{ label:'Upgrade to Pro', sub:'Unlimited paths · Study Mode · AI Tutor', right: <button style={btnPrimary}>$9.99/mo</button> }] : []),
+          ...(!profile?.is_pro?[{ label:'Upgrade to Pro', sub:'Unlimited paths · Study Mode · AI Tutor', right:<button style={btnPrimary}>$9.99/mo</button> }]:[]),
         ]},
-        { head: 'Stats', rows: [
-          { label:'Current streak', sub:'', right: <span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--amber)' }}>{profile?.streak ?? 0} days</span> },
-          { label:'Cards reviewed', sub:'', right: <span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--text2)' }}>{(profile?.cards_reviewed ?? 0).toLocaleString()}</span> },
+        { head:'Stats', rows:[
+          { label:'Cards reviewed', sub:'', right:<span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--text2)' }}>{(profile?.cards_reviewed??0).toLocaleString()}</span> },
+          { label:'Total study days', sub:'', right:<span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--text2)' }}>{profile?.total_days??0}</span> },
         ]},
-        { head: 'Session', rows: [
-          { label:'Sign out', sub:"You'll need to sign in again", right: <button onClick={onSignOut} style={btnSecondary}>Sign out</button> },
+        { head:'Session', rows:[
+          { label:'Sign out', sub:"You will need to sign in again", right:<button onClick={onSignOut} style={btnSecondary}>Sign out</button> },
         ]},
       ].map(section => (
         <div key={section.head} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', marginBottom:14 }}>
           <div style={{ padding:'12px 18px', borderBottom:'1px solid var(--border)', fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', background:'var(--bg3)' }}>{section.head}</div>
-          {section.rows.map((row, i) => (
+          {section.rows.map((row,i) => (
             <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 18px', borderBottom:'1px solid var(--border)', gap:16 }}>
               <div>
                 <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>{row.label}</div>
@@ -230,6 +212,9 @@ function SettingsPanel({ user, profile, onSignOut, onClose }: { user: User; prof
           ))}
         </div>
       ))}
+      <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textAlign:'center' as const, marginTop:20, lineHeight:1.8 }}>
+        Learnpath · MRF Studios · contact@mrfstudios.com
+      </div>
     </div>
   )
 }

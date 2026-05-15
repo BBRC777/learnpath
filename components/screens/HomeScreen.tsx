@@ -1,11 +1,10 @@
-'use client'
+﻿'use client'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { loadCurricula, loadStreak, loadWeekActivity } from '@/lib/db'
+import { useRouter } from 'next/navigation'
 
-const ACT_DATA = [22, 0, 35, 18, 42, 28, 14]
-const ACT_DAYS = ['M','T','W','T','F','S','S']
-const VOCAB_DUE = [
-  { w:'ichi', o:true },{ w:'juu', o:true },{ w:'hyaku', o:false },
-  { w:'nana', o:false },{ w:'print()', o:true },{ w:'def', o:false },
-]
+const DAY_LABELS = ['M','T','W','T','F','S','S']
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -19,116 +18,202 @@ function getDisplayName(profile: any): string {
 }
 
 export default function HomeScreen({ profile }: { profile: any }) {
+  const [curricula, setCurricula] = useState<any[]>([])
+  const [streak, setStreak] = useState(0)
+  const [activityData, setActivityData] = useState<number[]>([0,0,0,0,0,0,0])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { data: { user } } = await createClient().auth.getUser()
+        if (!user) return
+        const [currs, streakData, activity] = await Promise.all([
+          loadCurricula(user.id),
+          loadStreak(user.id),
+          loadWeekActivity(user.id),
+        ])
+        setCurricula(currs)
+        setStreak(streakData.current_streak || 0)
+        setActivityData(activity)
+      } catch (e) {
+        console.error('Load error:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
   const name = getDisplayName(profile)
   const isPro = profile?.is_pro ?? false
-  const maxAct = Math.max(...ACT_DATA, 1)
+  const maxAct = Math.max(...activityData, 1)
+  const totalMins = activityData.reduce((a,b)=>a+b,0)
+  const activeCurr = curricula[0]
+  const currProgress = activeCurr?.progress || {}
+  const currWeeks = activeCurr?.curriculum?.weeks || []
+  const totalSessions = currWeeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
+  const doneSessions = Object.values(currProgress).filter(Boolean).length
+  const pct = totalSessions ? Math.round((doneSessions/totalSessions)*100) : 0
+
+  // Vocab due — placeholder until flashcard system is connected
+  const VOCAB_DUE = [
+    { w:'ichi', o:true },{ w:'juu', o:true },{ w:'hyaku', o:false },
+    { w:'nana', o:false },{ w:'print()', o:true },{ w:'def', o:false },
+  ]
 
   return (
-    <div style={{ maxWidth:740, margin:'0 auto', padding:'22px 26px 60px' }}>
+    <div style={{ overflowY:'auto', height:'100%' }}>
+      <div style={{ maxWidth:740, margin:'0 auto', padding:'22px 26px 60px' }}>
 
-      {/* Pro banner */}
-      {!isPro && (
-        <div style={{ background:'linear-gradient(135deg,rgba(212,133,58,0.12),rgba(212,133,58,0.05))', border:'1px solid rgba(212,133,58,0.25)', borderRadius:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, marginBottom:18 }}>
-          <div>
-            <div style={{ fontSize:12.5, fontWeight:500, color:'var(--amber2)', marginBottom:2 }}>Unlock Learnpath Pro</div>
-            <div style={{ fontSize:11, color:'var(--text2)' }}>Unlimited paths, AI Tutor, Study Mode — $9.99/mo or $79.99/yr</div>
-          </div>
-          <button style={{ padding:'7px 14px', borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', whiteSpace:'nowrap', fontFamily:'var(--sans)' }}>Upgrade</button>
-        </div>
-      )}
-
-      {/* Greeting */}
-      <div style={{ marginBottom:18 }}>
-        <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.12em', textTransform:'uppercase', marginBottom:3 }}>
-          {new Date().toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' })}
-        </div>
-        <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:3 }}>{getGreeting()}, {name}</div>
-        <div style={{ fontSize:13, color:'var(--text2)' }}>You have 3 flashcards overdue and your next lesson is ready.</div>
-      </div>
-
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:18 }}>
-        {[
-          { v: profile?.streak ?? 0,          l:'Day streak',     c:'var(--amber)' },
-          { v: (profile?.total_days ?? 0) * 28, l:'Total minutes', c:'var(--blue-text)' },
-          { v: profile?.cards_reviewed ?? 0,  l:'Cards reviewed', c:'var(--green-text)' },
-          { v: '3/6',                          l:'Lessons done',   c:'var(--purple-text)' },
-        ].map((s,i) => (
-          <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }}>
-            <div style={{ fontFamily:'var(--mono)', fontSize:21, fontWeight:500, color:s.c }}>{s.v}</div>
-            <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{s.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Continue card */}
-      <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18 }}>
-        <div style={{ width:130, flexShrink:0, background:'var(--bg4)', overflow:'hidden' }}>
-          <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=260&q=70" alt="Japanese" style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
-        </div>
-        <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
-          <div>
-            <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>Continue · Japanese</div>
-            <div style={{ fontFamily:'var(--serif)', fontSize:17, color:'var(--text)', marginBottom:4 }}>Numbers 1-100</div>
-            <div style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5 }}>Week 1 · Lesson 3 — 38% through your path</div>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10 }}>
-            <div style={{ flex:1, height:2, background:'var(--bg5)', borderRadius:1, marginRight:10 }}>
-              <div style={{ height:'100%', borderRadius:1, background:'var(--amber)', width:'38%' }}/>
+        {/* Pro banner */}
+        {!isPro && (
+          <div style={{ background:'linear-gradient(135deg,rgba(212,133,58,0.12),rgba(212,133,58,0.05))', border:'1px solid rgba(212,133,58,0.25)', borderRadius:10, padding:'14px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, marginBottom:18 }}>
+            <div>
+              <div style={{ fontSize:12.5, fontWeight:500, color:'var(--amber2)', marginBottom:2 }}>Unlock Learnpath Pro</div>
+              <div style={{ fontSize:11, color:'var(--text2)' }}>Unlimited paths, AI Tutor, Study Mode — $9.99/mo or $79.99/yr</div>
             </div>
-            <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)' }}>38%</div>
-            <button style={{ padding:'5px 13px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', marginLeft:10, fontFamily:'var(--sans)' }}>Continue</button>
+            <button style={{ padding:'7px 14px', borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'var(--sans)' }}>Upgrade</button>
+          </div>
+        )}
+
+        {/* Greeting */}
+        <div style={{ marginBottom:18 }}>
+          <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.12em', textTransform:'uppercase' as const, marginBottom:3 }}>
+            {new Date().toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' })}
+          </div>
+          <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:3 }}>{getGreeting()}, {name}</div>
+          <div style={{ fontSize:13, color:'var(--text2)' }}>
+            {loading ? 'Loading your progress...' : curricula.length === 0 ? 'Build your first learning path to get started.' : `You have ${curricula.length} active path${curricula.length!==1?'s':''}.`}
           </div>
         </div>
-      </div>
 
-      {/* Two col */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:14 }}>
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:18 }}>
+          {[
+            { v: streak,                          l:'Day streak',      c:'var(--amber)' },
+            { v: totalMins > 0 ? totalMins+'m' : '0m', l:'This week',  c:'var(--blue-text)' },
+            { v: profile?.cards_reviewed ?? 0,    l:'Cards reviewed',  c:'var(--green-text)' },
+            { v: curricula.length,                l:'Active paths',    c:'var(--purple-text)' },
+          ].map((s,i) => (
+            <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }}>
+              <div style={{ fontFamily:'var(--mono)', fontSize:21, fontWeight:500, color:s.c }}>{s.v}</div>
+              <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
 
-        {/* Activity */}
-        <div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.09em' }}>This week</div>
-            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{ACT_DATA.reduce((a,b)=>a+b,0)} min</div>
+        {/* Continue card or empty state */}
+        {activeCurr ? (
+          <div onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18, transition:'border-color 0.14s' }}>
+            <div style={{ width:130, flexShrink:0, background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <div style={{ fontFamily:'var(--serif)', fontSize:32, color:'var(--amber)', opacity:0.4 }}>LP</div>
+            </div>
+            <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column' as const, justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:4 }}>Continue · {activeCurr.topic}</div>
+                <div style={{ fontFamily:'var(--serif)', fontSize:17, color:'var(--text)', marginBottom:4 }}>{activeCurr.curriculum?.title || activeCurr.topic}</div>
+                <div style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5 }}>{activeCurr.level} · {activeCurr.dur_label} · {pct}% complete</div>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10 }}>
+                <div style={{ flex:1, height:2, background:'var(--bg5)', borderRadius:1, marginRight:10 }}>
+                  <div style={{ height:'100%', borderRadius:1, background:'var(--amber)', width:pct+'%' }}/>
+                </div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)' }}>{pct}%</div>
+                <button style={{ padding:'5px 13px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', marginLeft:10, fontFamily:'var(--sans)' }}>Continue</button>
+              </div>
+            </div>
           </div>
-          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
-            <div style={{ display:'flex', alignItems:'flex-end', gap:5, height:64 }}>
-              {ACT_DATA.map((m,i) => (
-                <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-                  <div style={{ width:'100%', flex:1, background:'var(--bg4)', borderRadius:3, position:'relative', overflow:'hidden', minHeight:48 }}>
-                    <div style={{ position:'absolute', bottom:0, left:0, right:0, borderRadius:3, height:`${(m/maxAct)*100}%`, background: i===6 ? 'var(--amber)' : m>0 ? 'var(--blue-text)' : 'transparent', opacity: i===6 ? 1 : 0.55 }}/>
+        ) : (
+          <div onClick={() => router.push('/app/curriculum')} style={{ background:'var(--bg2)', border:'1px dashed var(--border2)', borderRadius:12, padding:'28px', marginBottom:18, textAlign:'center' as const, cursor:'pointer', transition:'all 0.14s' }}>
+            <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text2)', marginBottom:6 }}>No learning paths yet</div>
+            <div style={{ fontSize:13, color:'var(--text3)', marginBottom:14 }}>Build your first AI-generated curriculum — takes 30 seconds.</div>
+            <button style={{ padding:'9px 20px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Build my first path</button>
+          </div>
+        )}
+
+        {/* Two col */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:14 }}>
+
+          {/* Activity chart */}
+          <div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>This week</div>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{totalMins} min</div>
+            </div>
+            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
+              <div style={{ display:'flex', alignItems:'flex-end', gap:5, height:64 }}>
+                {activityData.map((m,i) => (
+                  <div key={i} style={{ flex:1, display:'flex', flexDirection:'column' as const, alignItems:'center', gap:3 }}>
+                    <div style={{ width:'100%', flex:1, background:'var(--bg4)', borderRadius:3, position:'relative' as const, overflow:'hidden', minHeight:48 }}>
+                      <div style={{ position:'absolute' as const, bottom:0, left:0, right:0, borderRadius:3, height:`${(m/maxAct)*100}%`, background:i===6?'var(--amber)':m>0?'var(--blue-text)':'transparent', opacity:i===6?1:0.55 }}/>
+                    </div>
+                    <div style={{ fontSize:8, fontFamily:'var(--mono)', color:i===6?'var(--amber)':'var(--text3)' }}>{DAY_LABELS[i]}</div>
                   </div>
-                  <div style={{ fontSize:8, fontFamily:'var(--mono)', color: i===6 ? 'var(--amber)' : 'var(--text3)' }}>{ACT_DAYS[i]}</div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Flashcards due */}
+          <div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>Flashcards due</div>
+              <div onClick={() => router.push('/app/flashcards')} style={{ fontSize:10.5, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>Review all</div>
+            </div>
+            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
+              <div style={{ fontSize:11, color:'var(--text2)', marginBottom:8 }}>
+                <span style={{ color:'var(--red-text)', fontFamily:'var(--mono)', fontWeight:500 }}>3 overdue</span>
+                <span style={{ color:'var(--text3)', margin:'0 4px' }}>·</span>
+                <span style={{ color:'var(--amber)', fontFamily:'var(--mono)' }}>6 due</span>
+              </div>
+              <div style={{ display:'flex', flexWrap:'wrap' as const, gap:5, marginBottom:11 }}>
+                {VOCAB_DUE.map((v,i) => (
+                  <div key={i} style={{ padding:'3px 9px', borderRadius:10, fontSize:10.5, fontFamily:'var(--mono)', cursor:'pointer', background:v.o?'var(--red-bg)':'var(--amber-bg)', border:`1px solid ${v.o?'var(--red-border)':'var(--amber-bg2)'}`, color:v.o?'var(--red-text)':'var(--amber2)' }}>
+                    {v.w}
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => router.push('/app/flashcards')} style={{ width:'100%', padding:8, borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>
+                Start review
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Flashcards due */}
-        <div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.09em' }}>Flashcards due</div>
-            <div style={{ fontSize:10.5, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>Review all</div>
-          </div>
-          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
-            <div style={{ fontSize:11, color:'var(--text2)', marginBottom:8 }}>
-              <span style={{ color:'var(--red-text)', fontFamily:'var(--mono)', fontWeight:500 }}>3 overdue</span>
-              <span style={{ color:'var(--text3)', margin:'0 4px' }}>·</span>
-              <span style={{ color:'var(--amber)', fontFamily:'var(--mono)' }}>6 due</span>
+        {/* All paths */}
+        {curricula.length > 0 && (
+          <div style={{ marginTop:20 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>All Learning Paths</div>
+              <div onClick={() => router.push('/app/curriculum')} style={{ fontSize:10.5, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>+ New path</div>
             </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:11 }}>
-              {VOCAB_DUE.map((v,i) => (
-                <div key={i} style={{ padding:'3px 9px', borderRadius:10, fontSize:10.5, fontFamily:'var(--mono)', cursor:'pointer', background: v.o ? 'var(--red-bg)' : 'var(--amber-bg)', border:`1px solid ${v.o ? 'var(--red-border)' : 'var(--amber-bg2)'}`, color: v.o ? 'var(--red-text)' : 'var(--amber2)' }}>
-                  {v.w}
-                </div>
-              ))}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:9 }}>
+              {curricula.map((c,i) => {
+                const weeks = c.curriculum?.weeks || []
+                const total = weeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
+                const done = Object.values(c.progress||{}).filter(Boolean).length
+                const p = total ? Math.round((done/total)*100) : 0
+                const colors = ['#d4853a','#7aacef','#b090f0','#6abf8a','#ef7a7a']
+                const color = colors[i % colors.length]
+                return (
+                  <div key={c.id} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'13px 15px', cursor:'pointer' }} onClick={() => router.push('/app/lesson')}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:8 }}>
+                      <div style={{ width:8, height:8, borderRadius:'50%', background:color }}/>
+                      <div style={{ fontSize:12.5, fontWeight:500, color:'var(--text)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{c.curriculum?.title || c.topic}</div>
+                    </div>
+                    <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
+                      <div style={{ height:'100%', borderRadius:2, background:color, width:p+'%' }}/>
+                    </div>
+                    <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} · {p}% complete</div>
+                  </div>
+                )
+              })}
             </div>
-            <button style={{ width:'100%', padding:8, borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>
-              Start review
-            </button>
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   )

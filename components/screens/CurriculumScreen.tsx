@@ -1,5 +1,8 @@
 ﻿'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { saveCurriculum } from '@/lib/db'
+import { useRouter } from 'next/navigation'
 
 const TOPICS = ['Spanish','Japanese','Python','Guitar','Drawing','Calculus','Photography','Chess','Public Speaking','Investing Basics','Creative Writing','Music Theory']
 const LEVEL_OPTS = ['Complete Beginner','Beginner','Intermediate','Advanced']
@@ -7,11 +10,11 @@ const DUR_OPTS = [{ label:'2 Weeks', weeks:2 },{ label:'4 Weeks', weeks:4 },{ la
 const TIME_OPTS = ['15 min','20 min','30 min','45 min','60 min']
 const DAY_LABELS = ['M','T','W','T','F','S','S']
 const STYLE_OPTS = [
-  { v:'visual', label:'Visual', desc:'Images, diagrams, examples' },
-  { v:'structured', label:'Structured', desc:'Lists, frameworks, steps' },
-  { v:'storytelling', label:'Story-driven', desc:'Narrative and context' },
-  { v:'practical', label:'Hands-on', desc:'Exercises and doing' },
-  { v:'mixed', label:'Mixed', desc:'Variety each session' },
+  { v:'visual',      label:'Visual',       desc:'Images, diagrams, examples' },
+  { v:'structured',  label:'Structured',   desc:'Lists, frameworks, steps' },
+  { v:'storytelling',label:'Story-driven', desc:'Narrative and context' },
+  { v:'practical',   label:'Hands-on',     desc:'Exercises and doing' },
+  { v:'mixed',       label:'Mixed',        desc:'Variety each session' },
 ]
 
 function StepProgress({ step }: { step: number }) {
@@ -43,12 +46,21 @@ export default function CurriculumScreen() {
   const [activeDays, setActiveDays] = useState([0,1,2,3,4])
   const [styles, setStyles] = useState(['mixed'])
   const [extra, setExtra] = useState('')
-  const [apiKey, setApiKey] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lp_api_key')||'' : '')
   const [generating, setGenerating] = useState(false)
   const [streamText, setStreamText] = useState('')
   const [curriculum, setCurriculum] = useState<any>(null)
+  const [savedId, setSavedId] = useState<string|null>(null)
   const [error, setError] = useState('')
   const [openWeeks, setOpenWeeks] = useState<Record<number,boolean>>({ 0:true })
+  const [userId, setUserId] = useState<string|null>(null)
+  const [saving, setSaving] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id)
+    })
+  }, [])
 
   const toggleDay = (i: number) => setActiveDays(d => d.includes(i)?d.filter(x=>x!==i):[...d,i].sort())
   const toggleStyle = (v: string) => setStyles(s => s.includes(v)?(s.length>1?s.filter(x=>x!==v):s):[...s,v])
@@ -66,6 +78,7 @@ export default function CurriculumScreen() {
     setGenerating(true)
     setStreamText('')
     setCurriculum(null)
+    setSavedId(null)
 
     const prompt = `Create a personalised learning curriculum as a single valid JSON object. No markdown. No explanation.
 
@@ -124,8 +137,31 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
         }
       }
       const match = full.match(/\{[\s\S]*\}/)
-      if (match) { setCurriculum(JSON.parse(match[0])); setOpenWeeks({0:true}) }
-      else throw new Error('Could not parse curriculum')
+      if (!match) throw new Error('Could not parse curriculum')
+      const parsed = JSON.parse(match[0])
+      setCurriculum(parsed)
+      setOpenWeeks({0:true})
+
+      // Auto-save to Supabase
+      if (userId) {
+        setSaving(true)
+        try {
+          const saved = await saveCurriculum(userId, {
+            topic,
+            level,
+            durLabel: duration.label,
+            days: activeDays.length,
+            time: sessionTime,
+            style: styles.join(', '),
+            curriculum: parsed,
+          })
+          setSavedId(saved.id)
+        } catch (e: any) {
+          console.error('Save failed:', e.message)
+        } finally {
+          setSaving(false)
+        }
+      }
     } catch(e: any) {
       setError(e.message)
     } finally { setGenerating(false); setStreamText('') }
@@ -147,21 +183,19 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
           <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>{level} · {duration.label} Path</div>
           <div style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', marginBottom:6, lineHeight:1.2 }}>{curriculum.title}</div>
           <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:16 }}>{curriculum.overview}</div>
-          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom: savedId ? 12 : 0 }}>
             {[`${curriculum.totalWeeks} weeks`, `${curriculum.daysPerWeek} days/week`, sessionTime+'/session', `${totalLessons} total sessions`].map((chip,i) => (
               <span key={i} style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)' }}>{chip}</span>
             ))}
             <span style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid rgba(212,133,58,0.3)', background:'var(--amber-bg)', color:'var(--amber2)' }}>Generated by Claude</span>
           </div>
+          {saving && <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:8 }}>Saving to your account...</div>}
+          {savedId && <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--green-text)', marginTop:8 }}>Saved to your account</div>}
         </div>
 
         <div style={{ display:'flex', gap:10, marginBottom:24, flexWrap:'wrap' as const }}>
-          {[
-            { label:'Start Week 1', primary:true, onClick:()=>{} },
-            { label:'Back to Builder', primary:false, onClick:()=>{ setCurriculum(null); setStep(0) } },
-          ].map((btn,i) => (
-            <button key={i} onClick={btn.onClick} style={{ flex:1, minWidth:120, padding:13, borderRadius:10, border:btn.primary?'1px solid var(--amber)':'1px solid var(--border)', background:btn.primary?'var(--amber)':'var(--bg2)', color:btn.primary?'#0a0b0f':'var(--text2)', fontFamily:'var(--sans)', fontSize:13, fontWeight:btn.primary?500:400, cursor:'pointer' }}>{btn.label}</button>
-          ))}
+          <button onClick={() => router.push('/app')} style={{ flex:1, minWidth:120, padding:13, borderRadius:10, border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Go to Home</button>
+          <button onClick={() => { setCurriculum(null); setSavedId(null); setStep(0) }} style={{ flex:1, minWidth:120, padding:13, borderRadius:10, border:'1px solid var(--border)', background:'var(--bg2)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Build Another</button>
         </div>
 
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
