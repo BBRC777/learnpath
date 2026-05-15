@@ -82,7 +82,7 @@ export default function AuthClient() {
         if (error) throw error
         // Create initial profile row
         if (data.user) {
-          await supabase.from('profiles').upsert({
+          await (supabase.from('profiles') as any).upsert({
             id: data.user.id, email,
             streak: 0, total_days: 0, cards_reviewed: 0, is_pro: false,
             created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
@@ -110,7 +110,7 @@ export default function AuthClient() {
   const finishOnboarding = async () => {
     if (!obUser) return
     setObSaving(true)
-    await supabase.from('profiles').upsert({
+    await (supabase.from('profiles') as any).upsert({
       id: obUser.id,
       email: obUser.email,
       display_name: displayName.trim() || obUser.email?.split('@')[0] || 'Learner',
@@ -354,4 +354,5 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
   },
 }
+
 
