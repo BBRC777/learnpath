@@ -22,6 +22,7 @@ export async function saveCurriculum(userId: string, params: {
     style: params.style,
     curriculum: params.curriculum,
     progress: {},
+    lesson_cache: {},
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   }).select().single()
@@ -43,6 +44,30 @@ export async function updateCurriculumProgress(curriculumId: string, progress: a
   const supabase = createClient()
   await (supabase.from('curricula') as any)
     .update({ progress, updated_at: new Date().toISOString() })
+    .eq('id', curriculumId)
+}
+
+export async function getCachedLesson(curriculumId: string, lessonKey: string) {
+  const supabase = createClient()
+  const { data } = await (supabase.from('curricula') as any)
+    .select('lesson_cache')
+    .eq('id', curriculumId)
+    .single()
+  if (!data) return null
+  const cache = data.lesson_cache || {}
+  return cache[lessonKey] || null
+}
+
+export async function cacheLesson(curriculumId: string, lessonKey: string, lessonData: any) {
+  const supabase = createClient()
+  const { data } = await (supabase.from('curricula') as any)
+    .select('lesson_cache')
+    .eq('id', curriculumId)
+    .single()
+  const cache = data?.lesson_cache || {}
+  cache[lessonKey] = lessonData
+  await (supabase.from('curricula') as any)
+    .update({ lesson_cache: cache, updated_at: new Date().toISOString() })
     .eq('id', curriculumId)
 }
 
