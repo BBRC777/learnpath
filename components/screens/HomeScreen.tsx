@@ -62,7 +62,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
 
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
-      <div style={{ maxWidth:760, margin:'0 auto', padding:'22px 26px 60px' }}>
+      <div style={{ maxWidth:860, margin:'0 auto', padding:'22px 26px 60px' }}>
 
         {/* Pro banner */}
         {!isPro && (
@@ -215,3 +215,4 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
