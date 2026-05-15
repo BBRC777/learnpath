@@ -60,6 +60,9 @@ export default function HomeScreen({ profile }: { profile: any }) {
   const doneSessions = Object.values(currProgress).filter(Boolean).length
   const pct = totalSessions ? Math.round((doneSessions/totalSessions)*100) : 0
 
+  const GRID3: React.CSSProperties = { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }
+  const CARD: React.CSSProperties = { background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }
+
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:740, margin:'0 auto', padding:'22px 26px 60px' }}>
@@ -88,7 +91,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
 
         {/* 2. CONTINUE CARD */}
         {activeCurr ? (
-          <div onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18, transition:'border-color 0.14s' }}>
+          <div onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18 }}>
             <div style={{ width:120, flexShrink:0, background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', opacity:0.35 }}>LP</div>
             </div>
@@ -96,33 +99,33 @@ export default function HomeScreen({ profile }: { profile: any }) {
               <div>
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:4 }}>Continue · {activeCurr.topic}</div>
                 <div style={{ fontFamily:'var(--serif)', fontSize:17, color:'var(--text)', marginBottom:4 }}>{activeCurr.curriculum?.title || activeCurr.topic}</div>
-                <div style={{ fontSize:12, color:'var(--text2)', lineHeight:1.5 }}>{activeCurr.level} · {activeCurr.dur_label} · {pct}% complete</div>
+                <div style={{ fontSize:12, color:'var(--text2)' }}>{activeCurr.level} · {activeCurr.dur_label} · {pct}% complete</div>
               </div>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10 }}>
-                <div style={{ flex:1, height:2, background:'var(--bg5)', borderRadius:1, marginRight:10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginTop:10 }}>
+                <div style={{ flex:1, height:2, background:'var(--bg5)', borderRadius:1 }}>
                   <div style={{ height:'100%', borderRadius:1, background:'var(--amber)', width:pct+'%' }}/>
                 </div>
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)' }}>{pct}%</div>
-                <button style={{ padding:'5px 13px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', marginLeft:10, fontFamily:'var(--sans)' }}>Continue</button>
+                <button style={{ padding:'5px 13px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', fontFamily:'var(--sans)' }}>Continue</button>
               </div>
             </div>
           </div>
         ) : (
-          <div onClick={() => router.push('/app/curriculum')} style={{ background:'var(--bg2)', border:'1px dashed var(--border2)', borderRadius:12, padding:'28px', marginBottom:18, textAlign:'center' as const, cursor:'pointer' }}>
+          <div onClick={() => router.push('/app/curriculum')} style={{ ...CARD, borderStyle:'dashed', borderColor:'var(--border2)', padding:'28px', marginBottom:18, textAlign:'center' as const, cursor:'pointer' }}>
             <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text2)', marginBottom:6 }}>No learning paths yet</div>
             <div style={{ fontSize:13, color:'var(--text3)', marginBottom:14 }}>Build your first AI-generated curriculum — takes 30 seconds.</div>
             <button style={{ padding:'9px 20px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Build my first path</button>
           </div>
         )}
 
-        {/* 3. PATH TILES — horizontal rows */}
+        {/* 3. PATH TILES — same grid as stats */}
         {curricula.length > 0 && (
           <div style={{ marginBottom:18 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>My Paths</div>
               <div onClick={() => router.push('/app/paths')} style={{ fontSize:10, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>View all</div>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, overflow:'hidden' }}>
+            <div style={GRID3}>
               {curricula.slice(0,6).map((c,i) => {
                 const weeks = c.curriculum?.weeks || []
                 const total = weeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
@@ -130,7 +133,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
                 const p = total ? Math.round((done/total)*100) : 0
                 const color = COLORS[i % COLORS.length]
                 return (
-                  <div key={c.id} onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'11px 13px', cursor:'pointer', transition:'border-color 0.13s' }}>
+                  <div key={c.id} onClick={() => router.push('/app/lesson')} style={{ ...CARD, cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
                       <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }}/>
                       <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{c.curriculum?.title || c.topic}</div>
@@ -138,7 +141,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
                     <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
                       <div style={{ height:'100%', borderRadius:2, background:color, width:p+'%' }}/>
                     </div>
-                    <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} · {p}% complete</div>
+                    <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} · {p}%</div>
                   </div>
                 )
               })}
@@ -151,14 +154,14 @@ export default function HomeScreen({ profile }: { profile: any }) {
           </div>
         )}
 
-        {/* 4. STATS ROW */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, overflow:'hidden', marginBottom:18 }}>
+        {/* 4. STATS — exact same grid */}
+        <div style={{ ...GRID3, marginBottom:18 }}>
           {[
             { v: streak,                                l:'Day streak',     c:'var(--amber)' },
             { v: totalMins > 0 ? totalMins+'m' : '0m', l:'This week',      c:'var(--blue-text)' },
             { v: profile?.cards_reviewed ?? 0,          l:'Cards reviewed', c:'var(--green-text)' },
           ].map((s,i) => (
-            <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }}>
+            <div key={i} style={CARD}>
               <div style={{ fontFamily:'var(--mono)', fontSize:21, fontWeight:500, color:s.c }}>{s.v}</div>
               <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{s.l}</div>
             </div>
@@ -172,7 +175,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>This week</div>
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{totalMins} min</div>
             </div>
-            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
+            <div style={{ ...CARD, padding:'14px 16px' }}>
               <div style={{ display:'flex', alignItems:'flex-end', gap:5, height:64 }}>
                 {activityData.map((m,i) => (
                   <div key={i} style={{ flex:1, display:'flex', flexDirection:'column' as const, alignItems:'center', gap:3 }}>
@@ -191,7 +194,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>Flashcards due</div>
               <div onClick={() => router.push('/app/flashcards')} style={{ fontSize:10, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>Review all</div>
             </div>
-            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
+            <div style={{ ...CARD, padding:'14px 16px' }}>
               <div style={{ fontSize:11, color:'var(--text2)', marginBottom:8 }}>
                 <span style={{ color:'var(--red-text)', fontFamily:'var(--mono)', fontWeight:500 }}>3 overdue</span>
                 <span style={{ color:'var(--text3)', margin:'0 4px' }}>·</span>
@@ -215,10 +218,3 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
-
-
-
-
-
-
-
