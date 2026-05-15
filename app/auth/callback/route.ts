@@ -1,4 +1,4 @@
-// app/auth/callback/route.ts
+﻿// app/auth/callback/route.ts
 // Handles: email confirmation links, OAuth redirects, password reset
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'

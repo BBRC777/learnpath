@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 // components/screens/HomeScreen.tsx
 import type { Profile } from '@/types/database'
 

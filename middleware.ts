@@ -1,4 +1,4 @@
-// middleware.ts — runs on every request, keeps session fresh
+﻿// middleware.ts — runs on every request, keeps session fresh
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 // hooks/useClaudeStream.ts
 // Streams from /api/claude — API key stays server-side
 import { useState, useRef } from 'react'

@@ -1,4 +1,4 @@
-// types/database.ts
+﻿// types/database.ts
 // Matches the actual Learnpath profiles schema in Supabase
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]

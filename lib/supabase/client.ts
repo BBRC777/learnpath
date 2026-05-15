@@ -1,4 +1,4 @@
-// lib/supabase/client.ts
+﻿// lib/supabase/client.ts
 // Browser-side Supabase client — use in Client Components
 import { createBrowserClient } from '@supabase/ssr'
 import type { Database } from '@/types/database'
