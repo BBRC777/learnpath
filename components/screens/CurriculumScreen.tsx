@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { saveCurriculum } from '@/lib/db'
+import { saveCurriculum, loadCurricula } from '@/lib/db'
 import { useRouter } from 'next/navigation'
 
 const TOPICS = ['Spanish','Japanese','Python','Guitar','Drawing','Calculus','Photography','Chess','Public Speaking','Investing Basics','Creative Writing','Music Theory']
@@ -10,17 +10,20 @@ const DUR_OPTS = [{ label:'2 Weeks', weeks:2 },{ label:'4 Weeks', weeks:4 },{ la
 const TIME_OPTS = ['15 min','20 min','30 min','45 min','60 min']
 const DAY_LABELS = ['M','T','W','T','F','S','S']
 const STYLE_OPTS = [
-  { v:'visual',      label:'Visual',       desc:'Images, diagrams, examples' },
-  { v:'structured',  label:'Structured',   desc:'Lists, frameworks, steps' },
-  { v:'storytelling',label:'Story-driven', desc:'Narrative and context' },
-  { v:'practical',   label:'Hands-on',     desc:'Exercises and doing' },
-  { v:'mixed',       label:'Mixed',        desc:'Variety each session' },
+  { v:'visual',       label:'Visual',       desc:'Images, diagrams, examples' },
+  { v:'structured',   label:'Structured',   desc:'Lists, frameworks, steps' },
+  { v:'storytelling', label:'Story-driven', desc:'Narrative and context' },
+  { v:'practical',    label:'Hands-on',     desc:'Exercises and doing' },
+  { v:'mixed',        label:'Mixed',        desc:'Variety each session' },
 ]
+
+const TYPE_COLORS: Record<string,string> = { lesson:'var(--blue-text)', flashcards:'var(--purple-text)', exercise:'var(--green-text)', review:'var(--amber2)', practice:'var(--green-text)' }
+const TYPE_BGS: Record<string,string>    = { lesson:'var(--blue-bg)',   flashcards:'var(--purple-bg)',   exercise:'var(--green-bg)',   review:'var(--amber-bg)',  practice:'var(--green-bg)' }
 
 function StepProgress({ step }: { step: number }) {
   const steps = ['Topic','Schedule','Style','Review']
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:0, marginBottom:36 }}>
+    <div style={{ display:'flex', alignItems:'center', marginBottom:36 }}>
       {steps.map((s,i) => (
         <div key={i} style={{ display:'flex', alignItems:'center', flex: i<steps.length-1?1:undefined }}>
           <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center' }}>
@@ -54,6 +57,8 @@ export default function CurriculumScreen() {
   const [openWeeks, setOpenWeeks] = useState<Record<number,boolean>>({ 0:true })
   const [userId, setUserId] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
+  const [selectedWeek, setSelectedWeek] = useState<number|null>(null)
+  const [selectedDay, setSelectedDay] = useState<number|null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -140,33 +145,20 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
       if (!match) throw new Error('Could not parse curriculum')
       const parsed = JSON.parse(match[0])
       setCurriculum(parsed)
-      setOpenWeeks({0:true})
-
-      // Auto-save to Supabase
+      setOpenWeeks({ 0:true })
       if (userId) {
         setSaving(true)
         try {
-          const saved = await saveCurriculum(userId, {
-            topic,
-            level,
-            durLabel: duration.label,
-            days: activeDays.length,
-            time: sessionTime,
-            style: styles.join(', '),
-            curriculum: parsed,
-          })
+          const saved = await saveCurriculum(userId, { topic, level, durLabel:duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum:parsed })
           setSavedId(saved.id)
-        } catch (e: any) {
-          console.error('Save failed:', e.message)
-        } finally {
-          setSaving(false)
-        }
+        } catch(e: any) { console.error('Save failed:', e.message) }
+        finally { setSaving(false) }
       }
-    } catch(e: any) {
-      setError(e.message)
-    } finally { setGenerating(false); setStreamText('') }
+    } catch(e: any) { setError(e.message) }
+    finally { setGenerating(false); setStreamText('') }
   }
 
+  // ── GENERATING SCREEN ──────────────────────────────────────
   if (generating) return (
     <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
       <div style={{ width:40, height:40, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 24px' }}/>
@@ -176,9 +168,12 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
     </div>
   )
 
+  // ── RESULT SCREEN ──────────────────────────────────────────
   if (curriculum) return (
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:740, margin:'0 auto', padding:'28px 32px 80px' }}>
+
+        {/* Hero */}
         <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, padding:'24px 26px', marginBottom:20 }}>
           <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>{level} · {duration.label} Path</div>
           <div style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', marginBottom:6, lineHeight:1.2 }}>{curriculum.title}</div>
@@ -193,13 +188,42 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
           {savedId && <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--green-text)', marginTop:8 }}>Saved to your account</div>}
         </div>
 
-        <div style={{ display:'flex', gap:10, marginBottom:24, flexWrap:'wrap' as const }}>
-          <button onClick={() => router.push('/app')} style={{ flex:1, minWidth:120, padding:13, borderRadius:10, border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Go to Home</button>
-          <button onClick={() => { setCurriculum(null); setSavedId(null); setStep(0) }} style={{ flex:1, minWidth:120, padding:13, borderRadius:10, border:'1px solid var(--border)', background:'var(--bg2)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Build Another</button>
+        {/* Fix #2 — Action buttons: Start Learning (left) + Go to Home (right) */}
+        <div style={{ display:'flex', gap:10, marginBottom:24 }}>
+          <button onClick={() => router.push('/app/lesson')} style={{ flex:2, padding:13, borderRadius:10, border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
+            Start Learning
+          </button>
+          <button onClick={() => router.push('/app')} style={{ flex:1, padding:13, borderRadius:10, border:'1px solid var(--border)', background:'var(--bg2)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>
+            Go to Home
+          </button>
+          <button onClick={() => { setCurriculum(null); setSavedId(null); setStep(0) }} style={{ flex:1, padding:13, borderRadius:10, border:'1px solid var(--border)', background:'var(--bg2)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>
+            Build Another
+          </button>
         </div>
 
+        {/* Fix #3 — Selected lesson info */}
+        {selectedWeek !== null && selectedDay !== null && (() => {
+          const wk = curriculum.weeks[selectedWeek]
+          const d = wk?.days[selectedDay]
+          if (!d) return null
+          return (
+            <div style={{ background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.3)', borderRadius:10, padding:'14px 18px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+              <div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:4 }}>Selected · Week {selectedWeek+1}, Day {selectedDay+1}</div>
+                <div style={{ fontSize:14, fontWeight:500, color:'var(--text)' }}>{d.title}</div>
+                <div style={{ fontSize:12, color:'var(--text2)', marginTop:2 }}>{d.description}</div>
+              </div>
+              <button onClick={() => router.push('/app/lesson')} style={{ padding:'9px 18px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const }}>
+                Start this lesson
+              </button>
+            </div>
+          )
+        })()}
+
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em' }}>{(curriculum.weeks||[]).length} Weeks · Full Curriculum</div>
+          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em' }}>
+            {(curriculum.weeks||[]).length} Weeks · Click any lesson to start
+          </div>
           <button onClick={() => { const all: Record<number,boolean>={}; (curriculum.weeks||[]).forEach((_:any,i:number)=>all[i]=true); setOpenWeeks(all) }} style={{ fontSize:11, padding:'4px 10px', borderRadius:5, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontFamily:'var(--sans)' }}>Expand All</button>
         </div>
 
@@ -216,25 +240,29 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
               </div>
               {openWeeks[wi] && (
                 <>
-                  {wk.milestone && <div style={{ display:'flex', alignItems:'center', gap:6, padding:'10px 16px', background:'var(--amber-bg)', borderBottom:'1px solid rgba(212,133,58,0.15)' }}>
-                    <span style={{ fontSize:11.5, color:'var(--amber2)', lineHeight:1.4 }}><strong>Goal:</strong> {wk.milestone}</span>
-                  </div>}
+                  {wk.milestone && (
+                    <div style={{ padding:'10px 16px', background:'var(--amber-bg)', borderBottom:'1px solid rgba(212,133,58,0.15)' }}>
+                      <span style={{ fontSize:11.5, color:'var(--amber2)', lineHeight:1.4 }}><strong>Goal:</strong> {wk.milestone}</span>
+                    </div>
+                  )}
                   <div style={{ borderTop:'1px solid var(--border)', padding:'12px 14px' }}>
                     <div style={{ display:'flex', flexDirection:'column' as const, gap:7 }}>
                       {(wk.days||[]).map((d: any, di: number) => {
-                        const typeColors: Record<string,string> = { lesson:'var(--blue-text)', flashcards:'var(--purple-text)', exercise:'var(--green-text)', review:'var(--amber2)', practice:'var(--green-text)' }
-                        const typeBgs: Record<string,string> = { lesson:'var(--blue-bg)', flashcards:'var(--purple-bg)', exercise:'var(--green-bg)', review:'var(--amber-bg)', practice:'var(--green-bg)' }
+                        const isSelected = selectedWeek===wi && selectedDay===di
                         return (
-                          <div key={di} style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 12px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8 }}>
-                            <div style={{ width:22, height:22, borderRadius:5, background:'var(--bg4)', border:'1px solid var(--border2)', fontFamily:'var(--mono)', fontSize:9, color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>D{di+1}</div>
+                          <div key={di}
+                            onClick={() => { setSelectedWeek(wi); setSelectedDay(di) }}
+                            style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'10px 12px', background:isSelected?'var(--amber-bg)':'var(--bg3)', border:`1px solid ${isSelected?'rgba(212,133,58,0.4)':'var(--border)'}`, borderRadius:8, cursor:'pointer', transition:'all 0.13s' }}>
+                            <div style={{ width:22, height:22, borderRadius:5, background:isSelected?'var(--amber-bg2)':'var(--bg4)', border:`1px solid ${isSelected?'rgba(212,133,58,0.4)':'var(--border2)'}`, fontFamily:'var(--mono)', fontSize:9, color:isSelected?'var(--amber)':'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>D{di+1}</div>
                             <div style={{ flex:1 }}>
                               <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
-                                <span style={{ fontSize:8.5, fontFamily:'var(--mono)', padding:'1px 6px', borderRadius:3, textTransform:'uppercase' as const, letterSpacing:'0.06em', background:typeBgs[d.type]||'var(--blue-bg)', color:typeColors[d.type]||'var(--blue-text)', border:`1px solid ${typeColors[d.type]||'var(--blue-text)'}44` }}>{d.type||'lesson'}</span>
+                                <span style={{ fontSize:8.5, fontFamily:'var(--mono)', padding:'1px 6px', borderRadius:3, textTransform:'uppercase' as const, letterSpacing:'0.06em', background:TYPE_BGS[d.type]||'var(--blue-bg)', color:TYPE_COLORS[d.type]||'var(--blue-text)', border:`1px solid ${TYPE_COLORS[d.type]||'var(--blue-text)'}44` }}>{d.type||'lesson'}</span>
                                 <span style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginLeft:'auto' }}>{d.duration}</span>
                               </div>
-                              <div style={{ fontSize:12.5, fontWeight:500, color:'var(--text)', marginBottom:2 }}>{d.title}</div>
+                              <div style={{ fontSize:12.5, fontWeight:500, color:isSelected?'var(--amber2)':'var(--text)', marginBottom:2 }}>{d.title}</div>
                               <div style={{ fontSize:11.5, color:'var(--text2)', lineHeight:1.5 }}>{d.description}</div>
                             </div>
+                            {isSelected && <div style={{ fontSize:11, color:'var(--amber)', fontFamily:'var(--mono)', flexShrink:0, marginTop:2 }}>selected</div>}
                           </div>
                         )
                       })}
@@ -249,6 +277,7 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
     </div>
   )
 
+  // ── INTAKE FORM ────────────────────────────────────────────
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:680, margin:'0 auto', padding:'32px 32px 80px' }}>

@@ -59,6 +59,23 @@ So 11 is juu-ichi, 12 is juu-ni, and so on. For tens: 20 is ni-juu (two-ten), 30
 
 const LESSON_KEY = 'week_1_day_3'
 
+function PlayIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="#0a0b0f">
+      <polygon points="2,1 11,6 2,11"/>
+    </svg>
+  )
+}
+
+function PauseIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="#0a0b0f">
+      <rect x="1" y="1" width="4" height="10"/>
+      <rect x="7" y="1" width="4" height="10"/>
+    </svg>
+  )
+}
+
 function renderContent(text: string) {
   return text.split('\n').map((line, i) => {
     if (line.startsWith('## ')) return <h2 key={i} style={{ fontFamily:'var(--serif)', fontSize:21, color:'var(--text)', margin:'28px 0 10px', lineHeight:1.3 }}>{line.slice(3)}</h2>
@@ -165,9 +182,10 @@ export default function LessonScreen() {
           </div>
         </div>
 
+        {/* AUDIO BAR */}
         <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, margin:'16px 0' }}>
-          <button onClick={toggleAudio} style={{ width:30, height:30, borderRadius:'50%', background:'var(--amber)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12, color:'#0a0b0f', fontWeight:700 }}>
-            {audioPlaying ? 'II' : 'P'}
+          <button onClick={toggleAudio} style={{ width:30, height:30, borderRadius:'50%', background:'var(--amber)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            {audioPlaying ? <PauseIcon/> : <PlayIcon/>}
           </button>
           <div style={{ flex:1, height:3, background:'var(--bg5)', borderRadius:2 }}>
             <div style={{ height:'100%', borderRadius:2, background:'var(--amber)', width:audioProgress+'%' }}/>

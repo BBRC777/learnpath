@@ -6,22 +6,23 @@ import { loadStreak } from '@/lib/db'
 import type { User } from '@supabase/supabase-js'
 
 const NAV = [
-  { id:'home',       label:'Home',             path:'/app' },
-  { id:'lesson',     label:'Current Lesson',   path:'/app/lesson' },
+  { id:'home',       label:'Home',              path:'/app' },
+  { id:'lesson',     label:'Current Lesson',    path:'/app/lesson' },
   { id:'curriculum', label:'New Learning Path', path:'/app/curriculum' },
-  { id:'flashcards', label:'Flashcards',        path:'/app/flashcards', badge:'9',   badgeCls:'red' },
-  { id:'study',      label:'Study Mode',        path:'/app/study',      badge:'PRO', badgeCls:'pro', proOnly:true },
-  { id:'progress',   label:'Progress',          path:'/app/progress' },
+  { id:'paths',      label:'All Learning Paths',path:'/app/paths' },
+  { id:'flashcards', label:'Flashcards',         path:'/app/flashcards', badge:'9',   badgeCls:'red' },
+  { id:'study',      label:'Study Mode',         path:'/app/study',      badge:'PRO', badgeCls:'pro', proOnly:true },
+  { id:'progress',   label:'Progress',           path:'/app/progress' },
 ]
 
 const SCREEN_META: Record<string,{ title:string; pill?:string }> = {
   '/app':            { title:'Home' },
   '/app/lesson':     { title:'Current Lesson',    pill:'Week 1 · Lesson 3' },
   '/app/curriculum': { title:'New Learning Path',  pill:'Step 1 of 4' },
+  '/app/paths':      { title:'All Learning Paths' },
   '/app/flashcards': { title:'Flashcards',         pill:'9 due today' },
   '/app/study':      { title:'Study Mode',         pill:'Pro Feature' },
   '/app/progress':   { title:'Progress' },
-  '/app/settings':   { title:'Settings' },
 }
 
 function getInitials(profile: any) {
@@ -45,6 +46,7 @@ interface AppShellProps {
 export default function AppShell({ user, profile, children }: AppShellProps) {
   const [showSettings, setShowSettings] = useState(false)
   const [streak, setStreak] = useState(profile?.streak ?? 0)
+  const [showWelcome, setShowWelcome] = useState(false)
   const supabase = createClient()
   const router = useRouter()
   const pathname = usePathname()
@@ -55,31 +57,60 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
 
   useEffect(() => {
     loadStreak(user.id).then(s => setStreak(s.current_streak || 0)).catch(()=>{})
+    // Fix #4 — show welcome popup on first load after login
+    const shown = sessionStorage.getItem('lp_welcome_shown')
+    if (!shown) {
+      setTimeout(() => setShowWelcome(true), 800)
+      sessionStorage.setItem('lp_welcome_shown', '1')
+    }
   }, [user.id])
 
   const signOut = async () => {
+    sessionStorage.removeItem('lp_welcome_shown')
     await supabase.auth.signOut()
     router.push('/auth')
     router.refresh()
   }
 
   const s: Record<string,React.CSSProperties> = {
-    shell: { display:'flex', height:'100vh', overflow:'hidden' },
+    shell:   { display:'flex', height:'100vh', overflow:'hidden' },
     sidebar: { width:236, flexShrink:0, background:'var(--bg2)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' },
-    logo: { padding:'17px 15px 13px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 },
+    logo:    { padding:'17px 15px 13px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 },
     logoBox: { width:28, height:28, borderRadius:7, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'var(--amber)', flexShrink:0, fontFamily:'var(--mono)' },
-    sidebarMid: { flex:1, overflowY:'auto' as const, paddingBottom:8 },
-    navSec: { padding:'13px 10px 3px', fontSize:8, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.14em', textTransform:'uppercase' as const },
+    sidebarMid:    { flex:1, overflowY:'auto' as const, paddingBottom:8 },
+    navSec:        { padding:'13px 10px 3px', fontSize:8, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.14em', textTransform:'uppercase' as const },
     sidebarFooter: { padding:10, borderTop:'1px solid var(--border)', flexShrink:0 },
     userRow: { display:'flex', alignItems:'center', gap:8, padding:'8px 9px', borderRadius:8, background:'var(--bg3)', border:'1px solid var(--border)', cursor:'pointer' },
-    avatar: { width:28, height:28, borderRadius:'50%', background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--serif)', fontSize:12, color:'var(--amber)', flexShrink:0 },
-    main: { flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' },
-    topbar: { height:50, background:'var(--bg2)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 22px', flexShrink:0 },
+    avatar:  { width:28, height:28, borderRadius:'50%', background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--serif)', fontSize:12, color:'var(--amber)', flexShrink:0 },
+    main:    { flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' },
+    topbar:  { height:50, background:'var(--bg2)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 22px', flexShrink:0 },
     content: { flex:1, overflowY:'auto' as const },
   }
 
   return (
     <div style={s.shell}>
+
+      {/* Fix #4 — Welcome back popup */}
+      {showWelcome && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:24 }}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'100%', textAlign:'center' as const }}>
+            <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)', marginBottom:6 }}>Welcome back, {name}</div>
+            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:22, lineHeight:1.6 }}>Where would you like to go?</div>
+            <div style={{ display:'flex', flexDirection:'column' as const, gap:9 }}>
+              <button onClick={() => { setShowWelcome(false); router.push('/app/lesson') }}
+                style={{ width:'100%', padding:'12px', borderRadius:9, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13.5, fontWeight:500, cursor:'pointer' }}>
+                Continue where I left off
+              </button>
+              <button onClick={() => { setShowWelcome(false); router.push('/app') }}
+                style={{ width:'100%', padding:'12px', borderRadius:9, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13.5, cursor:'pointer' }}>
+                Go to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SIDEBAR */}
       <div style={s.sidebar}>
         <div style={s.logo}>
           <div style={s.logoBox}>LP</div>
@@ -130,6 +161,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
         </div>
       </div>
 
+      {/* MAIN */}
       <div style={s.main}>
         <div style={s.topbar}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -140,6 +172,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
             {!showSettings && pathname==='/app' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
             {!showSettings && pathname==='/app/lesson' && <button style={btnPrimary}>Mark Complete</button>}
             {!showSettings && pathname==='/app/flashcards' && <button style={btnPrimary}>Review All</button>}
+            {!showSettings && pathname==='/app/paths' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
             {showSettings && <button onClick={()=>setShowSettings(false)} style={btnSecondary}>Back</button>}
             <button onClick={signOut} style={btnSecondary}>Sign out</button>
           </div>
@@ -147,7 +180,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
 
         <div style={s.content}>
           {showSettings ? (
-            <SettingsPanel user={user} profile={profile} onSignOut={signOut} />
+            <SettingsPanel user={user} profile={profile} onSignOut={signOut}/>
           ) : (
             children
           )}
@@ -162,8 +195,8 @@ const btnSecondary: React.CSSProperties = { display:'inline-flex', alignItems:'c
 
 function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: any; onSignOut: () => void }) {
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [saving, setSaving]   = useState(false)
+  const [saved, setSaved]     = useState(false)
   const supabase = createClient()
 
   const save = async () => {
