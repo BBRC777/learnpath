@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 // components/auth/AuthClient.tsx
 // Full auth flow: sign in, sign up, onboarding, password reset
 import { useState, useEffect } from 'react'
@@ -71,7 +71,7 @@ export default function AuthClient() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw })
         if (error) throw error
         // Check if profile needs onboarding
-        const { data: profile } = await supabase.from('profiles').select('display_name').eq('id', data.user.id).single()
+        const { data: profile } = await (supabase.from('profiles') as any).select('display_name').eq('id', data.user.id).single()
         if (!profile?.display_name) { setObUser(data.user); setTab('onboarding') }
         else router.push('/app')
       } else if (tab === 'signup') {
@@ -129,7 +129,7 @@ export default function AuthClient() {
   const colors = { weak:'var(--red-text)', fair:'var(--amber)', good:'var(--amber2)', strong:'var(--green-text)' }
   const barCol = colors[sCls as keyof typeof colors]
 
-  // ── ONBOARDING ───────────────────────────────────────────
+  // â”€â”€ ONBOARDING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (tab === 'onboarding') {
     const obSteps = ['Profile','Goals','Schedule']
     return (
@@ -142,7 +142,7 @@ export default function AuthClient() {
               <div key={i} style={{display:'flex',alignItems:'center',flex:i<obSteps.length-1?1:undefined}}>
                 <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
                   <div style={{width:24,height:24,borderRadius:'50%',border:`1px solid ${obStep>i?'var(--green-border)':obStep===i?'var(--amber)':'var(--border2)'}`,background:obStep>i?'var(--green-bg)':obStep===i?'var(--amber-bg2)':'var(--bg3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontFamily:'var(--mono)',color:obStep>i?'var(--green-text)':obStep===i?'var(--amber)':'var(--text3)'}}>
-                    {obStep>i?'✓':i+1}
+                    {obStep>i?'âœ“':i+1}
                   </div>
                   <div style={{fontSize:8,fontFamily:'var(--mono)',color:obStep===i?'var(--amber)':'var(--text3)',marginTop:3,whiteSpace:'nowrap'}}>{s}</div>
                 </div>
@@ -152,16 +152,16 @@ export default function AuthClient() {
           </div>
 
           {obStep===0 && <>
-            <div style={styles.cardTitle}>Welcome to Learnpath 👋</div>
+            <div style={styles.cardTitle}>Welcome to Learnpath ðŸ‘‹</div>
             <div style={styles.cardSub}>What should we call you?</div>
             <input style={styles.inp} placeholder={obUser?.email?.split('@')[0] || 'Your name'} value={displayName} onChange={e=>setDisplayName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&setObStep(1)} autoFocus/>
             <input style={{...styles.inp,opacity:0.45,cursor:'not-allowed',marginTop:10}} value={obUser?.email||''} disabled/>
-            <button style={{...styles.submitBtn,marginTop:14}} onClick={()=>setObStep(1)}>Continue →</button>
+            <button style={{...styles.submitBtn,marginTop:14}} onClick={()=>setObStep(1)}>Continue â†’</button>
           </>}
 
           {obStep===1 && <>
             <div style={styles.cardTitle}>What do you want to learn?</div>
-            <div style={styles.cardSub}>Pick all that apply — Claude uses this to suggest curricula.</div>
+            <div style={styles.cardSub}>Pick all that apply â€” Claude uses this to suggest curricula.</div>
             <div style={{display:'flex',flexWrap:'wrap' as const,gap:7,marginBottom:18}}>
               {OB_GOALS.map(g=>(
                 <div key={g} onClick={()=>setGoals(gs=>gs.includes(g)?gs.filter(x=>x!==g):[...gs,g])}
@@ -171,8 +171,8 @@ export default function AuthClient() {
               ))}
             </div>
             <div style={{display:'flex',gap:8}}>
-              <button style={styles.backBtn} onClick={()=>setObStep(0)}>← Back</button>
-              <button style={{...styles.submitBtn,flex:2}} onClick={()=>setObStep(2)} disabled={goals.length===0}>Continue →</button>
+              <button style={styles.backBtn} onClick={()=>setObStep(0)}>â† Back</button>
+              <button style={{...styles.submitBtn,flex:2}} onClick={()=>setObStep(2)} disabled={goals.length===0}>Continue â†’</button>
             </div>
           </>}
 
@@ -189,9 +189,9 @@ export default function AuthClient() {
               ))}
             </div>
             <div style={{display:'flex',gap:8}}>
-              <button style={styles.backBtn} onClick={()=>setObStep(1)}>← Back</button>
+              <button style={styles.backBtn} onClick={()=>setObStep(1)}>â† Back</button>
               <button style={{...styles.submitBtn,flex:2}} onClick={finishOnboarding} disabled={obSaving}>
-                {obSaving?'Saving…':'Start Learning →'}
+                {obSaving?'Savingâ€¦':'Start Learning â†’'}
               </button>
             </div>
           </>}
@@ -200,12 +200,12 @@ export default function AuthClient() {
     )
   }
 
-  // ── VERIFY ───────────────────────────────────────────────
+  // â”€â”€ VERIFY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (tab === 'verify') return (
     <div style={styles.page}>
       <div style={styles.bgGrid}/><div style={styles.bgGlow}/>
       <div style={{...styles.card,textAlign:'center' as const}}>
-        <div style={{fontSize:40,marginBottom:14}}>✉️</div>
+        <div style={{fontSize:40,marginBottom:14}}>âœ‰ï¸</div>
         <div style={styles.cardTitle}>Check your email</div>
         <div style={styles.cardSub}>We sent a confirmation link to <strong style={{color:'var(--text)'}}>{email}</strong>.<br/>Click it, then come back and sign in.</div>
         <button style={styles.submitBtn} onClick={()=>{setTab('signin');clear()}}>Back to Sign In</button>
@@ -213,14 +213,14 @@ export default function AuthClient() {
     </div>
   )
 
-  // ── SIGN IN / SIGN UP / RESET ────────────────────────────
+  // â”€â”€ SIGN IN / SIGN UP / RESET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
     <div style={styles.page}>
       <div style={styles.bgGrid}/><div style={styles.bgGlow}/>
       <div style={styles.card}>
         {/* Logo */}
         <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:24,justifyContent:'center'}}>
-          <div style={{width:32,height:32,borderRadius:8,background:'var(--amber-bg2)',border:'1px solid rgba(212,133,58,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📚</div>
+          <div style={{width:32,height:32,borderRadius:8,background:'var(--amber-bg2)',border:'1px solid rgba(212,133,58,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>ðŸ“š</div>
           <div style={{fontFamily:'var(--serif)',fontSize:20,color:'var(--amber)'}}>Learnpath</div>
         </div>
 
@@ -236,11 +236,11 @@ export default function AuthClient() {
         )}
 
         <div style={styles.cardTitle}>{tab==='signin'?'Welcome back':tab==='signup'?'Start learning anything':'Reset password'}</div>
-        <div style={styles.cardSub}>{tab==='signin'?'Continue where you left off.':tab==='signup'?'Free account — your first path is on us.':'Enter your email for a reset link.'}</div>
+        <div style={styles.cardSub}>{tab==='signin'?'Continue where you left off.':tab==='signup'?'Free account â€” your first path is on us.':'Enter your email for a reset link.'}</div>
 
         {alert && (
           <div style={{padding:'9px 12px',borderRadius:7,fontSize:12,marginBottom:12,display:'flex',alignItems:'flex-start',gap:7,background:alert.t==='err'?'var(--red-bg)':'var(--green-bg)',border:`1px solid ${alert.t==='err'?'var(--red-border)':'var(--green-border)'}`,color:alert.t==='err'?'var(--red-text)':'var(--green-text)'}}>
-            <span>{alert.t==='err'?'⚠':'✓'}</span> {alert.m}
+            <span>{alert.t==='err'?'âš ':'âœ“'}</span> {alert.m}
           </div>
         )}
 
@@ -258,7 +258,7 @@ export default function AuthClient() {
             <div style={{fontSize:9,fontFamily:'var(--mono)',textTransform:'uppercase' as const,letterSpacing:'0.1em',color:'var(--text3)',marginBottom:5}}>Password</div>
             <div style={{position:'relative'}}>
               <input style={{...styles.inp,paddingRight:36}} type={showPw?'text':'password'} placeholder={tab==='signup'?'Min 8 characters':'Your password'} value={pw} onChange={e=>{setPw(e.target.value);clear()}} onKeyDown={e=>e.key==='Enter'&&submit()}/>
-              <span style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',fontSize:13,cursor:'pointer'}} onClick={()=>setShowPw(v=>!v)}>{showPw?'🙈':'👁'}</span>
+              <span style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',color:'var(--text3)',fontSize:13,cursor:'pointer'}} onClick={()=>setShowPw(v=>!v)}>{showPw?'ðŸ™ˆ':'ðŸ‘'}</span>
             </div>
             {tab==='signup' && pw && (
               <>
@@ -276,14 +276,14 @@ export default function AuthClient() {
             <div style={{fontSize:9,fontFamily:'var(--mono)',textTransform:'uppercase' as const,letterSpacing:'0.1em',color:'var(--text3)',marginBottom:5}}>Confirm password</div>
             <div style={{position:'relative'}}>
               <input style={{...styles.inp,paddingRight:36,borderColor:confirmPw&&confirmPw!==pw?'var(--red-border)':undefined}} type={showPw?'text':'password'} placeholder="Repeat password" value={confirmPw} onChange={e=>{setConfirmPw(e.target.value);clear()}} onKeyDown={e=>e.key==='Enter'&&submit()}/>
-              {confirmPw && <span style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',color:confirmPw===pw?'var(--green-text)':'var(--red-text)',fontSize:13}}>{confirmPw===pw?'✓':'✗'}</span>}
+              {confirmPw && <span style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',color:confirmPw===pw?'var(--green-text)':'var(--red-text)',fontSize:13}}>{confirmPw===pw?'âœ“':'âœ—'}</span>}
             </div>
           </div>
         )}
 
         <button style={{...styles.submitBtn,opacity:(loading||!email||(tab!=='reset'&&!pw)||(tab==='signup'&&!confirmPw))?0.5:1,cursor:(loading||!email)?'not-allowed':'pointer'}}
           onClick={submit} disabled={loading||!email||(tab!=='reset'&&!pw)||(tab==='signup'&&!confirmPw)}>
-          {loading?`${tab==='signin'?'Signing in':tab==='signup'?'Creating account':'Sending'}…`:tab==='signin'?'Sign in →':tab==='signup'?'Create free account →':'Send reset link →'}
+          {loading?`${tab==='signin'?'Signing in':tab==='signup'?'Creating account':'Sending'}â€¦`:tab==='signin'?'Sign in â†’':tab==='signup'?'Create free account â†’':'Send reset link â†’'}
         </button>
 
         {tab!=='reset' && (
@@ -298,15 +298,15 @@ export default function AuthClient() {
           </>
         )}
 
-        {tab==='signup' && <div style={{fontSize:10.5,color:'var(--text3)',textAlign:'center' as const,marginTop:14,lineHeight:1.5}}>By signing up you agree to our <span style={{color:'var(--amber)',cursor:'pointer'}}>Terms</span> and <span style={{color:'var(--amber)',cursor:'pointer'}}>Privacy Policy</span>.<br/>MRF Studios · contact@mrfstudios.com</div>}
-        {tab==='reset' && <div style={{fontSize:11,color:'var(--text3)',textAlign:'center' as const,marginTop:12}}><span style={{color:'var(--amber)',cursor:'pointer'}} onClick={()=>{setTab('signin');clear()}}>← Back to Sign In</span></div>}
+        {tab==='signup' && <div style={{fontSize:10.5,color:'var(--text3)',textAlign:'center' as const,marginTop:14,lineHeight:1.5}}>By signing up you agree to our <span style={{color:'var(--amber)',cursor:'pointer'}}>Terms</span> and <span style={{color:'var(--amber)',cursor:'pointer'}}>Privacy Policy</span>.<br/>MRF Studios Â· contact@mrfstudios.com</div>}
+        {tab==='reset' && <div style={{fontSize:11,color:'var(--text3)',textAlign:'center' as const,marginTop:12}}><span style={{color:'var(--amber)',cursor:'pointer'}} onClick={()=>{setTab('signin');clear()}}>â† Back to Sign In</span></div>}
       </div>
-      <div style={{position:'absolute',bottom:18,fontSize:9,fontFamily:'var(--mono)',color:'var(--text3)',zIndex:1,letterSpacing:'0.08em'}}>LEARNPATH · MRF STUDIOS · learnpathnow.com</div>
+      <div style={{position:'absolute',bottom:18,fontSize:9,fontFamily:'var(--mono)',color:'var(--text3)',zIndex:1,letterSpacing:'0.08em'}}>LEARNPATH Â· MRF STUDIOS Â· learnpathnow.com</div>
     </div>
   )
 }
 
-// ── Inline styles ─────────────────────────────────────────────
+// â”€â”€ Inline styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const styles = {
   page: {
     minHeight: '100vh', display: 'flex', flexDirection: 'column' as const,
@@ -354,3 +354,4 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
   },
 }
+
