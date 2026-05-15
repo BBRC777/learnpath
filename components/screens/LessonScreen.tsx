@@ -1,5 +1,8 @@
 ﻿'use client'
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { loadCurricula, updateCurriculumProgress, updateStreak, logActivity } from '@/lib/db'
+import { useRouter } from 'next/navigation'
 
 const LESSON = {
   eyebrow: 'Week 1 · Lesson 3',
@@ -54,6 +57,8 @@ So 11 is juu-ichi, 12 is juu-ni, and so on. For tens: 20 is ni-juu (two-ten), 30
   ],
 }
 
+const LESSON_KEY = 'week_1_day_3'
+
 function renderContent(text: string) {
   return text.split('\n').map((line, i) => {
     if (line.startsWith('## ')) return <h2 key={i} style={{ fontFamily:'var(--serif)', fontSize:21, color:'var(--text)', margin:'28px 0 10px', lineHeight:1.3 }}>{line.slice(3)}</h2>
@@ -64,13 +69,52 @@ function renderContent(text: string) {
 }
 
 export default function LessonScreen() {
-  const [flipped, setFlipped] = useState(false)
   const [exAnswers, setExAnswers] = useState<Record<number,any>>({})
   const [exInputs, setExInputs] = useState<Record<number,string>>({})
   const [quizAnswers, setQuizAnswers] = useState<Record<number,number>>({})
   const [audioPlaying, setAudioPlaying] = useState(false)
-  const [audioProgress, setAudioProgress] = useState(0)
   const [audioSpeed, setAudioSpeed] = useState(1)
+  const [audioProgress, setAudioProgress] = useState(0)
+  const [isComplete, setIsComplete] = useState(false)
+  const [marking, setMarking] = useState(false)
+  const [curriculumId, setCurriculumId] = useState<string|null>(null)
+  const [userId, setUserId] = useState<string|null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await createClient().auth.getUser()
+      if (!user) return
+      setUserId(user.id)
+      const currs = await loadCurricula(user.id)
+      if (currs.length > 0) {
+        const curr = currs[0]
+        setCurriculumId(curr.id)
+        const progress = curr.progress || {}
+        setIsComplete(!!progress[LESSON_KEY])
+      }
+    }
+    load()
+  }, [])
+
+  const markComplete = async () => {
+    if (!curriculumId || !userId || isComplete) return
+    setMarking(true)
+    try {
+      const currs = await loadCurricula(userId)
+      const curr = currs.find((c: any) => c.id === curriculumId)
+      const progress = curr?.progress || {}
+      progress[LESSON_KEY] = true
+      await updateCurriculumProgress(curriculumId, progress)
+      await logActivity(userId, 'lesson', 11)
+      await updateStreak(userId)
+      setIsComplete(true)
+    } catch(e) {
+      console.error('Mark complete failed:', e)
+    } finally {
+      setMarking(false)
+    }
+  }
 
   const speak = (text: string) => {
     if (!window.speechSynthesis) return
@@ -98,12 +142,13 @@ export default function LessonScreen() {
 
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
-      <div style={{ width:'100%', height:280, position:'relative', overflow:'hidden' }}>
+      <div style={{ width:'100%', height:280, position:'relative' as const, overflow:'hidden' }}>
         <img src={LESSON.heroImage} alt={LESSON.title} style={{ width:'100%', height:'100%', objectFit:'cover' as const }}/>
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(10,11,15,0.9) 0%, transparent 60%)' }}/>
-        <div style={{ position:'absolute', bottom:20, left:28, display:'flex', gap:6 }}>
+        <div style={{ position:'absolute' as const, inset:0, background:'linear-gradient(to top, rgba(10,11,15,0.9) 0%, transparent 60%)' }}/>
+        <div style={{ position:'absolute' as const, bottom:20, left:28, display:'flex', gap:6 }}>
           <span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'3px 8px', borderRadius:4, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', color:'var(--amber2)', textTransform:'uppercase' as const, letterSpacing:'0.08em' }}>{LESSON.eyebrow}</span>
           <span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'3px 8px', borderRadius:4, background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.1)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.08em' }}>{LESSON.duration}</span>
+          {isComplete && <span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'3px 8px', borderRadius:4, background:'var(--green-bg)', border:'1px solid var(--green-border)', color:'var(--green-text)', textTransform:'uppercase' as const, letterSpacing:'0.08em' }}>Complete</span>}
         </div>
       </div>
 
@@ -161,8 +206,8 @@ export default function LessonScreen() {
             <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>{LESSON.video.title}</div>
             <div style={{ fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>YouTube · Visual Walkthrough</div>
           </div>
-          <div style={{ position:'relative', paddingBottom:'56.25%', height:0, overflow:'hidden' }}>
-            <iframe src={`https://www.youtube.com/embed/${LESSON.video.id}`} style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:'none' }} allowFullScreen title={LESSON.video.title}/>
+          <div style={{ position:'relative' as const, paddingBottom:'56.25%', height:0, overflow:'hidden' }}>
+            <iframe src={`https://www.youtube.com/embed/${LESSON.video.id}`} style={{ position:'absolute' as const, inset:0, width:'100%', height:'100%', border:'none' }} allowFullScreen title={LESSON.video.title}/>
           </div>
         </div>
 
@@ -231,13 +276,19 @@ export default function LessonScreen() {
           ))}
         </div>
 
-        <div style={{ background:'var(--green-bg)', border:'1px solid var(--green-border)', borderRadius:8, padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, margin:'20px 0' }}>
-          <div>
-            <div style={{ fontSize:13, color:'var(--green-text)', fontWeight:500 }}>Lesson complete!</div>
-            <div style={{ fontSize:11, color:'var(--green-text)', marginTop:2 }}>These words are being added to your flashcard deck.</div>
+        {isComplete ? (
+          <div style={{ background:'var(--green-bg)', border:'1px solid var(--green-border)', borderRadius:8, padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, margin:'20px 0' }}>
+            <div>
+              <div style={{ fontSize:13, color:'var(--green-text)', fontWeight:500 }}>Lesson complete!</div>
+              <div style={{ fontSize:11, color:'var(--green-text)', marginTop:2 }}>These words have been added to your flashcard deck.</div>
+            </div>
+            <button onClick={() => router.push('/app')} style={{ padding:'6px 14px', borderRadius:6, background:'var(--green-bg)', border:'1px solid var(--green-border)', color:'var(--green-text)', fontSize:12, cursor:'pointer', fontFamily:'var(--sans)', whiteSpace:'nowrap' as const }}>Back to Home</button>
           </div>
-          <button style={{ padding:'6px 14px', borderRadius:6, background:'var(--green-bg)', border:'1px solid var(--green-border)', color:'var(--green-text)', fontSize:12, cursor:'pointer', fontFamily:'var(--sans)', whiteSpace:'nowrap' as const }}>Next Lesson</button>
-        </div>
+        ) : (
+          <button onClick={markComplete} disabled={marking} style={{ width:'100%', padding:'14px', borderRadius:10, background:marking?'var(--bg4)':'var(--amber)', border:`1px solid ${marking?'var(--border2)':'var(--amber)'}`, color:marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:marking?'not-allowed':'pointer', margin:'20px 0', transition:'all 0.13s' }}>
+            {marking ? 'Saving...' : 'Mark Lesson Complete'}
+          </button>
+        )}
       </div>
     </div>
   )

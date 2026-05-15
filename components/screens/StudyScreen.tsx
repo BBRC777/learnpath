@@ -1,5 +1,8 @@
 ﻿'use client'
 import { useState, useRef, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { updateStreak, logActivity } from '@/lib/db'
+import { useRouter } from 'next/navigation'
 
 const SESSIONS = [
   { id:'quick',  name:'Quick Review',     desc:'5 flashcards + 3 exercises',                    time:'~10 min' },
@@ -20,7 +23,7 @@ const FLASHCARDS = [
 const EXERCISES = [
   { type:'Multiple Choice', q:'What does ni-juu go mean?', opts:['Twenty','Fifteen','Twenty-five','Fifty-two'], correct:2, expl:'Ni (2) + juu (10) = 20, plus go (5) = 25.' },
   { type:'Multiple Choice', q:'Which reading of 4 is preferred in modern Japanese?', opts:['shi','yon','equal','yonn'], correct:1, expl:'Yon is preferred — shi sounds like death.' },
-  { type:'Fill in Blank',   q:'Complete: hachi-juu ___  (83 in Japanese)', answer:'san', expl:'83 = hachi-juu san. Eighty (8x10) + three.' },
+  { type:'Fill in Blank',   q:'Complete: hachi-juu ___ (83 in Japanese)', answer:'san', expl:'83 = hachi-juu san. Eighty (8x10) + three.' },
 ]
 
 const QUIZ = [
@@ -31,7 +34,7 @@ const QUIZ = [
 
 const LESSON_TEXT = `Numbers are the backbone of everyday communication in Japanese. Once you memorize ten words, you can construct any number up to 99 using simple arithmetic spoken aloud.
 
-The magic lies in Japanese's elegant modularity. 11 is juu-ichi (ten-one), 20 is ni-juu (two-ten), 47 is yon-juu nana (four-ten-seven). Unlike English's irregular eleven and twelve, Japanese numbers are completely predictable.
+The magic lies in Japanese elegant modularity. 11 is juu-ichi (ten-one), 20 is ni-juu (two-ten), 47 is yon-juu nana (four-ten-seven). Unlike English irregular eleven and twelve, Japanese numbers are completely predictable.
 
 Watch out for 4 and 7: each has two readings. Use yon (not shi) and nana (not shichi) in most contexts.`
 
@@ -65,7 +68,9 @@ function buildQueue(sessionType: string) {
 }
 
 export default function StudyScreen() {
-  const [phase, setPhase] = useState<'launcher'|'studying'|'done'>('launcher')
+  const [phase, setPhase] = useState<'loading'|'locked'|'launcher'|'studying'|'done'>('loading')
+  const [isPro, setIsPro] = useState(false)
+  const [userId, setUserId] = useState<string|null>(null)
   const [sessionType, setSessionType] = useState('deep')
   const [queue, setQueue] = useState<any[]>([])
   const [idx, setIdx] = useState(0)
@@ -75,6 +80,26 @@ export default function StudyScreen() {
   const [score, setScore] = useState({ correct:0, wrong:0, cards:0, xp:0 })
   const [secs, setSecs] = useState(0)
   const timerRef = useRef<any>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await createClient().auth.getUser()
+      if (!user) { setPhase('locked'); return }
+      setUserId(user.id)
+      const { data: profile } = await (createClient().from('profiles') as any)
+        .select('is_pro')
+        .eq('id', user.id)
+        .single()
+      if (profile?.is_pro) {
+        setIsPro(true)
+        setPhase('launcher')
+      } else {
+        setPhase('locked')
+      }
+    }
+    check()
+  }, [])
 
   useEffect(() => {
     if (phase==='studying') { timerRef.current = setInterval(()=>setSecs(s=>s+1),1000) }
@@ -93,7 +118,16 @@ export default function StudyScreen() {
   const advance = (wasCorrect: boolean|null=null) => {
     setScore(s=>({ ...s, correct:wasCorrect===true?s.correct+1:s.correct, wrong:wasCorrect===false?s.wrong+1:s.wrong, xp:s.xp+(wasCorrect===true?10:wasCorrect===false?2:5) }))
     const next = idx+1
-    if (next>=queue.length) { setPhase('done'); return }
+    if (next>=queue.length) {
+      // Log activity and update streak when session completes
+      if (userId) {
+        const mins = Math.max(1, Math.round(secs/60))
+        logActivity(userId, 'study', mins).catch(console.error)
+        updateStreak(userId).catch(console.error)
+      }
+      setPhase('done')
+      return
+    }
     setIdx(next); setFlipped(false); setAnswered(null); setFillVal('')
   }
 
@@ -113,18 +147,53 @@ export default function StudyScreen() {
   const btnPrimary: React.CSSProperties = { padding:'10px 22px', borderRadius:8, background:'var(--amber)', border:'1px solid var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }
   const btnSecondary: React.CSSProperties = { padding:'10px 22px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }
 
+  // Loading
+  if (phase==='loading') return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
+      <div style={{ width:32, height:32, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+    </div>
+  )
+
+  // Locked — not Pro
+  if (phase==='locked') return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', padding:24 }}>
+      <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 40px', width:'100%', maxWidth:480, textAlign:'center' as const }}>
+        <div style={{ width:56, height:56, borderRadius:14, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', fontSize:24, fontFamily:'var(--mono)', color:'var(--amber)', fontWeight:700 }}>P</div>
+        <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Study Mode is Pro</div>
+        <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>
+          Study Mode mixes flashcards, exercises, and quizzes into one focused session. Upgrade to Pro to unlock it along with unlimited learning paths and AI Tutor.
+        </div>
+        <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 18px', marginBottom:24, textAlign:'left' as const }}>
+          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:10 }}>Pro includes</div>
+          {['Unlimited learning paths','Study Mode — focused sessions','AI Tutor — ask questions about any lesson','Cross-device sync','Priority support'].map((f,i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, fontSize:13, color:'var(--text2)' }}>
+              <span style={{ color:'var(--green-text)', fontSize:12 }}>✓</span> {f}
+            </div>
+          ))}
+        </div>
+        <button onClick={() => router.push('/app')} style={{ ...btnPrimary, width:'100%', justifyContent:'center', display:'flex', marginBottom:10 }}>
+          Upgrade to Pro — $9.99/mo
+        </button>
+        <button onClick={() => router.push('/app')} style={{ ...btnSecondary, width:'100%', justifyContent:'center', display:'flex' }}>
+          Back to Home
+        </button>
+      </div>
+    </div>
+  )
+
+  // Done screen
   if (phase==='done') {
     const total = score.correct+score.wrong
     const pct2 = total ? Math.round((score.correct/total)*100) : 100
     const mins = Math.max(1,Math.round(secs/60))
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
-        <div style={{ maxWidth:500, width:'100%', textAlign:'center', padding:20 }}>
+        <div style={{ maxWidth:500, width:'100%', textAlign:'center' as const, padding:20 }}>
           <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--text)', marginBottom:6 }}>{pct2>=85?'Outstanding!':pct2>=65?'Good session!':'Keep going!'}</div>
           <div style={{ fontSize:13.5, color:'var(--text2)', marginBottom:24 }}>{pct2}% accuracy · {fmt(secs)} · {score.xp} XP earned</div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:24 }}>
             {[{v:score.correct,l:'Correct',c:'var(--green-text)'},{v:score.wrong,l:'Wrong',c:'var(--red-text)'},{v:score.cards,l:'Cards',c:'var(--purple-text)'},{v:score.xp,l:'XP',c:'var(--amber)'}].map((s,i)=>(
-              <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 8px', textAlign:'center' }}>
+              <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 8px', textAlign:'center' as const }}>
                 <div style={{ fontFamily:'var(--mono)', fontSize:20, fontWeight:500, color:s.c, marginBottom:2 }}>{s.v}</div>
                 <div style={{ fontSize:9.5, color:'var(--text3)' }}>{s.l}</div>
               </div>
@@ -146,6 +215,7 @@ export default function StudyScreen() {
     )
   }
 
+  // Studying screen
   if (phase==='studying') return (
     <div style={{ display:'flex', flexDirection:'column' as const, height:'100%' }}>
       <div style={{ height:2, background:'var(--border)', flexShrink:0 }}>
@@ -160,7 +230,14 @@ export default function StudyScreen() {
           <span style={{ fontFamily:'var(--mono)', fontSize:12, color:'var(--text3)', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:5, padding:'3px 9px' }}>{fmt(secs)}</span>
           <span style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--green-text)' }}>✓ {score.correct}</span>
           <span style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--red-text)' }}>x {score.wrong}</span>
-          <button onClick={()=>setPhase('done')} style={{ fontSize:11, padding:'3px 9px', borderRadius:5, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontFamily:'var(--sans)' }}>End</button>
+          <button onClick={()=>{
+            if (userId) {
+              const mins = Math.max(1, Math.round(secs/60))
+              logActivity(userId, 'study', mins).catch(console.error)
+              updateStreak(userId).catch(console.error)
+            }
+            setPhase('done')
+          }} style={{ fontSize:11, padding:'3px 9px', borderRadius:5, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontFamily:'var(--sans)' }}>End</button>
         </div>
       </div>
 
@@ -168,7 +245,7 @@ export default function StudyScreen() {
         <div style={{ width:'100%', maxWidth:580 }} key={idx}>
 
           {currentItem?.type==='transition' && (
-            <div style={{ textAlign:'center' }}>
+            <div style={{ textAlign:'center' as const }}>
               <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)', marginBottom:6 }}>
                 {currentItem.to==='flash'?'Flashcard Time':currentItem.to==='exercise'?'Practice Exercises':currentItem.to==='quiz'?'Quick Quiz':'Lesson Extract'}
               </div>
@@ -197,7 +274,7 @@ export default function StudyScreen() {
           {currentItem?.type==='flash' && (
             <>
               <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--purple-text)', background:'var(--purple-bg)', border:'1px solid var(--purple-border)', borderRadius:4, padding:'2px 8px', display:'inline-block', marginBottom:12, textTransform:'uppercase' as const, letterSpacing:'0.1em' }}>Flashcard</div>
-              <div onClick={()=>!flipped&&setFlipped(true)} style={{ width:'100%', height:240, cursor:flipped?'default':'pointer', marginBottom:18, background:flipped?'var(--bg3)':'var(--bg2)', border:`1px solid ${flipped?'rgba(212,133,58,0.18)':'var(--border2)'}`, borderRadius:16, display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', padding:'28px 32px', textAlign:'center' }}>
+              <div onClick={()=>!flipped&&setFlipped(true)} style={{ width:'100%', height:240, cursor:flipped?'default':'pointer', marginBottom:18, background:flipped?'var(--bg3)':'var(--bg2)', border:`1px solid ${flipped?'rgba(212,133,58,0.18)':'var(--border2)'}`, borderRadius:16, display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', padding:'28px 32px', textAlign:'center' as const }}>
                 {!flipped ? (
                   <>
                     <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, marginBottom:10 }}>{currentItem.data.subject}</div>
@@ -214,7 +291,7 @@ export default function StudyScreen() {
                 )}
               </div>
               {!flipped ? (
-                <div style={{ textAlign:'center', fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', cursor:'pointer' }} onClick={()=>setFlipped(true)}>Tap card or press Space to reveal</div>
+                <div style={{ textAlign:'center' as const, fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', cursor:'pointer' }} onClick={()=>setFlipped(true)}>Tap card or press Space to reveal</div>
               ) : (
                 <div style={{ display:'flex', gap:8 }}>
                   {[{l:'Again',r:1,c:'var(--red-text)',bg:'var(--red-bg)',b:'var(--red-border)',sub:'1d'},{l:'Hard',r:2,c:'var(--amber2)',bg:'var(--amber-bg)',b:'var(--amber-bg2)',sub:'2d'},{l:'Good',r:3,c:'var(--green-text)',bg:'var(--green-bg)',b:'var(--green-border)',sub:'4d'},{l:'Easy',r:4,c:'var(--blue-text)',bg:'var(--blue-bg)',b:'var(--blue-border)',sub:'1w'}].map(btn=>(
@@ -272,16 +349,17 @@ export default function StudyScreen() {
     </div>
   )
 
+  // Launcher
   return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', padding:24 }}>
       <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'32px 36px', width:'100%', maxWidth:520 }}>
         <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:10 }}>Focus Session</div>
         <div style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', marginBottom:6 }}>Study Mode</div>
-        <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>Mix lessons, flashcards, exercises, and quizzes into one focused session — no switching screens.</div>
+        <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>Mix lessons, flashcards, exercises, and quizzes into one focused session.</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:20 }}>
           {SESSIONS.map(s=>(
             <div key={s.id} onClick={()=>setSessionType(s.id)} style={{ padding:'14px 16px', borderRadius:10, border:`1px solid ${sessionType===s.id?'rgba(212,133,58,0.4)':'var(--border)'}`, background:sessionType===s.id?'var(--amber-bg)':'var(--bg3)', cursor:'pointer', position:'relative' as const }}>
-              <div style={{ position:'absolute', top:10, right:10, fontSize:9, fontFamily:'var(--mono)', color:sessionType===s.id?'var(--amber)':'var(--text3)', background:sessionType===s.id?'var(--amber-bg2)':'var(--bg5)', borderRadius:3, padding:'1px 5px' }}>{s.time}</div>
+              <div style={{ position:'absolute' as const, top:10, right:10, fontSize:9, fontFamily:'var(--mono)', color:sessionType===s.id?'var(--amber)':'var(--text3)', background:sessionType===s.id?'var(--amber-bg2)':'var(--bg5)', borderRadius:3, padding:'1px 5px' }}>{s.time}</div>
               <div style={{ fontSize:13, fontWeight:500, color:sessionType===s.id?'var(--amber2)':'var(--text)', marginBottom:3 }}>{s.name}</div>
               <div style={{ fontSize:11, color:'var(--text3)' }}>{s.desc}</div>
             </div>
@@ -290,9 +368,6 @@ export default function StudyScreen() {
         <button style={{ ...btnPrimary, width:'100%', justifyContent:'center', display:'flex', alignItems:'center', gap:8 }} onClick={launch}>
           Start Session
         </button>
-        <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', textAlign:'center' as const, marginTop:12 }}>
-          Study Mode is a Pro feature · $9.99/mo
-        </div>
       </div>
     </div>
   )
