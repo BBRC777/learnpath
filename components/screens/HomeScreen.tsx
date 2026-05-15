@@ -75,76 +75,18 @@ export default function HomeScreen({ profile }: { profile: any }) {
           </div>
         )}
 
-        {/* Fix #6 — Greeting + path tiles side by side */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 260px', gap:18, marginBottom:18, alignItems:'start' }}>
-          {/* Greeting left */}
-          <div>
-            <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.12em', textTransform:'uppercase' as const, marginBottom:3 }}>
-              {new Date().toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' })}
-            </div>
-            <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:3 }}>{getGreeting()}, {name}</div>
-            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:16 }}>
-              {loading ? 'Loading...' : curricula.length === 0 ? 'Build your first learning path to get started.' : `${curricula.length} active path${curricula.length!==1?'s':''} · ${streak > 0 ? streak+' day streak' : 'Start your streak today'}`}
-            </div>
-
-            {/* Stats row */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-              {[
-                { v: streak,                               l:'Day streak',     c:'var(--amber)' },
-                { v: totalMins > 0 ? totalMins+'m' : '0m', l:'This week',     c:'var(--blue-text)' },
-                { v: profile?.cards_reviewed ?? 0,         l:'Cards reviewed', c:'var(--green-text)' },
-              ].map((s,i) => (
-                <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'11px 13px' }}>
-                  <div style={{ fontFamily:'var(--mono)', fontSize:19, fontWeight:500, color:s.c }}>{s.v}</div>
-                  <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{s.l}</div>
-                </div>
-              ))}
-            </div>
+        {/* 1. GREETING */}
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.12em', textTransform:'uppercase' as const, marginBottom:3 }}>
+            {new Date().toLocaleDateString('en-US',{ weekday:'long', month:'long', day:'numeric' })}
           </div>
-
-          {/* Fix #6 — Path tiles top right */}
-          <div>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
-              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>My Paths</div>
-              <div onClick={() => router.push('/app/paths')} style={{ fontSize:10, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>View all</div>
-            </div>
-            {curricula.length === 0 ? (
-              <div onClick={() => router.push('/app/curriculum')} style={{ background:'var(--bg2)', border:'1px dashed var(--border2)', borderRadius:10, padding:'18px', textAlign:'center' as const, cursor:'pointer' }}>
-                <div style={{ fontSize:12, color:'var(--text3)', marginBottom:8 }}>No paths yet</div>
-                <div style={{ fontSize:11, color:'var(--amber)', fontFamily:'var(--mono)' }}>+ Build your first path</div>
-              </div>
-            ) : (
-              <div style={{ display:'flex', flexDirection:'column' as const, gap:7 }}>
-                {curricula.slice(0,3).map((c,i) => {
-                  const weeks = c.curriculum?.weeks || []
-                  const total = weeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
-                  const done = Object.values(c.progress||{}).filter(Boolean).length
-                  const p = total ? Math.round((done/total)*100) : 0
-                  const color = COLORS[i % COLORS.length]
-                  return (
-                    <div key={c.id} onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'11px 13px', cursor:'pointer', transition:'border-color 0.13s' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
-                        <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }}/>
-                        <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{c.curriculum?.title || c.topic}</div>
-                      </div>
-                      <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
-                        <div style={{ height:'100%', borderRadius:2, background:color, width:p+'%' }}/>
-                      </div>
-                      <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} · {p}% complete</div>
-                    </div>
-                  )
-                })}
-                {curricula.length > 3 && (
-                  <div onClick={() => router.push('/app/paths')} style={{ fontSize:11, color:'var(--amber)', fontFamily:'var(--mono)', textAlign:'center' as const, cursor:'pointer', padding:'6px' }}>
-                    +{curricula.length-3} more paths
-                  </div>
-                )}
-              </div>
-            )}
+          <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:3 }}>{getGreeting()}, {name}</div>
+          <div style={{ fontSize:13, color:'var(--text2)' }}>
+            {loading ? 'Loading...' : curricula.length === 0 ? 'Build your first learning path to get started.' : `${curricula.length} active path${curricula.length!==1?'s':''} · ${streak > 0 ? streak+' day streak' : 'Start your streak today'}`}
           </div>
         </div>
 
-        {/* Continue card */}
+        {/* 2. CONTINUE CARD */}
         {activeCurr ? (
           <div onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18, transition:'border-color 0.14s' }}>
             <div style={{ width:120, flexShrink:0, background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -173,7 +115,57 @@ export default function HomeScreen({ profile }: { profile: any }) {
           </div>
         )}
 
-        {/* Two col — activity + flashcards */}
+        {/* 3. PATH TILES — horizontal rows */}
+        {curricula.length > 0 && (
+          <div style={{ marginBottom:18 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>My Paths</div>
+              <div onClick={() => router.push('/app/paths')} style={{ fontSize:10, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>View all</div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:9 }}>
+              {curricula.slice(0,6).map((c,i) => {
+                const weeks = c.curriculum?.weeks || []
+                const total = weeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
+                const done = Object.values(c.progress||{}).filter(Boolean).length
+                const p = total ? Math.round((done/total)*100) : 0
+                const color = COLORS[i % COLORS.length]
+                return (
+                  <div key={c.id} onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'11px 13px', cursor:'pointer', transition:'border-color 0.13s' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
+                      <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }}/>
+                      <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{c.curriculum?.title || c.topic}</div>
+                    </div>
+                    <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
+                      <div style={{ height:'100%', borderRadius:2, background:color, width:p+'%' }}/>
+                    </div>
+                    <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} · {p}% complete</div>
+                  </div>
+                )
+              })}
+            </div>
+            {curricula.length > 6 && (
+              <div onClick={() => router.push('/app/paths')} style={{ fontSize:11, color:'var(--amber)', fontFamily:'var(--mono)', textAlign:'center' as const, cursor:'pointer', padding:'8px', marginTop:4 }}>
+                +{curricula.length-6} more paths
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 4. STATS ROW */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:18 }}>
+          {[
+            { v: streak,                                l:'Day streak',     c:'var(--amber)' },
+            { v: totalMins > 0 ? totalMins+'m' : '0m', l:'This week',      c:'var(--blue-text)' },
+            { v: profile?.cards_reviewed ?? 0,          l:'Cards reviewed', c:'var(--green-text)' },
+          ].map((s,i) => (
+            <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }}>
+              <div style={{ fontFamily:'var(--mono)', fontSize:21, fontWeight:500, color:s.c }}>{s.v}</div>
+              <div style={{ fontSize:10, color:'var(--text3)', marginTop:3 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* 5. ACTIVITY + FLASHCARDS */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 260px', gap:14 }}>
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
