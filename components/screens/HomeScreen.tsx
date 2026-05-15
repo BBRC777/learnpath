@@ -122,7 +122,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>My Paths</div>
               <div onClick={() => router.push('/app/paths')} style={{ fontSize:10, color:'var(--amber)', cursor:'pointer', fontFamily:'var(--mono)' }}>View all</div>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:9 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, overflow:'hidden' }}>
               {curricula.slice(0,6).map((c,i) => {
                 const weeks = c.curriculum?.weeks || []
                 const total = weeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
@@ -152,7 +152,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
         )}
 
         {/* 4. STATS ROW */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:18 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, overflow:'hidden', marginBottom:18 }}>
           {[
             { v: streak,                                l:'Day streak',     c:'var(--amber)' },
             { v: totalMins > 0 ? totalMins+'m' : '0m', l:'This week',      c:'var(--blue-text)' },
@@ -215,6 +215,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
 
 
 
