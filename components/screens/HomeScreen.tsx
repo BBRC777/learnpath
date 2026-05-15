@@ -136,7 +136,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
                   <div key={c.id} onClick={() => router.push('/app/lesson')} style={{ ...CARD, cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
                       <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }}/>
-                      <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{c.curriculum?.title || c.topic}</div>
+                      <div style={{ fontSize:11, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, display:'block', maxWidth:'100%' }}>{c.curriculum?.title || c.topic}</div>
                     </div>
                     <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
                       <div style={{ height:'100%', borderRadius:2, background:color, width:p+'%' }}/>
@@ -218,3 +218,4 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
