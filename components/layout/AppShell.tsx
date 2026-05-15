@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 // components/layout/AppShell.tsx
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -7,12 +7,12 @@ import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 
 const NAV = [
-  { id:'home',       icon:'🏠', label:'Home' },
-  { id:'lesson',     icon:'📖', label:'Current Lesson' },
-  { id:'curriculum', icon:'➕', label:'New Learning Path' },
-  { id:'flashcards', icon:'🃏', label:'Flashcards',   badge:'9',   badgeCls:'red' },
-  { id:'study',      icon:'🎯', label:'Study Mode',   badge:'PRO', badgeCls:'pro', proOnly:true },
-  { id:'progress',   icon:'📊', label:'Progress' },
+  { id:'home',       icon:'ðŸ ', label:'Home' },
+  { id:'lesson',     icon:'ðŸ“–', label:'Current Lesson' },
+  { id:'curriculum', icon:'âž•', label:'New Learning Path' },
+  { id:'flashcards', icon:'ðŸƒ', label:'Flashcards',   badge:'9',   badgeCls:'red' },
+  { id:'study',      icon:'ðŸŽ¯', label:'Study Mode',   badge:'PRO', badgeCls:'pro', proOnly:true },
+  { id:'progress',   icon:'ðŸ“Š', label:'Progress' },
 ]
 
 interface AppShellProps {
@@ -40,7 +40,7 @@ function getGreeting(): string {
 
 const SCREEN_META: Record<string, { title: string; pill?: string }> = {
   home:       { title: 'Home' },
-  lesson:     { title: 'Current Lesson',   pill: 'Week 1 · Lesson 3' },
+  lesson:     { title: 'Current Lesson',   pill: 'Week 1 Â· Lesson 3' },
   curriculum: { title: 'New Learning Path', pill: 'Step 1 of 4' },
   flashcards: { title: 'Flashcards',        pill: '9 due today' },
   study:      { title: 'Study Mode',        pill: 'Pro Feature' },
@@ -65,14 +65,14 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
 
   return (
     <div style={{display:'flex',height:'100vh',overflow:'hidden'}}>
-      {/* ── SIDEBAR ── */}
+      {/* â”€â”€ SIDEBAR â”€â”€ */}
       <div style={{width:236,flexShrink:0,background:'var(--bg2)',borderRight:'1px solid var(--border)',display:'flex',flexDirection:'column',height:'100%',overflow:'hidden'}}>
         {/* Logo */}
         <div style={{padding:'17px 15px 13px',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:9}}>
-          <div style={{width:28,height:28,borderRadius:7,background:'var(--amber-bg2)',border:'1px solid rgba(212,133,58,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>📚</div>
+          <div style={{width:28,height:28,borderRadius:7,background:'var(--amber-bg2)',border:'1px solid rgba(212,133,58,0.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>ðŸ“š</div>
           <div>
             <div style={{fontFamily:'var(--serif)',fontSize:17,color:'var(--amber)'}}>Learnpath</div>
-            <div style={{fontSize:8,fontFamily:'var(--mono)',color:'var(--text3)',letterSpacing:'0.1em',marginTop:1}}>Learn Anything · All Inside</div>
+            <div style={{fontSize:8,fontFamily:'var(--mono)',color:'var(--text3)',letterSpacing:'0.1em',marginTop:1}}>Learn Anything Â· All Inside</div>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
           {/* Streak */}
           <div style={{background:'var(--amber-bg)',border:'1px solid var(--amber-bg2)',borderRadius:8,padding:'9px 11px',margin:'12px 8px 0'}}>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <div style={{fontFamily:'var(--mono)',fontSize:22,color:'var(--amber)',fontWeight:500,lineHeight:1}}>{profile.streak ?? 0}🔥</div>
+              <div style={{fontFamily:'var(--mono)',fontSize:22,color:'var(--amber)',fontWeight:500,lineHeight:1}}>{profile.streak ?? 0}ðŸ”¥</div>
               <div>
                 <div style={{fontSize:12,fontWeight:500,color:'var(--text2)'}}>Day streak</div>
                 <div style={{fontSize:9,fontFamily:'var(--mono)',color:'var(--text3)',marginTop:1}}>Keep the chain alive!</div>
@@ -129,14 +129,14 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:12,fontWeight:500,color:'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{name}</div>
-              <div style={{fontSize:8.5,fontFamily:'var(--mono)',color:isPro?'var(--amber)':'var(--text3)'}}>{isPro?'✨ Pro':'Free · 1/1 paths'}</div>
+              <div style={{fontSize:8.5,fontFamily:'var(--mono)',color:isPro?'var(--amber)':'var(--text3)'}}>{isPro?'âœ¨ Pro':'Free Â· 1/1 paths'}</div>
             </div>
-            <div style={{fontSize:13,color:'var(--text3)'}}>⚙</div>
+            <div style={{fontSize:13,color:'var(--text3)'}}>âš™</div>
           </div>
         </div>
       </div>
 
-      {/* ── MAIN ── */}
+      {/* â”€â”€ MAIN â”€â”€ */}
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
         {/* Topbar */}
         <div style={{height:50,background:'var(--bg2)',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 22px',flexShrink:0}}>
@@ -146,7 +146,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
           </div>
           <div style={{display:'flex',alignItems:'center',gap:7}}>
             {active==='home' && <button onClick={()=>setActive('curriculum')} style={btnPrimary}>+ New Path</button>}
-            {active==='lesson' && <button style={btnPrimary}>Mark Complete →</button>}
+            {active==='lesson' && <button style={btnPrimary}>Mark Complete â†’</button>}
             {active==='settings' && <button onClick={signOut} style={btnDanger}>Sign out</button>}
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function AppShell({ user, profile, children }: AppShellProps) {
   )
 }
 
-// ── Inline button styles ───────────────────────────────────────
+// â”€â”€ Inline button styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const btnPrimary: React.CSSProperties = {
   display:'inline-flex',alignItems:'center',gap:5,padding:'5px 11px',
   borderRadius:6,fontSize:11.5,fontFamily:'var(--sans)',cursor:'pointer',
@@ -182,7 +182,7 @@ const btnDanger: React.CSSProperties = {
   border:'1px solid var(--border2)',background:'var(--bg3)',color:'var(--text2)',
 }
 
-// ── Settings panel ─────────────────────────────────────────────
+// â”€â”€ Settings panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: Profile; onSignOut: () => void }) {
   const [displayName, setDisplayName] = useState(profile.display_name || '')
   const [saving, setSaving]   = useState(false)
@@ -191,7 +191,7 @@ function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: Prof
 
   const save = async () => {
     setSaving(true)
-    await supabase.from('profiles').update({ display_name: displayName.trim(), updated_at: new Date().toISOString() }).eq('id', user.id)
+    await (supabase.from('profiles') as any).update({ display_name: displayName.trim(), updated_at: new Date().toISOString() }).eq('id', user.id)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -207,16 +207,16 @@ function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: Prof
     <div style={{maxWidth:560,margin:'0 auto',padding:'24px 26px 60px'}}>
       {[
         { head:'Account', rows: [
-          row('Display name', user.email||'', <div style={{display:'flex',gap:8,alignItems:'center'}}><input value={displayName} onChange={e=>setDisplayName(e.target.value)} style={{padding:'6px 10px',background:'var(--bg3)',border:'1px solid var(--border2)',borderRadius:7,color:'var(--text)',fontFamily:'var(--sans)',fontSize:13,outline:'none'}}/><button onClick={save} disabled={saving||!displayName.trim()} style={{...btnPrimary,fontSize:11}}>{saved?'✓ Saved':saving?'…':'Save'}</button></div>),
-          row('Email', user.email||'', <span style={{fontSize:12,fontFamily:'var(--mono)',color:'var(--text2)'}}>Verified ✓</span>),
-          row('User ID', user.id?.slice(0,20)+'…', null),
+          row('Display name', user.email||'', <div style={{display:'flex',gap:8,alignItems:'center'}}><input value={displayName} onChange={e=>setDisplayName(e.target.value)} style={{padding:'6px 10px',background:'var(--bg3)',border:'1px solid var(--border2)',borderRadius:7,color:'var(--text)',fontFamily:'var(--sans)',fontSize:13,outline:'none'}}/><button onClick={save} disabled={saving||!displayName.trim()} style={{...btnPrimary,fontSize:11}}>{saved?'âœ“ Saved':saving?'â€¦':'Save'}</button></div>),
+          row('Email', user.email||'', <span style={{fontSize:12,fontFamily:'var(--mono)',color:'var(--text2)'}}>Verified âœ“</span>),
+          row('User ID', user.id?.slice(0,20)+'â€¦', null),
         ]},
         { head:'Subscription', rows: [
-          row('Current plan', profile.is_pro?'Learnpath Pro — all features':'Free — 1 learning path', <span style={{fontSize:9,fontFamily:'var(--mono)',padding:'2px 6px',borderRadius:3,background:profile.is_pro?'var(--amber-bg)':'var(--green-bg)',border:`1px solid ${profile.is_pro?'var(--amber-bg2)':'var(--green-border)'}`,color:profile.is_pro?'var(--amber2)':'var(--green-text)'}}>{profile.is_pro?'PRO':'FREE'}</span>),
-          ...(!profile.is_pro ? [row('Upgrade to Pro', 'Unlimited paths · Study Mode · AI Tutor', <button style={btnPrimary}>$9.99/mo →</button>)] : []),
+          row('Current plan', profile.is_pro?'Learnpath Pro â€” all features':'Free â€” 1 learning path', <span style={{fontSize:9,fontFamily:'var(--mono)',padding:'2px 6px',borderRadius:3,background:profile.is_pro?'var(--amber-bg)':'var(--green-bg)',border:`1px solid ${profile.is_pro?'var(--amber-bg2)':'var(--green-border)'}`,color:profile.is_pro?'var(--amber2)':'var(--green-text)'}}>{profile.is_pro?'PRO':'FREE'}</span>),
+          ...(!profile.is_pro ? [row('Upgrade to Pro', 'Unlimited paths Â· Study Mode Â· AI Tutor', <button style={btnPrimary}>$9.99/mo â†’</button>)] : []),
         ]},
         { head:'Your Stats', rows: [
-          row('Current streak', '', <span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--amber)'}}>{profile.streak ?? 0} days 🔥</span>),
+          row('Current streak', '', <span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--amber)'}}>{profile.streak ?? 0} days ðŸ”¥</span>),
           row('Total study days', '', <span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--text2)'}}>{profile.total_days ?? 0}</span>),
           row('Cards reviewed', '', <span style={{fontFamily:'var(--mono)',fontSize:13,color:'var(--text2)'}}>{(profile.cards_reviewed ?? 0).toLocaleString()}</span>),
         ]},
@@ -230,9 +230,10 @@ function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: Prof
         </div>
       ))}
       <div style={{fontSize:10,fontFamily:'var(--mono)',color:'var(--text3)',textAlign:'center' as const,marginTop:20,lineHeight:1.8}}>
-        Learnpath · MRF Studios · contact@mrfstudios.com<br/>
-        v0.5.0-beta · Supabase: luvccsyqmxctvfubuhkk
+        Learnpath Â· MRF Studios Â· contact@mrfstudios.com<br/>
+        v0.5.0-beta Â· Supabase: luvccsyqmxctvfubuhkk
       </div>
     </div>
   )
 }
+
