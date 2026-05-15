@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 // hooks/useProfile.ts
 import { useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -11,14 +11,14 @@ export function useProfile(initial: Profile) {
   const update = useCallback(async (fields: Partial<Profile>) => {
     const updated = { ...fields, updated_at: new Date().toISOString() }
     const { error } = await supabase
-      .from('profiles')
+      .from('profiles') as any
       .update(updated)
       .eq('id', profile.id)
     if (!error) setProfile(p => ({ ...p, ...updated }))
     return !error
   }, [profile.id, supabase])
 
-  // Call after a study session — increments streak and total_days
+  // Call after a study session â€” increments streak and total_days
   const recordStudySession = useCallback(async (cardsReviewed = 0) => {
     const today = new Date().toISOString().split('T')[0]
     const lastStudy = profile.last_study
@@ -40,3 +40,4 @@ export function useProfile(initial: Profile) {
 
   return { profile, update, recordStudySession }
 }
+
