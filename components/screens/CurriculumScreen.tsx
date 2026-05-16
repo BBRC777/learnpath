@@ -57,13 +57,25 @@ export default function CurriculumScreen() {
   const [openWeeks, setOpenWeeks] = useState<Record<number,boolean>>({ 0:true })
   const [userId, setUserId] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
+  const [isPro, setIsPro] = useState(false)
+  const [pathCount, setPathCount] = useState(0)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [selectedWeek, setSelectedWeek] = useState<number|null>(null)
   const [selectedDay, setSelectedDay] = useState<number|null>(null)
   const router = useRouter()
 
   useEffect(() => {
-    createClient().auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id)
+    createClient().auth.getUser().then(async ({ data }) => {
+      if (data.user) {
+        setUserId(data.user.id)
+        const supabase = createClient()
+        const [profileRes, currRes] = await Promise.all([
+          (supabase.from('profiles') as any).select('is_pro').eq('id', data.user.id).single(),
+          (supabase.from('curricula') as any).select('id').eq('user_id', data.user.id)
+        ])
+        setIsPro(profileRes.data?.is_pro || false)
+        setPathCount(currRes.data?.length || 0)
+      }
     })
   }, [])
 
@@ -79,6 +91,7 @@ export default function CurriculumScreen() {
 
   const generate = async () => {
     if (!topic.trim()) { setError('Enter a topic first'); return }
+    if (!isPro && pathCount >= 2) { setShowPaywall(true); return }
     setError('')
     setGenerating(true)
     setStreamText('')
@@ -158,7 +171,32 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
     finally { setGenerating(false); setStreamText('') }
   }
 
-  // ── GENERATING SCREEN ──────────────────────────────────────
+  // -- PAYWALL SCREEN
+  if (showPaywall) return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', padding:24 }}>
+      <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 40px', width:'100%', maxWidth:460, textAlign:'center' as const }}>
+        <div style={{ width:56, height:56, borderRadius:14, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', fontFamily:'var(--mono)', fontSize:11, fontWeight:700, color:'var(--amber)' }}>PRO</div>
+        <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Unlock unlimited paths</div>
+        <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>You have used your 2 free learning paths. Upgrade to Pro for unlimited curricula, longer paths up to 12 weeks, Study Mode, and the AI Tutor.</div>
+        <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 18px', marginBottom:24, textAlign:'left' as const }}>
+          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:10 }}>Pro includes</div>
+          {['Unlimited learning paths','Paths up to 12 weeks','Study Mode — focused sessions','AI Tutor — ask questions about any lesson','Priority support'].map((f,i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:7, fontSize:13, color:'var(--text2)' }}>
+              <span style={{ color:'var(--green-text)', fontSize:12 }}>+</span> {f}
+            </div>
+          ))}
+        </div>
+        <button style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>
+          Upgrade to Pro — .99/mo
+        </button>
+        <button onClick={() => setShowPaywall(false)} style={{ width:'100%', padding:'11px', borderRadius:10, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>
+          Back
+        </button>
+      </div>
+    </div>
+  )
+
+  // -- GENERATING SCREEN ──────────────────────────────────────
   if (generating) return (
     <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
       <div style={{ width:40, height:40, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 24px' }}/>
@@ -318,7 +356,8 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
             <div style={{ marginBottom:14 }}>
               <label style={lbl}>Path length</label>
               <div style={{ display:'flex', flexWrap:'wrap' as const, gap:7 }}>
-                {DUR_OPTS.map(d => <div key={d.weeks} onClick={()=>setDuration(d)} style={{ padding:'7px 13px', borderRadius:20, border:`1px solid ${duration.weeks===d.weeks?'rgba(212,133,58,0.4)':'var(--border2)'}`, background:duration.weeks===d.weeks?'var(--amber-bg2)':'var(--bg3)', color:duration.weeks===d.weeks?'var(--amber2)':'var(--text2)', fontSize:12, cursor:'pointer' }}>{d.label}</div>)}
+                {DUR_OPTS.map(d => <div key={d.weeks} onClick={()=>setDuration(d)} style={{ padding:'7px 13px', borderRadius:20, border:`1px solid ${duration.weeks===d.weeks?'rgba(212,133,58,0.4)':'var(--border2)'}`, background:duration.weeks===d.weeks?'var(--amber-bg2)':'var(--bg3)', color: locked?'var(--text3)':duration.weeks===d.weeks?'var(--amber2)':'var(--text2)', fontSize:12, cursor:locked?'not-allowed':'pointer', opacity:locked?0.4:1 }}>{d.label}{locked?' (Pro)':''}</div>
+              })}
               </div>
             </div>
             <div style={{ marginBottom:14 }}>
@@ -399,3 +438,7 @@ Rules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. 
     </div>
   )
 }
+
+
+
+
