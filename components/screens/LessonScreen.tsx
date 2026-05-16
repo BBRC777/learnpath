@@ -70,22 +70,7 @@ export default function LessonScreen() {
         if (!found && targetWeeks.length > 0) {
           setSelectedLesson({ wi:0, di:0 })
         }
-        // Auto-select first incomplete lesson
-        const curr = currs[0]
-        const progress = curr.progress || {}
-        const weeks = curr.curriculum?.weeks || []
-        let found = false
-        for (let wi = 0; wi < weeks.length && !found; wi++) {
-          for (let di = 0; di < (weeks[wi].days||[]).length && !found; di++) {
-            if (!progress[`${wi}-${di}`]) {
-              setSelectedLesson({ wi, di })
-              found = true
-            }
-          }
-        }
-        if (!found && weeks.length > 0) {
-          setSelectedLesson({ wi:0, di:0 })
-        }
+
       }
     }
     load()
@@ -477,6 +462,7 @@ Rules:
     </div>
   )
 }
+
 
 
 
