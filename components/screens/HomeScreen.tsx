@@ -91,7 +91,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
 
         {/* 2. CONTINUE CARD */}
         {activeCurr ? (
-          <div onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18 }}>
+          <div onClick={() => router.push('/app/lesson?id=' + activeCurr.id)} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18 }}>
             <div style={{ width:120, flexShrink:0, background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', opacity:0.35 }}>LP</div>
             </div>
@@ -218,6 +218,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
 
 
 
