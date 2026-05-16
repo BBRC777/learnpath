@@ -17,7 +17,7 @@ const NAV = [
 
 const SCREEN_META: Record<string,{ title:string; pill?:string }> = {
   '/app':            { title:'Home' },
-  '/app/lesson':     { title:'Current Lesson',    pill:'Week 1 · Lesson 3' },
+  '/app/lesson':     { title:'Current Lesson' },
   '/app/curriculum': { title:'New Learning Path',  pill:'Step 1 of 4' },
   '/app/paths':      { title:'All Learning Paths' },
   '/app/flashcards': { title:'Flashcards',         pill:'9 due today' },
@@ -251,3 +251,4 @@ function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: any;
     </div>
   )
 }
+
