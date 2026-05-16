@@ -91,7 +91,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
 
         {/* 2. CONTINUE CARD */}
         {activeCurr ? (
-          <div onClick={() => router.push('/app/lesson')} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18 }}>
+          <div onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', display:'flex', cursor:'pointer', marginBottom:18 }}>
             <div style={{ width:120, flexShrink:0, background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', opacity:0.35 }}>LP</div>
             </div>
@@ -133,7 +133,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
                 const p = total ? Math.round((done/total)*100) : 0
                 const color = COLORS[i % COLORS.length]
                 return (
-                  <div key={c.id} onClick={() => router.push('/app/lesson')} style={{ ...CARD, cursor:'pointer' }}>
+                  <div key={c.id} onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ ...CARD, cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
                       <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }}/>
                       <div style={{ fontSize:11, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, display:'block', maxWidth:'100%' }}>{c.curriculum?.title || c.topic}</div>
@@ -218,6 +218,8 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
+
 
 
 
