@@ -77,7 +77,7 @@ export default function PathsScreen() {
           <div style={{ textAlign:'center' as const, padding:'60px 20px', color:'var(--text3)' }}>
             <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text2)', marginBottom:8 }}>No learning paths yet</div>
             <div style={{ fontSize:13, marginBottom:20, lineHeight:1.6 }}>Build your first AI-generated curriculum — takes 30 seconds.</div>
-            <button onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ padding:'10px 22px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Build my first path</button>
+            <button onClick={() => router.push('/app/curriculum')} style={{ padding:'10px 22px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Build my first path</button>
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
@@ -145,6 +145,7 @@ export default function PathsScreen() {
     </div>
   )
 }
+
 
 
 
