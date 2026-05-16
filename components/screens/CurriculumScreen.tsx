@@ -131,7 +131,7 @@ export default function CurriculumScreen() {
             </div>
           ))}
         </div>
-        <button style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Upgrade to Pro — $9.99/mo</button>
+        <button onClick={()=>window.open(`https://pay.rev.cat/sandbox/skelxidydieztrqy/${userId||''}`,`_blank`)} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Upgrade to Pro — $9.99/mo — 2 weeks free</button>
         <button onClick={() => setShowPaywall(false)} style={{ width:'100%', padding:'11px', borderRadius:10, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back</button>
       </div>
     </div>
@@ -341,5 +341,6 @@ export default function CurriculumScreen() {
     </div>
   )
 }
+
 
 

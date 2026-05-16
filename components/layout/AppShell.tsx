@@ -222,7 +222,7 @@ function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: any;
           { label:'Current plan', sub:profile?.is_pro?'Learnpath Pro':'Free — 1 learning path',
             right:<span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'2px 6px', borderRadius:3, background:profile?.is_pro?'var(--amber-bg)':'var(--green-bg)', border:`1px solid ${profile?.is_pro?'var(--amber-bg2)':'var(--green-border)'}`, color:profile?.is_pro?'var(--amber2)':'var(--green-text)' }}>{profile?.is_pro?'PRO':'FREE'}</span>
           },
-          ...(!profile?.is_pro?[{ label:'Upgrade to Pro', sub:'Unlimited paths · Study Mode · AI Tutor', right:<button style={btnPrimary}>$9.99/mo</button> }]:[]),
+          ...(!profile?.is_pro?[{ label:'Upgrade to Pro', sub:'Unlimited paths · Study Mode · AI Tutor', right:<button onClick={()=>window.open(`https://pay.rev.cat/sandbox/skelxidydieztrqy/${user.id}`,`_blank`)} style={btnPrimary}>$9.99/mo</button> }]:[]),
         ]},
         { head:'Stats', rows:[
           { label:'Cards reviewed', sub:'', right:<span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--text2)' }}>{(profile?.cards_reviewed??0).toLocaleString()}</span> },
@@ -251,6 +251,8 @@ function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: any;
     </div>
   )
 }
+
+
 
 
 
