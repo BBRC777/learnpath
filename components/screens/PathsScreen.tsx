@@ -68,7 +68,7 @@ export default function PathsScreen() {
             <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:3 }}>All Learning Paths</div>
             <div style={{ fontSize:13, color:'var(--text2)' }}>{curricula.length} path{curricula.length!==1?'s':''} · {curricula.filter(c=>Object.values(c.progress||{}).some(Boolean)).length} in progress</div>
           </div>
-          <button onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ padding:'9px 18px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
+          <button onClick={() => router.push('/app/curriculum')} style={{ padding:'9px 18px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
             + New Path
           </button>
         </div>
@@ -145,5 +145,6 @@ export default function PathsScreen() {
     </div>
   )
 }
+
 
 
