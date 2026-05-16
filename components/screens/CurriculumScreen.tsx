@@ -341,3 +341,4 @@ export default function CurriculumScreen() {
     </div>
   )
 }
+
