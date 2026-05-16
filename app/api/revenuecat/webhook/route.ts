@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const supabase = createClient()
     const db = supabase.from("profiles") as any
 
-    if (PRO_EVENTS.includes(type) && isPro) {
+    if (PRO_EVENTS.includes(type)) {
       await db.update({ is_pro: true, rc_customer_id: app_user_id, updated_at: new Date().toISOString() }).eq("id", app_user_id)
     }
 
@@ -38,4 +38,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "Webhook error" }, { status: 500 })
   }
 }
+
+
 
