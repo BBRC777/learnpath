@@ -1,10 +1,22 @@
 ﻿import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 
 const PRO_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION']
 const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION', 'BILLING_ISSUE']
 
 export async function POST(request: Request) {
   try {
+    const headersList = headers()
+    const authHeader = headersList.get('authorization')
+    const expectedSecret = process.env.REVENUECAT_API_KEY
+
+    // Accept both "Bearer sk_..." and raw "sk_..." formats
+    const receivedToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
+    if (expectedSecret && receivedToken !== expectedSecret) {
+      console.log('Unauthorized webhook attempt')
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { event } = body
     if (!event) return Response.json({ error: 'No event' }, { status: 400 })
