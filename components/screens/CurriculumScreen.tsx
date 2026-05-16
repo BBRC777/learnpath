@@ -233,7 +233,7 @@ export default function CurriculumScreen() {
         {!isPro && (
           <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 14px', marginBottom:20, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
             <div style={{ fontSize:12, color:'var(--text2)' }}>Free plan: <span style={{ color:'var(--amber)', fontFamily:'var(--mono)' }}>{pathCount}/{FREE_MAX_PATHS}</span> paths · Max {FREE_MAX_WEEKS} weeks</div>
-            <button style={{ padding:'4px 10px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11, fontFamily:'var(--sans)', fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const }}>Upgrade</button>
+            <button onClick={()=>window.open('https://pay.rev.cat/sandbox/skelxidydieztrqy/'+(userId||''),'_blank')} style={{ padding:'4px 10px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11, fontFamily:'var(--sans)', fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const }}>Upgrade</button>
           </div>
         )}
         <StepProgress step={step}/>
@@ -341,6 +341,7 @@ export default function CurriculumScreen() {
     </div>
   )
 }
+
 
 
 
