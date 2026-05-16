@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson } from '@/lib/db'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 function PlayIcon() {
   return <svg width="12" height="12" viewBox="0 0 12 12" fill="#0a0b0f"><polygon points="2,1 11,6 2,11"/></svg>
@@ -40,6 +40,8 @@ export default function LessonScreen() {
   const [showPicker, setShowPicker] = useState(false)
   const [view, setView] = useState<'picker'|'lesson'>('picker')
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlCurrId = searchParams.get('id')
 
   useEffect(() => {
     const load = async () => {
@@ -49,7 +51,9 @@ export default function LessonScreen() {
       const currs = await loadCurricula(user.id)
       setCurricula(currs)
       if (currs.length > 0) {
-        setActiveCurrId(currs[0].id)
+        const targetId = urlCurrId || currs[0].id
+        const targetCurr = currs.find((c: any) => c.id === targetId) || currs[0]
+        setActiveCurrId(targetCurr.id)
         // Auto-select first incomplete lesson
         const curr = currs[0]
         const progress = curr.progress || {}
@@ -457,3 +461,6 @@ Rules:
     </div>
   )
 }
+
+
+
