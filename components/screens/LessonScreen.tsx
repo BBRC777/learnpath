@@ -54,6 +54,22 @@ export default function LessonScreen() {
         const targetId = urlCurrId || currs[0].id
         const targetCurr = currs.find((c: any) => c.id === targetId) || currs[0]
         setActiveCurrId(targetCurr.id)
+        // Find first incomplete lesson for THIS specific curriculum
+        const targetProgress = targetCurr.progress || {}
+        const targetWeeks = targetCurr.curriculum?.weeks || []
+        let found = false
+        outer: for (let wi = 0; wi < targetWeeks.length; wi++) {
+          for (let di = 0; di < (targetWeeks[wi].days||[]).length; di++) {
+            if (!targetProgress[wi + '-' + di]) {
+              setSelectedLesson({ wi, di })
+              found = true
+              break outer
+            }
+          }
+        }
+        if (!found && targetWeeks.length > 0) {
+          setSelectedLesson({ wi:0, di:0 })
+        }
         // Auto-select first incomplete lesson
         const curr = currs[0]
         const progress = curr.progress || {}
@@ -461,6 +477,8 @@ Rules:
     </div>
   )
 }
+
+
 
 
 
