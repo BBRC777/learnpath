@@ -52,6 +52,14 @@ export function xpToNextLevel(xp: number): number | null {
   return info.maxXP + 1 - xp
 }
 
+// ── PROFILES
+export async function getProfile() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await (supabase.from('profiles') as any).select('*').eq('id', user.id).single()
+  return data
+}
+
 // ── CURRICULA ─────────────────────────────────────────────────
 export async function saveCurriculum(userId: string, params: any) {
   const id = `curr_${Date.now()}_${Math.random().toString(36).slice(2,7)}`
@@ -183,3 +191,4 @@ export async function completeLessonAndAwardXP(
 ): Promise<LevelUpResult | null> {
   return awardXP('lesson_complete', { streak })
 }
+
