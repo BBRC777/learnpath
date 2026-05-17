@@ -1,4 +1,5 @@
 ﻿'use client'
+// Certificate generation using browser canvas
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { loadCurricula } from '@/lib/db'
@@ -11,7 +12,79 @@ export default function PathsScreen() {
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string|null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [certPath, setCertPath] = useState<any>(null)
   const router = useRouter()
+
+  const generateCertificate = (c: any, displayName: string) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1200; canvas.height = 850
+    const ctx = canvas.getContext('2d')!
+    // Background
+    ctx.fillStyle = '#0a0b0f'
+    ctx.fillRect(0, 0, 1200, 850)
+    // Border
+    ctx.strokeStyle = '#d4853a'
+    ctx.lineWidth = 3
+    ctx.strokeRect(30, 30, 1140, 790)
+    ctx.strokeStyle = 'rgba(212,133,58,0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(45, 45, 1110, 760)
+    // Header
+    ctx.fillStyle = '#d4853a'
+    ctx.font = 'bold 18px monospace'
+    ctx.textAlign = 'center'
+    ctx.fillText('◆ LEARNPATH', 600, 100)
+    // Title
+    ctx.fillStyle = '#e8e6df'
+    ctx.font = 'italic 38px Georgia'
+    ctx.fillText('Certificate of Completion', 600, 170)
+    // Divider
+    ctx.strokeStyle = 'rgba(212,133,58,0.5)'
+    ctx.lineWidth = 1
+    ctx.beginPath(); ctx.moveTo(200, 195); ctx.lineTo(1000, 195); ctx.stroke()
+    // This certifies
+    ctx.fillStyle = '#9a9790'
+    ctx.font = '18px Georgia'
+    ctx.fillText('This certifies that', 600, 260)
+    // Name
+    ctx.fillStyle = '#d4853a'
+    ctx.font = 'bold 52px Georgia'
+    ctx.fillText(displayName || 'Learner', 600, 340)
+    // has completed
+    ctx.fillStyle = '#9a9790'
+    ctx.font = '18px Georgia'
+    ctx.fillText('has successfully completed', 600, 390)
+    // Course title
+    const title = c.curriculum?.title || c.topic
+    ctx.fillStyle = '#e8e6df'
+    ctx.font = 'bold 30px Georgia'
+    // Wrap long titles
+    if (ctx.measureText(title).width > 900) {
+      ctx.font = 'bold 22px Georgia'
+    }
+    ctx.fillText(title, 600, 450)
+    // Details
+    ctx.fillStyle = '#5a5856'
+    ctx.font = '15px monospace'
+    ctx.fillText(${c.level} ·  ·  days/week · /session, 600, 500)
+    // Divider
+    ctx.strokeStyle = 'rgba(212,133,58,0.3)'
+    ctx.beginPath(); ctx.moveTo(200, 560); ctx.lineTo(1000, 560); ctx.stroke()
+    // Date
+    ctx.fillStyle = '#9a9790'
+    ctx.font = '15px Georgia'
+    const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })
+    ctx.fillText(Completed on , 600, 620)
+    // Footer
+    ctx.fillStyle = '#5a5856'
+    ctx.font = '13px monospace'
+    ctx.fillText('LEARNPATHNOW.COM', 600, 780)
+    // Download
+    const link = document.createElement('a')
+    link.download = learnpath-certificate-.png
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  }
 
   const load = async () => {
     const { data: { user } } = await createClient().auth.getUser()
@@ -129,10 +202,19 @@ export default function PathsScreen() {
 
                     <div style={{ display:'flex', gap:9 }}>
                       <button onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ flex:2, padding:'10px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
-                        {pct > 0 ? 'Continue Learning' : 'Start Learning'}
+                        {pct >= 100 ? '✓ Review' : pct > 0 ? 'Continue Learning' : 'Start Learning'}
                       </button>
                       <button onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ flex:1, padding:'10px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>
                         View Curriculum
+                      </button>
+                      {pct >= 100 && (
+                        <button onClick={async () => {
+                          const { data: { user } } = await createClient().auth.getUser()
+                          const { data: profile } = await (createClient().from('profiles') as any).select('display_name').eq('id', user?.id).single()
+                          generateCertificate(c, profile?.display_name || 'Learner')
+                        }} style={{ padding:'9px 16px', borderRadius:8, background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.4)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
+                          🎓 Certificate
+                        </button>
                       </button>
                     </div>
                   </div>
@@ -145,6 +227,9 @@ export default function PathsScreen() {
     </div>
   )
 }
+
+
+
 
 
 
