@@ -1,4 +1,4 @@
-'use client'
+'use client' // v2
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { loadCurricula, loadStreak, loadWeekActivity } from '@/lib/db'
