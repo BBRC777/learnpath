@@ -307,33 +307,3 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
     </div>
   )
 }
-
-
-
-
-        {showSummary && (
-          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setShowSummary(false)}>
-            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'32px 36px', width:'100%', maxWidth:560, maxHeight:'80vh', overflowY:'auto' as const }} onClick={e => e.stopPropagation()}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-                <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>* Weekly Summary</div>
-                <button onClick={() => setShowSummary(false)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:18, cursor:'pointer' }}>x</button>
-              </div>
-              {summaryLoading && !summary && (
-                <div style={{ display:'flex', alignItems:'center', gap:10, color:'var(--text2)', fontSize:13 }}>
-                  <div style={{ width:16, height:16, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
-                  Claude is writing your summary...
-                </div>
-              )}
-              {summary && (
-                <div style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, whiteSpace:'pre-wrap' as const }}>{summary}</div>
-              )}
-              {!summaryLoading && summary && (
-                <button onClick={() => setShowSummary(false)} style={{ marginTop:24, padding:'10px 24px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Done</button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
