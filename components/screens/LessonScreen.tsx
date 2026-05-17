@@ -199,7 +199,7 @@ Rules:
       await logActivity(userId, 'lesson', 20)
       await updateStreak(userId)
       const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
-      if (xpResult?.leveledUp) setShowLevelUp(xpResult.levelInfo)
+      if (xpResult && xpResult.leveledUp) { setShowLevelUp(xpResult.levelInfo as Record<string,any>) }
       (window as any).__learnpath_refreshProfile?.()
       setIsComplete(true)
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
@@ -480,6 +480,7 @@ Rules:
     </div>
   )
 }
+
 
 
 
