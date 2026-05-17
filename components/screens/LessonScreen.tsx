@@ -44,6 +44,10 @@ export default function LessonScreen() {
   const [eliMode, setEliMode] = useState<'eli5'|'deeper'|null>(null)
   const [eliContent, setEliContent] = useState('')
   const [eliLoading, setEliLoading] = useState(false)
+  const [tutorOpen, setTutorOpen] = useState(false)
+  const [tutorMessages, setTutorMessages] = useState<{role:'user'|'assistant',content:string}[]>([])
+  const [tutorInput, setTutorInput] = useState('')
+  const [tutorLoading, setTutorLoading] = useState(false)
   const [newBadges, setNewBadges] = useState<string[]>([])
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -233,6 +237,30 @@ Rules:
       }
     } catch(e) { setEliContent('Unable to generate. Please try again.') }
     finally { setEliLoading(false) }
+  }
+  const askTutor = async (question: string) => {
+    if (!question.trim() || !lessonData) return
+    const userMsg = { role: 'user' as const, content: question }
+    setTutorMessages(m => [...m, userMsg])
+    setTutorInput('')
+    setTutorLoading(true)
+    const context = 'Lesson: ' + (lessonData.title||'') + '\n\n' + (lessonData.content||'')
+    const systemPrompt = 'You are a helpful tutor. Answer questions about this lesson concisely and clearly. Lesson context:\n\n' + context
+    const allMessages = [...tutorMessages, userMsg].map(m => ({ role: m.role, content: m.content }))
+    try {
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, system:systemPrompt, messages:allMessages }) })
+      const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break
+        for (const line of decoder.decode(value).split('\n')) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim(); if (data === '[DONE]') break
+          try { const p = JSON.parse(data); if (p.text) { full += p.text; setTutorMessages(m => [...m.slice(0,-1), { role:'assistant', content: full }]) } } catch {}
+        }
+      }
+      if (!full) setTutorMessages(m => [...m, { role:'assistant', content:'Sorry, I could not generate a response.' }])
+    } catch(e) { setTutorMessages(m => [...m, { role:'assistant', content:'Error connecting to tutor.' }]) }
+    finally { setTutorLoading(false) }
   }
 
   const toggleAudio = () => {
@@ -476,6 +504,30 @@ Rules:
                 <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8 }}>{eliMode==='eli5'?'Simplified':'Deeper Dive'}</div>
                 {eliLoading && !eliContent && <div style={{ fontSize:13, color:'var(--text3)' }}>Claude is thinking...</div>}
                 {eliContent && <div style={{ fontSize:14, color:'var(--text2)', lineHeight:1.8, whiteSpace:'pre-wrap' }}>{eliContent}</div>}
+              </div>
+            )}
+            {/* AI Tutor */}
+            {lessonData && (
+              <div style={{ marginBottom:16 }}>
+                <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! I am your AI Tutor for this lesson. Ask me anything about ' + (lessonData.title||'this topic') + '.'}]) }} style={{ width:'100%', padding:'9px', borderRadius:8, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                  {tutorOpen ? 'Close AI Tutor' : 'Ask AI Tutor'}
+                </button>
+                {tutorOpen && (
+                  <div style={{ marginTop:8, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, overflow:'hidden' }}>
+                    <div style={{ maxHeight:280, overflowY:'auto', padding:'12px 14px', display:'flex', flexDirection:'column' as const, gap:10 }}>
+                      {tutorMessages.map((msg, i) => (
+                        <div key={i} style={{ display:'flex', flexDirection:'column' as const, alignItems:msg.role==='user'?'flex-end':'flex-start' }}>
+                          <div style={{ maxWidth:'85%', padding:'8px 12px', borderRadius:8, background:msg.role==='user'?'var(--amber)':'var(--bg2)', color:msg.role==='user'?'#0a0b0f':'var(--text2)', fontSize:13, lineHeight:1.6 }}>{msg.content}</div>
+                        </div>
+                      ))}
+                      {tutorLoading && <div style={{ fontSize:12, color:'var(--text3)', fontStyle:'italic' }}>Tutor is thinking...</div>}
+                    </div>
+                    <div style={{ padding:'8px', borderTop:'1px solid var(--border)', display:'flex', gap:6 }}>
+                      <input value={tutorInput} onChange={e => setTutorInput(e.target.value)} onKeyDown={e => { if(e.key==='Enter'&&!tutorLoading) askTutor(tutorInput) }} placeholder='Ask a question...' style={{ flex:1, padding:'7px 10px', background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:6, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none' }}/>
+                      <button onClick={() => askTutor(tutorInput)} disabled={tutorLoading||!tutorInput.trim()} style={{ padding:'7px 14px', borderRadius:6, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>Ask</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {/* Mark complete */}
