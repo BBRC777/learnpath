@@ -215,7 +215,6 @@ export default function PathsScreen() {
                         }} style={{ padding:'9px 16px', borderRadius:8, background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.4)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
                           🎓 Certificate
                         </button>
-                      </button>
                     </div>
                   </div>
                 </div>
