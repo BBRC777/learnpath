@@ -16,7 +16,7 @@ function renderContent(text: string) {
     if (line.startsWith('## ')) return <h2 key={i} style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', margin:'24px 0 8px', lineHeight:1.3 }}>{line.slice(3)}</h2>
     if (line.startsWith('# ')) return <h1 key={i} style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', margin:'28px 0 10px', lineHeight:1.2 }}>{line.slice(2)}</h1>
     if (line.startsWith('> ')) return <blockquote key={i} style={{ borderLeft:'2px solid var(--amber)', padding:'10px 16px', background:'var(--amber-bg)', borderRadius:'0 8px 8px 0', margin:'14px 0', color:'var(--amber3)', fontStyle:'italic', fontSize:14 }}>{line.slice(2)}</blockquote>
-    if (line.startsWith('- ') || line.startsWith('* ')) return <div key={i} style={{ display:'flex', gap:8, marginBottom:6, paddingLeft:8 }}><span style={{ color:'var(--amber)', flexShrink:0 }}>Ã‚Â·</span><span style={{ fontSize:14, color:'var(--text2)', lineHeight:1.7 }}>{line.slice(2)}</span></div>
+    if (line.startsWith('- ') || line.startsWith('* ')) return <div key={i} style={{ display:'flex', gap:8, marginBottom:6, paddingLeft:8 }}><span style={{ color:'var(--amber)', flexShrink:0 }}>Ãƒâ€šÃ‚Â·</span><span style={{ fontSize:14, color:'var(--text2)', lineHeight:1.7 }}>{line.slice(2)}</span></div>
     if (!line.trim()) return <div key={i} style={{ height:10 }}/>
     return <p key={i} style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, marginBottom:12 }}>{line}</p>
   })
@@ -129,7 +129,7 @@ Generate a complete lesson as a single valid JSON object. Return ONLY the JSON, 
   "subject": "${curr.topic}",
   "level": "${curr.level}",
   "duration": "${day.duration}",
-  "eyebrow": "Week ${wi+1} Ã‚Â· Day ${di+1}",
+  "eyebrow": "Week ${wi+1} Ãƒâ€šÃ‚Â· Day ${di+1}",
   "intro": "2-3 sentence introduction that hooks the learner and explains what they will master.",
   "content": "Full lesson content in markdown. Use ## for section headers. Use > for key insights. Write 600-900 words. Be specific, practical, and engaging. Include real examples.",
   "keyPoints": ["Point 1", "Point 2", "Point 3", "Point 4"],
@@ -214,6 +214,7 @@ Rules:
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
     } catch(e) { console.error(e) }
     finally { setMarking(false) }
+  }
   const fetchEli = async (mode: 'eli5'|'deeper') => {
     if (!lessonData) return
     setEliMode(mode); setEliLoading(true); setEliContent('')
@@ -277,7 +278,7 @@ Rules:
   return (
     <div style={{ display:'flex', height:'100%', overflow:'hidden' }}>
 
-      {/* LEFT PANEL Ã¢â‚¬â€ lesson picker */}
+      {/* LEFT PANEL ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â lesson picker */}
       <div style={{ width:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)' }}>
 
         {/* Curriculum selector */}
@@ -298,7 +299,7 @@ Rules:
             <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
               <div style={{ height:'100%', borderRadius:2, background:'var(--amber)', width:currPct+'%' }}/>
             </div>
-            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{doneSessions}/{totalSessions} sessions Ã‚Â· {currPct}%</div>
+            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{doneSessions}/{totalSessions} sessions Ãƒâ€šÃ‚Â· {currPct}%</div>
           </div>
         )}
 
@@ -306,7 +307,7 @@ Rules:
         {weeks.map((wk: any, wi: number) => (
           <div key={wi}>
             <div style={{ padding:'8px 14px 4px', fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', background:'var(--bg3)', borderBottom:'1px solid var(--border)' }}>
-              Week {wi+1} Ã‚Â· {wk.theme}
+              Week {wi+1} Ãƒâ€šÃ‚Â· {wk.theme}
             </div>
             {(wk.days||[]).map((d: any, di: number) => {
               const key = `${wi}-${di}`
@@ -318,7 +319,7 @@ Rules:
                   style={{ padding:'10px 14px', borderBottom:'1px solid var(--border)', cursor:'pointer', background:isSelected?'var(--amber-bg)':'transparent', borderLeft:`2px solid ${isSelected?'var(--amber)':'transparent'}`, transition:'all 0.12s' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
                     <div style={{ width:14, height:14, borderRadius:'50%', border:`1px solid ${done?'var(--green-border)':'var(--border2)'}`, background:done?'var(--green-bg)':'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      {done && <span style={{ fontSize:8, color:'var(--green-text)' }}>Ã¢Å“â€œ</span>}
+                      {done && <span style={{ fontSize:8, color:'var(--green-text)' }}>ÃƒÂ¢Ã…â€œÃ¢â‚¬Å“</span>}
                     </div>
                     <span style={{ fontSize:8.5, fontFamily:'var(--mono)', color:typeColors[d.type]||'var(--blue-text)', textTransform:'uppercase' as const, letterSpacing:'0.06em' }}>{d.type}</span>
                     <span style={{ fontSize:8, fontFamily:'var(--mono)', color:'var(--text3)', marginLeft:'auto' }}>{d.duration}</span>
@@ -331,7 +332,7 @@ Rules:
         ))}
       </div>
 
-      {/* RIGHT PANEL Ã¢â‚¬â€ lesson content */}
+      {/* RIGHT PANEL ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â lesson content */}
       <div style={{ flex:1, overflowY:'auto' }}>
         {generating ? (
           <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
@@ -364,8 +365,8 @@ Rules:
             {/* Header */}
             <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
               <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>
-                {lessonData.eyebrow} Ã‚Â· {lessonData.subject}
-                {isComplete && <span style={{ marginLeft:8, color:'var(--green-text)' }}>Ã‚Â· Complete</span>}
+                {lessonData.eyebrow} Ãƒâ€šÃ‚Â· {lessonData.subject}
+                {isComplete && <span style={{ marginLeft:8, color:'var(--green-text)' }}>Ãƒâ€šÃ‚Â· Complete</span>}
               </div>
               <h1 style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', lineHeight:1.2, marginBottom:10 }}>{lessonData.title}</h1>
               <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.6, marginBottom:12 }}>{lessonData.intro}</div>
@@ -483,7 +484,7 @@ Rules:
               <div style={{ background:'var(--green-bg)', border:'1px solid var(--green-border)', borderRadius:8, padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
                 <div>
                   <div style={{ fontSize:13, color:'var(--green-text)', fontWeight:500 }}>Lesson complete!</div>
-                  <div style={{ fontSize:11, color:'var(--green-text)', marginTop:2 }}>Great work Ã¢â‚¬â€ keep going.</div>
+                  <div style={{ fontSize:11, color:'var(--green-text)', marginTop:2 }}>Great work ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â keep going.</div>
                 </div>
                 <button onClick={() => {
                   // Auto-advance to next lesson
@@ -510,7 +511,7 @@ Rules:
     {newBadges.length > 0 && !showLevelUp && (
       <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setNewBadges([])}>
         <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
-          <div style={{ fontSize:40, marginBottom:12 }}>Ã°Å¸Ââ€ </div>
+          <div style={{ fontSize:40, marginBottom:12 }}>ÃƒÂ°Ã…Â¸Ã‚ÂÃ¢â‚¬Â </div>
           <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Badge{newBadges.length>1?'s':''} Earned!</div>
           <div style={{ display:'flex', flexDirection:'column' as const, gap:8, marginBottom:24 }}>
             {newBadges.map(id => {
@@ -533,7 +534,7 @@ Rules:
     {showLevelUp && (
       <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowLevelUp(null)}>
         <div style={{ background:'var(--bg2)', border:'1px solid var(--amber)', borderRadius:18, padding:'40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
-          <div style={{ fontSize:48, marginBottom:16 }}>Ã°Å¸Å½â€°</div>
+          <div style={{ fontSize:48, marginBottom:16 }}>ÃƒÂ°Ã…Â¸Ã…Â½Ã¢â‚¬Â°</div>
           <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', marginBottom:8 }}>Level Up!</div>
           <div style={{ fontSize:16, color:'var(--text)', marginBottom:6 }}>You are now a</div>
           <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber2)', fontWeight:700, marginBottom:20 }}>{showLevelUp?.title}</div>
