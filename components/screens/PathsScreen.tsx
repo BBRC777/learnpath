@@ -1,4 +1,3 @@
-$content = @'
 'use client' // v3
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
