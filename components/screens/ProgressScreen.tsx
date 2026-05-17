@@ -87,7 +87,7 @@ Write a 3-paragraph summary:
 2. Identify one area to focus on next week based on their paths
 3. An encouraging closing that motivates them to keep going
 
-Keep it personal, concise, and motivating. No bullet points — flowing prose only.
+Keep it personal, concise, and motivating. No bullet points - flowing prose only.
 
     try {
       const res = await fetch('/api/claude', {
@@ -134,7 +134,7 @@ Keep it personal, concise, and motivating. No bullet points — flowing prose on
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>Your Progress</div>
           <button onClick={generateSummary} disabled={summaryLoading} style={{ padding:'8px 16px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
-            {summaryLoading ? 'Generating...' : '✦ Weekly Summary'}
+            {summaryLoading ? 'Generating...' : '* Weekly Summary'}
           </button>
         </div>
 
@@ -168,7 +168,7 @@ Keep it personal, concise, and motivating. No bullet points — flowing prose on
                 {activityData.map((m,i) => (
                   <div key={i} style={{ flex:1, display:'flex', flexDirection:'column' as const, alignItems:'center', gap:3 }}>
                     <div style={{ width:'100%', flex:1, background:'var(--bg4)', borderRadius:3, position:'relative' as const, overflow:'hidden', minHeight:60 }}>
-                      <div style={{ position:'absolute' as const, bottom:0, left:0, right:0, borderRadius:3, height:`${(m/maxAct)*100}%`, background:i===6?'var(--amber)':m>0?'var(--blue-text)':'transparent', opacity:i===6?1:0.55 }}/>
+                      <div style={{ position:'absolute' as const, bottom:0, left:0, right:0, borderRadius:3, height:(Math.round((m/maxAct)*100))+'%', background:i===6?'var(--amber)':m>0?'var(--blue-text)':'transparent', opacity:i===6?1:0.55 }}/>
                     </div>
                     <div style={{ fontSize:8, fontFamily:'var(--mono)', color:i===6?'var(--amber)':'var(--text3)' }}>{DAY_LABELS[i]}</div>
                     {m>0 && <div style={{ fontSize:7.5, fontFamily:'var(--mono)', color:'var(--text3)' }}>{m}m</div>}
@@ -201,7 +201,7 @@ Keep it personal, concise, and motivating. No bullet points — flowing prose on
                     <div style={{ height:4, background:'var(--bg5)', borderRadius:2 }}>
                       <div style={{ height:'100%', borderRadius:2, background:color, width:pct+'%', transition:'width 0.5s' }}/>
                     </div>
-                    <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:4 }}>{done}/{total} sessions · {c.level} · {c.dur_label} · {c.dur_label}</div>
+                    <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:4 }}>{done}/{total} sessions - {c.level} - {c.dur_label}</div>
                   </div>
                 )
               })}
@@ -253,7 +253,7 @@ Keep it personal, concise, and motivating. No bullet points — flowing prose on
               ].map((s,i) => (
                 <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
                   <span style={{ fontSize:12, color:'var(--text2)' }}>{s.label}</span>
-                  <span style={{ fontSize:11, fontFamily:'var(--mono)', padding:'2px 8px', borderRadius:4, background:s.bg, border:`1px solid ${s.b}`, color:s.c }}>{s.v}</span>
+                  <span style={{ fontSize:11, fontFamily:'var(--mono)', padding:'2px 8px', borderRadius:4, background:s.bg, border:'1px solid '+s.b, color:s.c }}>{s.v}</span>
                 </div>
               ))}
             </div>
@@ -286,8 +286,8 @@ Keep it personal, concise, and motivating. No bullet points — flowing prose on
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setShowSummary(false)}>
           <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'32px 36px', width:'100%', maxWidth:560, maxHeight:'80vh', overflowY:'auto' as const }} onClick={e => e.stopPropagation()}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-              <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>✦ Weekly Summary</div>
-              <button onClick={() => setShowSummary(false)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:18, cursor:'pointer' }}>✕</button>
+              <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>* Weekly Summary</div>
+              <button onClick={() => setShowSummary(false)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:18, cursor:'pointer' }}>x</button>
             </div>
             {summaryLoading && !summary && (
               <div style={{ display:'flex', alignItems:'center', gap:10, color:'var(--text2)', fontSize:13 }}>

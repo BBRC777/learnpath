@@ -33,7 +33,7 @@ export default function PathsScreen() {
     ctx.fillStyle = '#d4853a'
     ctx.font = 'bold 18px monospace'
     ctx.textAlign = 'center'
-    ctx.fillText('◆ LEARNPATH', 600, 100)
+    ctx.fillText('* LEARNPATH', 600, 100)
     // Title
     ctx.fillStyle = '#e8e6df'
     ctx.font = 'italic 38px Georgia'
@@ -66,7 +66,7 @@ export default function PathsScreen() {
     // Details
     ctx.fillStyle = '#5a5856'
     ctx.font = '15px monospace'
-    ctx.fillText(c.level + ' · ' + c.dur_label + ' · ' + c.days + ' days/week · ' + c.time + '/session', 600, 500)
+    ctx.fillText(c.level + ' - ' + c.dur_label + ' - ' + c.days + ' days/week - ' + c.time + '/session', 600, 500)
     // Divider
     ctx.strokeStyle = 'rgba(212,133,58,0.3)'
     ctx.beginPath(); ctx.moveTo(200, 560); ctx.lineTo(1000, 560); ctx.stroke()
@@ -139,7 +139,7 @@ export default function PathsScreen() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22 }}>
           <div>
             <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:3 }}>All Learning Paths</div>
-            <div style={{ fontSize:13, color:'var(--text2)' }}>{curricula.length} path{curricula.length!==1?'s':''} · {curricula.filter(c=>Object.values(c.progress||{}).some(Boolean)).length} in progress</div>
+            <div style={{ fontSize:13, color:'var(--text2)' }}>{curricula.length} path{curricula.length!==1?'s':''} &middot; {curricula.filter(c=>Object.values(c.progress||{}).some(Boolean)).length} in progress</div>
           </div>
           <button onClick={() => router.push('/app/curriculum')} style={{ padding:'9px 18px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
             + New Path
@@ -149,7 +149,7 @@ export default function PathsScreen() {
         {curricula.length === 0 ? (
           <div style={{ textAlign:'center' as const, padding:'60px 20px', color:'var(--text3)' }}>
             <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text2)', marginBottom:8 }}>No learning paths yet</div>
-            <div style={{ fontSize:13, marginBottom:20, lineHeight:1.6 }}>Build your first AI-generated curriculum — takes 30 seconds.</div>
+            <div style={{ fontSize:13, marginBottom:20, lineHeight:1.6 }}>Build your first AI-generated curriculum - takes 30 seconds.</div>
             <button onClick={() => router.push('/app/curriculum')} style={{ padding:'10px 22px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Build my first path</button>
           </div>
         ) : (
@@ -169,7 +169,7 @@ export default function PathsScreen() {
                     <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:12 }}>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text)', marginBottom:3, lineHeight:1.3 }}>{c.curriculum?.title || c.topic}</div>
-                        <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} · {c.dur_label} · {c.days} days/week · Created {createdAt}</div>
+                        <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>{c.level} - {c.dur_label} - {c.days} days/week - Created {createdAt}</div>
                       </div>
                       <button onClick={() => setDeleteId(c.id)} style={{ padding:'5px 11px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontSize:11, fontFamily:'var(--sans)', cursor:'pointer', flexShrink:0, transition:'all 0.13s' }}
                         onMouseEnter={e => { (e.target as HTMLElement).style.borderColor='var(--red-border)'; (e.target as HTMLElement).style.color='var(--red-text)'; (e.target as HTMLElement).style.background='var(--red-bg)' }}
@@ -202,7 +202,7 @@ export default function PathsScreen() {
 
                     <div style={{ display:'flex', gap:9 }}>
                       <button onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ flex:2, padding:'10px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
-                        {pct >= 100 ? '✓ Review' : pct > 0 ? 'Continue Learning' : 'Start Learning'}
+                        {pct >= 100 ? 'Done - Review' : pct > 0 ? 'Continue Learning' : 'Start Learning'}
                       </button>
                       <button onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ flex:1, padding:'10px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>
                         View Curriculum
@@ -213,7 +213,7 @@ export default function PathsScreen() {
                           const { data: profile } = await (createClient().from('profiles') as any).select('display_name').eq('id', user?.id).single()
                           generateCertificate(c, profile?.display_name || 'Learner')
                         }} style={{ padding:'9px 16px', borderRadius:8, background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.4)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
-                          🎓 Certificate
+                          Certificate
                         </button>
                     </div>
                   </div>
