@@ -66,7 +66,7 @@ export default function PathsScreen() {
     // Details
     ctx.fillStyle = '#5a5856'
     ctx.font = '15px monospace'
-    ctx.fillText(${c.level} ·  ·  days/week · /session, 600, 500)
+    ctx.fillText(`${c.level} · ${c.dur_label} · ${c.days} days/week · ${c.time}/session`, 600, 500)
     // Divider
     ctx.strokeStyle = 'rgba(212,133,58,0.3)'
     ctx.beginPath(); ctx.moveTo(200, 560); ctx.lineTo(1000, 560); ctx.stroke()
