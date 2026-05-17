@@ -17,8 +17,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <AppShell user={user} profile={profile}>
+    <AppShell>
       {children}
     </AppShell>
   )
 }
+
