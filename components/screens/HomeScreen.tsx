@@ -28,6 +28,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
   const [streak, setStreak] = useState(0)
   const [activityData, setActivityData] = useState<number[]>([0,0,0,0,0,0,0])
   const [loading, setLoading] = useState(true)
+  const [userId, setUserId] = useState<string>('')
   const router = useRouter()
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
       try {
         const { data: { user } } = await createClient().auth.getUser()
         if (!user) return
+        setUserId(user.id)
         const [currs, streakData, activity] = await Promise.all([
           loadCurricula(user.id),
           loadStreak(user.id),
@@ -74,7 +76,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
               <div style={{ fontSize:12.5, fontWeight:500, color:'var(--amber2)', marginBottom:2 }}>Unlock Learnpath Pro</div>
               <div style={{ fontSize:11, color:'var(--text2)' }}>Unlimited paths, AI Tutor, Study Mode — $9.99/mo or $79.99/yr</div>
             </div>
-            <button onClick={() => window.open('https://pay.rev.cat/sandbox/skelxidydieztrqy/', '_blank')} style={{ padding:'7px 14px', borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'var(--sans)' }}>Upgrade</button>
+            <button onClick={() => window.open('https://pay.rev.cat/sandbox/skelxidydieztrqy/'+userId, '_blank')} style={{ padding:'7px 14px', borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11.5, fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const, fontFamily:'var(--sans)' }}>Upgrade</button>
           </div>
         )}
 
@@ -218,6 +220,8 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
+
+
 
 
 
