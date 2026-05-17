@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { loadCurricula, loadStreak, loadWeekActivity } from '@/lib/db'
@@ -199,7 +199,7 @@ Keep it personal, concise, and motivating. No bullet points — flowing prose on
                       <div style={{ fontSize:10, fontFamily:'var(--mono)', color }}>{pct}%</div>
                     </div>
                     <div style={{ height:4, background:'var(--bg5)', borderRadius:2 }}>
-                      <div style={{ height:'100%', borderRadius:2, background:color, width:pct+'%', transition:'width 0.5s' }}/>
+                      <div style={{ height:`100%', borderRadius:2, background:color, width:pct+'%', transition:'width 0.5s' }}/>
                     </div>
                     <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:4 }}>{done}/{total} sessions · {c.level} · {c.dur_label}</div>
                   </div>

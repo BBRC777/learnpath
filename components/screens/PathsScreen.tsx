@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 // Certificate generation using browser canvas
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -81,7 +81,7 @@ export default function PathsScreen() {
     ctx.fillText('LEARNPATHNOW.COM', 600, 780)
     // Download
     const link = document.createElement('a')
-    link.download = learnpath-certificate-.png
+    link.download = `learnpath-certificate-${c.topic?.replace(/\\s+/g,'-').toLowerCase()}.png`
     link.href = canvas.toDataURL('image/png')
     link.click()
   }
