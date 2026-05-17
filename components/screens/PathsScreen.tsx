@@ -273,6 +273,3 @@ export default function ProgressScreen() {
     </div>
   )
 }
-'@
-$content | Out-File -FilePath "components\screens\ProgressScreen.tsx" -Encoding utf8NoBOM
-Write-Host "Done"
