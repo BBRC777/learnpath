@@ -173,7 +173,8 @@ export async function awardXP(
 ): Promise<LevelUpResult | null> {
   const { data: { user } } = await supabase.auth.getUser()
   const uid = opts?.userId || user?.id
-  if (!uid) return null
+  console.log('[db] awardXP uid:', uid, 'type:', activityType)
+  if (!uid) { console.error('[db] awardXP: no user'); return null }
 
   let amount = XP_REWARDS[activityType]
   if (opts?.streak && opts.streak >= 3 && activityType === 'lesson_complete') {
@@ -194,9 +195,19 @@ export async function awardXP(
 }
 
 export async function completeLessonAndAwardXP(
-  curriculumId: string, lessonKey: string, streak: number
+  curriculumId: string, lessonKey: string, streak: number, userId?: string
 ): Promise<LevelUpResult | null> {
-  return awardXP('lesson_complete', { streak })
+  try {
+    const result = await awardXP('lesson_complete', { streak, userId })
+    console.log('[db] completeLessonAndAwardXP result:', result)
+    return result
+  } catch(e) {
+    console.error('[db] completeLessonAndAwardXP error:', e)
+    return null
+  }
 }
+
+
+
 
 
