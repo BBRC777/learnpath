@@ -74,7 +74,7 @@ export default function PathsScreen() {
     ctx.fillStyle = '#9a9790'
     ctx.font = '15px Georgia'
     const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' })
-    ctx.fillText(Completed on , 600, 620)
+    ctx.fillText(`Completed on ${date}`, 600, 620)
     // Footer
     ctx.fillStyle = '#5a5856'
     ctx.font = '13px monospace'
