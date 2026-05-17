@@ -269,7 +269,7 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
                       <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{c.curriculum?.title||c.topic}</div>
                       <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1 }}>{done} sessions complete</div>
                     </div>
-                    <span style={{ fontSize:10, fontFamily:'var(--mono)', padding:'2px 7px', borderRadius:4, background: done>0?'var(--green-bg)':'var(--bg4)', border:`1px solid ${done>0?'var(--green-border)':'var(--border2)'}`, color:done>0?'var(--green-text)':'var(--text3)', whiteSpace:'nowrap' as const }}>
+                    <span style={{ fontSize:10, fontFamily:'var(--mono)', padding:'2px 7px', borderRadius:4, background: done>0?'var(--green-bg)':'var(--bg4)', border:'1px solid '+(done>0?'var(--green-border)':'var(--border2)'), color:done>0?'var(--green-text)':'var(--text3)', whiteSpace:'nowrap' as const }}>
                       {done>0?'In Progress':'Not started'}
                     </span>
                   </div>
