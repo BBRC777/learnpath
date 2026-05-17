@@ -1,4 +1,5 @@
-'use client' // build-0153
+$content = @'
+'use client' // v3
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { loadCurricula, loadStreak, loadWeekActivity } from '@/lib/db'
@@ -32,7 +33,6 @@ export default function ProgressScreen() {
         const { data: { user } } = await createClient().auth.getUser()
         if (!user) return
         const supabase = createClient()
-
         const [currs, streakData, activity, profileData, activityHistory] = await Promise.all([
           loadCurricula(user.id),
           (supabase.from('streaks') as any).select('*').eq('user_id', user.id).single(),
@@ -40,14 +40,11 @@ export default function ProgressScreen() {
           (supabase.from('profiles') as any).select('*').eq('id', user.id).single(),
           (supabase.from('activity') as any).select('*').eq('user_id', user.id).order('date', { ascending: false }).limit(28),
         ])
-
         setCurricula(currs)
         setStreak(streakData.data?.current_streak || 0)
         setLongestStreak(streakData.data?.longest_streak || 0)
         setActivityData(activity)
         setProfile(profileData.data)
-
-        // Build 28-day heatmap
         const acts = activityHistory.data || []
         const heat = Array(28).fill(0)
         const today = new Date()
@@ -72,23 +69,7 @@ export default function ProgressScreen() {
     const totalMinsVal = activityData.reduce((a,b)=>a+b,0)
     const doneLessonsVal = curricula.reduce((a, c) => a + Object.values(c.progress||{}).filter(Boolean).length, 0)
     const pathNames = curricula.map(c => c.curriculum?.title || c.topic).join(', ')
-    const prompt = `You are a learning coach. Give a warm, encouraging end-of-week summary for a student.
-
-Their stats this week:
-- Study time:  minutes across 7 days
-- Lessons completed: 
-- Current streak:  days
-- Learning paths: 
-- XP earned: 
-- Level: 
-
-Write a 3-paragraph summary:
-1. Celebrate what they accomplished this week (specific, warm)
-2. Identify one area to focus on next week based on their paths
-3. An encouraging closing that motivates them to keep going
-
-Keep it personal, concise, and motivating. No bullet points - flowing prose only.
-
+    const prompt = 'You are a learning coach. Give a warm, encouraging end-of-week summary.\n\nStats:\n- Study time: ' + totalMinsVal + ' minutes\n- Lessons: ' + doneLessonsVal + '\n- Streak: ' + streak + ' days\n- Paths: ' + (pathNames||'None') + '\n- XP: ' + (profile?.xp||0) + '\n\nWrite 3 paragraphs: celebrate achievements, suggest focus for next week, encouraging close. Flowing prose only.'
     try {
       const res = await fetch('/api/claude', {
         method: 'POST',
@@ -130,7 +111,6 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:740, margin:'0 auto', padding:'24px 28px 60px' }}>
 
-        {/* Weekly Summary Button */}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>Your Progress</div>
           <button onClick={generateSummary} disabled={summaryLoading} style={{ padding:'8px 16px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
@@ -138,13 +118,12 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
           </button>
         </div>
 
-        {/* Stats row */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:9, marginBottom:22 }}>
           {[
-            { v: streak,                    l:'Day streak',      c:'var(--amber)' },
-            { v: totalMins+'m',             l:'This week',       c:'var(--blue-text)' },
-            { v: doneLessons,               l:'Lessons done',    c:'var(--green-text)' },
-            { v: profile?.cards_reviewed??0, l:'Cards reviewed', c:'var(--purple-text)' },
+            { v: streak,                     l:'Day streak',      c:'var(--amber)' },
+            { v: totalMins+'m',              l:'This week',       c:'var(--blue-text)' },
+            { v: doneLessons,                l:'Lessons done',    c:'var(--green-text)' },
+            { v: profile?.cards_reviewed??0, l:'Cards reviewed',  c:'var(--purple-text)' },
           ].map((s,i) => (
             <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
               <div style={{ fontFamily:'var(--mono)', fontSize:24, fontWeight:500, color:s.c }}>{s.v}</div>
@@ -154,11 +133,8 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16, marginBottom:20 }}>
-
-          {/* Left col */}
           <div style={{ display:'flex', flexDirection:'column' as const, gap:16 }}>
 
-            {/* Activity chart */}
             <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 18px' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                 <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>This week</div>
@@ -177,7 +153,6 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
               </div>
             </div>
 
-            {/* Learning paths progress */}
             <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 18px' }}>
               <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em', marginBottom:14 }}>Learning Paths</div>
               {curricula.length === 0 ? (
@@ -198,7 +173,7 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
                       </div>
                       <div style={{ fontSize:10, fontFamily:'var(--mono)', color }}>{pct}%</div>
                     </div>
-                    <div style={{ height:4, background:'var(--bg5)', borderRadius:2 }}>
+                    <div style={{ height:4, background:'var(--bg4)', borderRadius:2 }}>
                       <div style={{ height:'100%', borderRadius:2, background:color, width:pct+'%', transition:'width 0.5s' }}/>
                     </div>
                     <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:4 }}>{done}/{total} sessions - {c.level} - {c.dur_label}</div>
@@ -208,10 +183,7 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
             </div>
           </div>
 
-          {/* Right col */}
           <div style={{ display:'flex', flexDirection:'column' as const, gap:16 }}>
-
-            {/* Streak */}
             <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 18px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14, paddingBottom:14, borderBottom:'1px solid var(--border)' }}>
                 <div>
@@ -224,8 +196,6 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
                   <div style={{ fontSize:10, color: streak>0?'var(--amber)':'var(--text3)', marginTop:4 }}>{streak>0?'Keep going!':'Start your streak today'}</div>
                 </div>
               </div>
-
-              {/* 28-day heatmap */}
               <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:6, letterSpacing:'0.06em' }}>LAST 4 WEEKS</div>
               <div style={{ display:'flex', justifyContent:'space-around', marginBottom:4 }}>
                 {DAY_LABELS.map((d,i) => <div key={i} style={{ fontSize:7.5, fontFamily:'var(--mono)', color:'var(--text3)', textAlign:'center' as const, flex:1 }}>{d}</div>)}
@@ -242,23 +212,21 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
               </div>
             </div>
 
-            {/* Flashcard health */}
             <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 18px' }}>
-              <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em', marginBottom:12 }}>Flashcard Health</div>
+              <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em', marginBottom:12 }}>Stats</div>
               {[
-                { label:'Cards reviewed', v: profile?.cards_reviewed??0, c:'var(--amber)',        bg:'var(--amber-bg)',   b:'var(--amber-bg2)' },
-                { label:'Lessons done',   v: doneLessons,                 c:'var(--green-text)',  bg:'var(--green-bg)',   b:'var(--green-border)' },
-                { label:'Active paths',   v: curricula.length,            c:'var(--blue-text)',   bg:'var(--blue-bg)',    b:'var(--blue-border)' },
-                { label:'Study days',     v: profile?.total_days??0,      c:'var(--purple-text)', bg:'var(--purple-bg)',  b:'var(--purple-border)' },
+                { label:'Cards reviewed', v: profile?.cards_reviewed??0 },
+                { label:'Lessons done',   v: doneLessons },
+                { label:'Active paths',   v: curricula.length },
+                { label:'Study days',     v: profile?.total_days??0 },
               ].map((s,i) => (
                 <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:9 }}>
                   <span style={{ fontSize:12, color:'var(--text2)' }}>{s.label}</span>
-                  <span style={{ fontSize:11, fontFamily:'var(--mono)', padding:'2px 8px', borderRadius:4, background:s.bg, border:'1px solid '+s.b, color:s.c }}>{s.v}</span>
+                  <span style={{ fontSize:11, fontFamily:'var(--mono)', padding:'2px 8px', borderRadius:4, background:'var(--bg3)', border:'1px solid var(--border2)', color:'var(--text2)' }}>{s.v}</span>
                 </div>
               ))}
             </div>
 
-            {/* Recent activity */}
             <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 18px' }}>
               <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em', marginBottom:12 }}>Recent Activity</div>
               {curricula.slice(0,4).map((c,i) => {
@@ -279,31 +247,33 @@ Keep it personal, concise, and motivating. No bullet points - flowing prose only
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Weekly Summary Modal */}
-      {showSummary && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setShowSummary(false)}>
-          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'32px 36px', width:'100%', maxWidth:560, maxHeight:'80vh', overflowY:'auto' as const }} onClick={e => e.stopPropagation()}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-              <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>* Weekly Summary</div>
-              <button onClick={() => setShowSummary(false)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:18, cursor:'pointer' }}>x</button>
-            </div>
-            {summaryLoading && !summary && (
-              <div style={{ display:'flex', alignItems:'center', gap:10, color:'var(--text2)', fontSize:13 }}>
-                <div style={{ width:16, height:16, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
-                Claude is writing your summary...
+        {showSummary && (
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setShowSummary(false)}>
+            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'32px 36px', width:'100%', maxWidth:560, maxHeight:'80vh', overflowY:'auto' as const }} onClick={e => e.stopPropagation()}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+                <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>Weekly Summary</div>
+                <button onClick={() => setShowSummary(false)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:18, cursor:'pointer' }}>x</button>
               </div>
-            )}
-            {summary && (
-              <div style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, whiteSpace:'pre-wrap' as const }}>{summary}</div>
-            )}
-            {!summaryLoading && summary && (
-              <button onClick={() => setShowSummary(false)} style={{ marginTop:24, padding:'10px 24px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Done</button>
-            )}
+              {summaryLoading && !summary && (
+                <div style={{ display:'flex', alignItems:'center', gap:10, color:'var(--text2)', fontSize:13 }}>
+                  <div style={{ width:16, height:16, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+                  Claude is writing your summary...
+                </div>
+              )}
+              {summary && (
+                <div style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, whiteSpace:'pre-wrap' as const }}>{summary}</div>
+              )}
+              {!summaryLoading && summary && (
+                <button onClick={() => setShowSummary(false)} style={{ marginTop:24, padding:'10px 24px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Done</button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
+'@
+$content | Out-File -FilePath "components\screens\ProgressScreen.tsx" -Encoding utf8NoBOM
+Write-Host "Done"
