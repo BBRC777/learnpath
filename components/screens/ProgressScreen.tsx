@@ -72,22 +72,22 @@ export default function ProgressScreen() {
     const totalMinsVal = activityData.reduce((a,b)=>a+b,0)
     const doneLessonsVal = curricula.reduce((a, c) => a + Object.values(c.progress||{}).filter(Boolean).length, 0)
     const pathNames = curricula.map(c => c.curriculum?.title || c.topic).join(', ')
-    const prompt = You are a learning coach. Give a warm, encouraging end-of-week summary for a student.
+    const prompt = `You are a learning coach. Give a warm, encouraging end-of-week summary for a student.
 
 Their stats this week:
-- Study time:  minutes across 7 days
-- Lessons completed: 
-- Current streak:  days
-- Learning paths: 
-- XP earned: 
-- Level: 
+- Study time: ${totalMinsVal} minutes across 7 days
+- Lessons completed: ${doneLessonsVal}
+- Current streak: ${streak} days
+- Learning paths: ${pathNames || 'None yet'}
+- XP earned: ${profile?.xp || 0}
+- Level: ${profile?.level || 1}
 
 Write a 3-paragraph summary:
 1. Celebrate what they accomplished this week (specific, warm)
 2. Identify one area to focus on next week based on their paths
 3. An encouraging closing that motivates them to keep going
 
-Keep it personal, concise, and motivating. No bullet points — flowing prose only.
+Keep it personal, concise, and motivating. No bullet points — flowing prose only.`
 
     try {
       const res = await fetch('/api/claude', {
