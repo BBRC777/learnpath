@@ -40,7 +40,7 @@ export default function LessonScreen() {
   const [showPicker, setShowPicker] = useState(false)
   const [view, setView] = useState<'picker'|'lesson'>('picker')
   const [streak, setStreak] = useState(0)
-  const [showLevelUp, setShowLevelUp] = useState<any>(null)
+  const [showLevelUp, setShowLevelUp] = useState<Record<string,any>|null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlCurrId = searchParams.get('id')
@@ -480,6 +480,7 @@ Rules:
     </div>
   )
 }
+
 
 
 
