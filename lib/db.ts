@@ -166,6 +166,54 @@ export async function loadWeekActivity(userId: string): Promise<number[]> {
   return days.map(d => data?.find((r: any) => r.date === d)?.count || 0)
 }
 
+// ── BADGES ───────────────────────────────────────────────────
+export const BADGES = [
+  { id:'first_lesson',    label:'First Step',      desc:'Complete your first lesson',          icon:'🎯' },
+  { id:'streak_3',        label:'On a Roll',        desc:'3 day streak',                        icon:'🔥' },
+  { id:'streak_7',        label:'Week Warrior',     desc:'7 day streak',                        icon:'⚡' },
+  { id:'streak_30',       label:'Unstoppable',      desc:'30 day streak',                       icon:'💎' },
+  { id:'xp_50',           label:'Getting Started',  desc:'Earn 50 XP',                          icon:'⭐' },
+  { id:'xp_200',          label:'Scholar',          desc:'Earn 200 XP',                         icon:'📚' },
+  { id:'xp_600',          label:'Expert',           desc:'Earn 600 XP',                         icon:'🎓' },
+  { id:'xp_1200',         label:'Master',           desc:'Earn 1200 XP',                        icon:'👑' },
+  { id:'first_path',      label:'Pathfinder',       desc:'Complete your first learning path',   icon:'🗺️' },
+  { id:'speed_learner',   label:'Speed Learner',    desc:'Complete 3 lessons in one day',       icon:'⚡' },
+]
+
+export async function checkAndAwardBadges(userId: string, context: {
+  xp?: number; streak?: number; lessonsToday?: number; pathCompleted?: boolean
+}): Promise<string[]> {
+  const { data: profile } = await (supabase.from('profiles') as any)
+    .select('badges, xp, streak').eq('id', userId).single()
+  if (!profile) return []
+
+  const existing: string[] = profile.badges || []
+  const newBadges: string[] = []
+  const xp     = context.xp     ?? profile.xp     ?? 0
+  const streak = context.streak ?? profile.streak  ?? 0
+
+  const check = (id: string, condition: boolean) => {
+    if (condition && !existing.includes(id)) newBadges.push(id)
+  }
+
+  check('xp_50',        xp >= 50)
+  check('xp_200',       xp >= 200)
+  check('xp_600',       xp >= 600)
+  check('xp_1200',      xp >= 1200)
+  check('streak_3',     streak >= 3)
+  check('streak_7',     streak >= 7)
+  check('streak_30',    streak >= 30)
+  check('first_path',   context.pathCompleted === true)
+  check('speed_learner',( context.lessonsToday ?? 0) >= 3)
+
+  if (newBadges.length > 0) {
+    const updated = [...existing, ...newBadges]
+    await (supabase.from('profiles') as any)
+      .update({ badges: updated, updated_at: new Date().toISOString() })
+      .eq('id', userId)
+  }
+  return newBadges
+}
 // ── XP ────────────────────────────────────────────────────────
 export async function awardXP(
   activityType: XPRewardKey,
@@ -206,6 +254,7 @@ export async function completeLessonAndAwardXP(
     return null
   }
 }
+
 
 
 

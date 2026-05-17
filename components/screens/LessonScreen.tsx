@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, completeLessonAndAwardXP, loadStreak } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function PlayIcon() {
@@ -41,6 +41,7 @@ export default function LessonScreen() {
   const [view, setView] = useState<'picker'|'lesson'>('picker')
   const [streak, setStreak] = useState(0)
   const [showLevelUp, setShowLevelUp] = useState<Record<string,any>|null>(null)
+  const [newBadges, setNewBadges] = useState<string[]>([])
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlCurrId = searchParams.get('id')
@@ -200,7 +201,12 @@ Rules:
       await updateStreak(userId)
       const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
       if (xpResult && xpResult.leveledUp) { setShowLevelUp(xpResult.levelInfo as Record<string,any>) }
-      (window as any).__learnpath_refreshProfile?.()
+      // Check badges
+      if (userId && xpResult) {
+        const earned = await checkAndAwardBadges(userId, { xp: xpResult.newXP, streak })
+        if (earned.length > 0) setNewBadges(earned)
+      }
+      ;(window as any).__learnpath_refreshProfile?.()
       setIsComplete(true)
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
     } catch(e) { console.error(e) }
@@ -465,6 +471,29 @@ Rules:
           </div>
         )}
       </div>
+    {newBadges.length > 0 && !showLevelUp && (
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setNewBadges([])}>
+        <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize:40, marginBottom:12 }}>🏆</div>
+          <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Badge{newBadges.length>1?'s':''} Earned!</div>
+          <div style={{ display:'flex', flexDirection:'column' as const, gap:8, marginBottom:24 }}>
+            {newBadges.map(id => {
+              const b = BADGES.find((x: any) => x.id === id)
+              return b ? (
+                <div key={id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
+                  <span style={{ fontSize:24 }}>{b.icon}</span>
+                  <div style={{ textAlign:'left' as const }}>
+                    <div style={{ fontSize:14, fontWeight:500, color:'var(--amber)' }}>{b.label}</div>
+                    <div style={{ fontSize:12, color:'var(--text2)' }}>{b.desc}</div>
+                  </div>
+                </div>
+              ) : null
+            })}
+          </div>
+          <button onClick={() => setNewBadges([])} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
+        </div>
+      </div>
+    )}
     {showLevelUp && (
       <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowLevelUp(null)}>
         <div style={{ background:'var(--bg2)', border:'1px solid var(--amber)', borderRadius:18, padding:'40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
@@ -480,6 +509,10 @@ Rules:
     </div>
   )
 }
+
+
+
+
 
 
 
