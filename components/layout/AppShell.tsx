@@ -1,258 +1,252 @@
 ﻿'use client'
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter, usePathname } from 'next/navigation'
-import { loadStreak } from '@/lib/db'
-import type { User } from '@supabase/supabase-js'
+// components/layout/AppShell.tsx  —  Learnpath shell with XP sidebar widget
 
-const NAV = [
-  { id:'home',       label:'Home',              path:'/app' },
-  { id:'lesson',     label:'Current Lesson',    path:'/app/lesson' },
-  { id:'curriculum', label:'New Learning Path', path:'/app/curriculum' },
-  { id:'paths',      label:'All Learning Paths',path:'/app/paths' },
-  { id:'flashcards', label:'Flashcards',         path:'/app/flashcards', badge:'9',   badgeCls:'red' },
-  { id:'study',      label:'Study Mode',         path:'/app/study',      badge:'PRO', badgeCls:'pro', proOnly:true },
-  { id:'progress',   label:'Progress',           path:'/app/progress' },
+import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import {
+  getProfile,
+  getLevelInfo,
+  xpProgress,
+  xpToNextLevel,
+  type Profile,
+} from '@/lib/db'
+
+// ─────────────────────────────────────────────────────────────
+// LEVEL BADGE  (small pill shown next to name / in nav)
+// ─────────────────────────────────────────────────────────────
+
+function LevelBadge({ level, title }: { level: number; title: string }) {
+  const colors: Record<number, string> = {
+    1: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+    2: 'bg-amber-950/60 text-amber-400 border-amber-800',
+    3: 'bg-purple-950/60 text-purple-400 border-purple-800',
+    4: 'bg-yellow-950/60 text-yellow-400 border-yellow-700',
+  }
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5
+        font-mono text-[10px] uppercase tracking-widest ${colors[level]}`}
+    >
+      {level === 4 ? '★' : `L${level}`} {title}
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// XP WIDGET  (sidebar footer section)
+// ─────────────────────────────────────────────────────────────
+
+function XPWidget({ profile }: { profile: Profile }) {
+  const info       = getLevelInfo(profile.xp)
+  const progress   = xpProgress(profile.xp)
+  const remaining  = xpToNextLevel(profile.xp)
+  const isMaster   = info.level === 4
+
+  return (
+    <div
+      className="rounded-xl border border-amber-900/40 bg-amber-950/20 p-3"
+      style={{ fontFamily: 'var(--sans)' }}
+    >
+      {/* Level title + badge */}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-[11px] text-neutral-400">Your Level</span>
+        <LevelBadge level={info.level} title={info.title} />
+      </div>
+
+      {/* XP total */}
+      <div className="mb-2 flex items-baseline gap-1">
+        <span
+          className="font-mono text-2xl font-semibold leading-none"
+          style={{ color: '#d4853a' }}
+        >
+          {profile.xp.toLocaleString()}
+        </span>
+        <span className="font-mono text-[11px] text-neutral-500">XP</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mb-1.5 h-1.5 overflow-hidden rounded-full bg-neutral-800">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${Math.round(progress * 100)}%`,
+            background: isMaster
+              ? 'linear-gradient(90deg, #d97706, #fbbf24)'
+              : '#d4853a',
+          }}
+        />
+      </div>
+
+      {/* Sublabel */}
+      <p className="font-mono text-[10px] text-neutral-500">
+        {isMaster
+          ? '✦ Maximum level reached'
+          : `${remaining} XP to ${NEXT_LEVEL_TITLES[info.level]}`}
+      </p>
+    </div>
+  )
+}
+
+const NEXT_LEVEL_TITLES: Record<number, string> = {
+  1: 'Scholar',
+  2: 'Expert',
+  3: 'Master',
+}
+
+// ─────────────────────────────────────────────────────────────
+// STREAK WIDGET  (already existed — kept unchanged)
+// ─────────────────────────────────────────────────────────────
+
+function StreakWidget({ streak }: { streak: number }) {
+  return (
+    <div className="rounded-xl border border-amber-900/40 bg-amber-950/20 p-3">
+      <div className="streak-n font-mono text-2xl font-medium text-amber-400">
+        {streak}
+      </div>
+      <div className="streak-l mt-0.5 text-[11px] text-neutral-400">
+        {streak === 1 ? 'day streak 🔥' : 'day streak 🔥'}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// NAV CONFIG
+// ─────────────────────────────────────────────────────────────
+
+const NAV_ITEMS = [
+  { href: '/dashboard',   label: 'Dashboard',  icon: '⊞' },
+  { href: '/learn',       label: 'My Courses',  icon: '◈' },
+  { href: '/activity',    label: 'Activity',    icon: '◉' },
+  { href: '/settings',    label: 'Settings',    icon: '◎' },
 ]
 
-const SCREEN_META: Record<string,{ title:string; pill?:string }> = {
-  '/app':            { title:'Home' },
-  '/app/lesson':     { title:'Current Lesson' },
-  '/app/curriculum': { title:'New Learning Path',  pill:'Step 1 of 4' },
-  '/app/paths':      { title:'All Learning Paths' },
-  '/app/flashcards': { title:'Flashcards',         pill:'9 due today' },
-  '/app/study':      { title:'Study Mode',         pill:'Pro Feature' },
-  '/app/progress':   { title:'Progress' },
-}
-
-function getInitials(profile: any) {
-  if (profile?.display_name) return profile.display_name[0].toUpperCase()
-  if (profile?.email) return profile.email[0].toUpperCase()
-  return 'L'
-}
-
-function getDisplayName(profile: any) {
-  if (profile?.display_name) return profile.display_name.split(' ')[0]
-  if (profile?.email) return profile.email.split('@')[0]
-  return 'Learner'
-}
+// ─────────────────────────────────────────────────────────────
+// APPSHELL
+// ─────────────────────────────────────────────────────────────
 
 interface AppShellProps {
-  user: User
-  profile: any
   children: React.ReactNode
 }
 
-export default function AppShell({ user, profile, children }: AppShellProps) {
-  const [showSettings, setShowSettings] = useState(false)
-  const [streak, setStreak] = useState(profile?.streak ?? 0)
-  const [showWelcome, setShowWelcome] = useState(false)
-  const supabase = createClient()
-  const router = useRouter()
-  const pathname = usePathname()
-  const isPro = profile?.is_pro ?? false
-  const initials = getInitials(profile)
-  const name = getDisplayName(profile)
-  const meta = SCREEN_META[pathname] || SCREEN_META['/app']
+export default function AppShell({ children }: AppShellProps) {
+  const pathname               = usePathname()
+  const [profile, setProfile]  = useState<Profile | null>(null)
+  const [mobOpen, setMobOpen]  = useState(false)
+
+  /** Refresh profile (called on mount and after any XP award) */
+  const refreshProfile = useCallback(async () => {
+    const p = await getProfile()
+    if (p) setProfile(p)
+  }, [])
 
   useEffect(() => {
-    loadStreak(user.id).then(s => setStreak(s.current_streak || 0)).catch(()=>{})
-    // Fix #4 — show welcome popup on first load after login
-    const shown = sessionStorage.getItem('lp_welcome_shown')
-    if (!shown) {
-      setTimeout(() => setShowWelcome(true), 800)
-      sessionStorage.setItem('lp_welcome_shown', '1')
+    refreshProfile()
+  }, [refreshProfile])
+
+  // Expose global refresh so lesson pages can call it after awarding XP:
+  //   window.__learnpath_refreshProfile?.()
+  useEffect(() => {
+    // @ts-ignore
+    window.__learnpath_refreshProfile = refreshProfile
+    return () => {
+      // @ts-ignore
+      delete window.__learnpath_refreshProfile
     }
-  }, [user.id])
-
-  const signOut = async () => {
-    sessionStorage.removeItem('lp_welcome_shown')
-    await supabase.auth.signOut()
-    router.push('/auth')
-    router.refresh()
-  }
-
-  const s: Record<string,React.CSSProperties> = {
-    shell:   { display:'flex', height:'100vh', overflow:'hidden' },
-    sidebar: { width:236, flexShrink:0, background:'var(--bg2)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', height:'100%', overflow:'hidden' },
-    logo:    { padding:'17px 15px 13px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:9 },
-    logoBox: { width:28, height:28, borderRadius:7, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'var(--amber)', flexShrink:0, fontFamily:'var(--mono)' },
-    sidebarMid:    { flex:1, overflowY:'auto' as const, paddingBottom:8 },
-    navSec:        { padding:'13px 10px 3px', fontSize:8, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.14em', textTransform:'uppercase' as const },
-    sidebarFooter: { padding:10, borderTop:'1px solid var(--border)', flexShrink:0 },
-    userRow: { display:'flex', alignItems:'center', gap:8, padding:'8px 9px', borderRadius:8, background:'var(--bg3)', border:'1px solid var(--border)', cursor:'pointer' },
-    avatar:  { width:28, height:28, borderRadius:'50%', background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--serif)', fontSize:12, color:'var(--amber)', flexShrink:0 },
-    main:    { flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' },
-    topbar:  { height:50, background:'var(--bg2)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 22px', flexShrink:0 },
-    content: { flex:1, overflowY:'auto' as const },
-  }
+  }, [refreshProfile])
 
   return (
-    <div style={s.shell}>
+    <div className="flex min-h-screen" style={{ background: '#0a0b0f', color: '#e8e6df' }}>
 
-      {/* Fix #4 — Welcome back popup */}
-      {showWelcome && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:24 }}>
-          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'100%', textAlign:'center' as const }}>
-            <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)', marginBottom:6 }}>Welcome back, {name}</div>
-            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:22, lineHeight:1.6 }}>Where would you like to go?</div>
-            <div style={{ display:'flex', flexDirection:'column' as const, gap:9 }}>
-              <button onClick={() => { setShowWelcome(false); router.push('/app/lesson') }}
-                style={{ width:'100%', padding:'12px', borderRadius:9, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13.5, fontWeight:500, cursor:'pointer' }}>
-                Continue where I left off
-              </button>
-              <button onClick={() => { setShowWelcome(false); router.push('/app') }}
-                style={{ width:'100%', padding:'12px', borderRadius:9, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13.5, cursor:'pointer' }}>
-                Go to Home
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ── MOBILE OVERLAY ── */}
+      {mobOpen && (
+        <div
+          className="fixed inset-0 z-[99] bg-black/60"
+          onClick={() => setMobOpen(false)}
+        />
       )}
 
-      {/* SIDEBAR */}
-      <div style={s.sidebar}>
-        <div style={s.logo}>
-          <div style={s.logoBox}>LP</div>
-          <div>
-            <div style={{ fontFamily:'var(--serif)', fontSize:17, color:'var(--amber)' }}>Learnpath</div>
-            <div style={{ fontSize:8, fontFamily:'var(--mono)', color:'var(--text3)', letterSpacing:'0.1em', marginTop:1 }}>Learn Anything · All Inside</div>
+      {/* ── SIDEBAR ── */}
+      <aside
+        className={`fixed left-0 top-0 z-[100] flex h-screen w-[252px] flex-col
+          overflow-y-auto border-r transition-transform duration-300
+          ${mobOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        style={{ background: '#111318', borderColor: 'rgba(255,255,255,0.07)' }}
+      >
+        {/* Logo */}
+        <div className="border-b px-[18px] pb-[15px] pt-5" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          <div className="font-serif text-xl tracking-tight" style={{ color: '#d4853a' }}>
+            ◆ Learnpath
+          </div>
+          <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-neutral-500">
+            Learn anything
           </div>
         </div>
 
-        <div style={s.sidebarMid}>
-          <div style={s.navSec}>Navigate</div>
-          {NAV.map(n => {
-            const locked = (n as any).proOnly && !isPro
-            const isActive = pathname === n.path
+        {/* Level badge (compact, top of nav) */}
+        {profile && (
+          <div className="px-4 pt-3">
+            <LevelBadge level={getLevelInfo(profile.xp).level} title={getLevelInfo(profile.xp).title} />
+          </div>
+        )}
+
+        {/* Nav */}
+        <nav className="mt-2 flex-1 px-2">
+          <p className="px-2 pb-1 pt-3 font-mono text-[9px] uppercase tracking-widest text-neutral-600">
+            Navigation
+          </p>
+          {NAV_ITEMS.map(({ href, label, icon }) => {
+            const active = pathname?.startsWith(href)
             return (
-              <div key={n.id}
-                onClick={() => { if (!locked) { setShowSettings(false); router.push(n.path) } }}
-                title={locked ? 'Upgrade to Pro to unlock Study Mode' : undefined}
-                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', margin:'1px 4px', borderRadius:7, cursor:locked?'default':'pointer', fontSize:12.5, color:isActive?'var(--amber2)':'var(--text2)', background:isActive?'var(--amber-bg2)':'transparent', border:`1px solid ${isActive?'rgba(212,133,58,0.2)':'transparent'}`, opacity:locked?0.45:1, transition:'all 0.13s', userSelect:'none' as const }}>
-                <span style={{ flex:1 }}>{n.label}</span>
-                {(n as any).badge && (
-                  <span style={{ fontSize:8.5, fontFamily:'var(--mono)', padding:'1px 5px', borderRadius:3, background:(n as any).badgeCls==='red'?'var(--red-bg)':'var(--amber-bg)', border:`1px solid ${(n as any).badgeCls==='red'?'var(--red-border)':'var(--amber-bg2)'}`, color:(n as any).badgeCls==='red'?'var(--red-text)':'var(--amber2)' }}>{(n as any).badge}</span>
-                )}
-              </div>
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobOpen(false)}
+                className={`mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px]
+                  transition-all duration-150
+                  ${active
+                    ? 'bg-amber-950/50 text-amber-400'
+                    : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'}`}
+              >
+                <span className="w-4 text-center text-sm">{icon}</span>
+                {label}
+              </Link>
             )
           })}
+        </nav>
 
-          <div style={{ background:'var(--amber-bg)', border:'1px solid var(--amber-bg2)', borderRadius:8, padding:'9px 11px', margin:'12px 8px 0' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber)', fontWeight:500, lineHeight:1 }}>{streak}</div>
-              <div>
-                <div style={{ fontSize:12, fontWeight:500, color:'var(--text2)' }}>Day streak</div>
-                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1 }}>{streak > 0 ? 'Keep the chain alive!' : 'Start your streak today!'}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={s.sidebarFooter}>
-          <div style={s.userRow} onClick={() => setShowSettings(v => !v)}>
-            <div style={s.avatar}>{initials}</div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{name}</div>
-              <div style={{ fontSize:8.5, fontFamily:'var(--mono)', color:isPro?'var(--amber)':'var(--text3)' }}>{isPro?'Pro':'Free · 1/1 paths'}</div>
-            </div>
-            <div style={{ fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>Settings</div>
-          </div>
-        </div>
-      </div>
-
-      {/* MAIN */}
-      <div style={s.main}>
-        <div style={s.topbar}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ fontFamily:'var(--serif)', fontSize:15, color:'var(--text)' }}>{showSettings ? 'Settings' : meta.title}</div>
-            {!showSettings && meta.pill && <div style={{ fontSize:9.5, fontFamily:'var(--mono)', color:'var(--text3)', background:'var(--bg4)', border:'1px solid var(--border2)', borderRadius:4, padding:'2px 6px' }}>{meta.pill}</div>}
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-            {!showSettings && pathname==='/app' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
-            {!showSettings && pathname==='/app/lesson' && <button style={btnPrimary}>Mark Complete</button>}
-            {!showSettings && pathname==='/app/flashcards' && <button style={btnPrimary}>Review All</button>}
-            {!showSettings && pathname==='/app/paths' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
-            {showSettings && <button onClick={()=>setShowSettings(false)} style={btnSecondary}>Back</button>}
-            <button onClick={signOut} style={btnSecondary}>Sign out</button>
-          </div>
-        </div>
-
-        <div style={s.content}>
-          {showSettings ? (
-            <SettingsPanel user={user} profile={profile} onSignOut={signOut}/>
+        {/* Footer: XP + Streak */}
+        <div className="mt-auto space-y-2.5 border-t p-3" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
+          {profile ? (
+            <>
+              <XPWidget profile={profile} />
+              <StreakWidget streak={profile.streak ?? 0} />
+            </>
           ) : (
-            children
+            // Skeleton while loading
+            <div className="animate-pulse space-y-2">
+              <div className="h-20 rounded-xl bg-neutral-800" />
+              <div className="h-14 rounded-xl bg-neutral-800" />
+            </div>
           )}
         </div>
-      </div>
+      </aside>
+
+      {/* ── MOBILE MENU BUTTON ── */}
+      <button
+        className="fixed left-3 top-3 z-[200] flex h-9 w-9 items-center justify-center
+          rounded-lg border border-neutral-700 bg-neutral-900 text-neutral-300 md:hidden"
+        onClick={() => setMobOpen(v => !v)}
+        aria-label="Open menu"
+      >
+        ☰
+      </button>
+
+      {/* ── MAIN CONTENT ── */}
+      <main className="ml-0 flex min-h-screen flex-1 flex-col md:ml-[252px]">
+        {children}
+      </main>
     </div>
   )
 }
-
-const btnPrimary: React.CSSProperties = { display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:6, fontSize:12, fontFamily:'var(--sans)', cursor:'pointer', border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontWeight:500 }
-const btnSecondary: React.CSSProperties = { display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:6, fontSize:12, fontFamily:'var(--sans)', cursor:'pointer', border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)' }
-
-function SettingsPanel({ user, profile, onSignOut }: { user: User; profile: any; onSignOut: () => void }) {
-  const [displayName, setDisplayName] = useState(profile?.display_name || '')
-  const [saving, setSaving]   = useState(false)
-  const [saved, setSaved]     = useState(false)
-  const supabase = createClient()
-
-  const save = async () => {
-    setSaving(true)
-    await (supabase.from('profiles') as any).update({ display_name: displayName.trim(), updated_at: new Date().toISOString() }).eq('id', user.id)
-    setSaving(false); setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  return (
-    <div style={{ maxWidth:560, margin:'0 auto', padding:'24px 26px 60px' }}>
-      {[
-        { head:'Account', rows:[
-          { label:'Display name', sub:'', right:(
-            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-              <input value={displayName} onChange={e=>setDisplayName(e.target.value)} style={{ padding:'6px 10px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none' }}/>
-              <button onClick={save} disabled={saving||!displayName.trim()} style={btnPrimary}>{saved?'Saved':saving?'...':'Save'}</button>
-            </div>
-          )},
-          { label:'Email', sub:user.email||'', right:<span style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text2)' }}>Verified</span> },
-        ]},
-        { head:'Subscription', rows:[
-          { label:'Current plan', sub:profile?.is_pro?'Learnpath Pro':'Free — 1 learning path',
-            right:<span style={{ fontSize:9, fontFamily:'var(--mono)', padding:'2px 6px', borderRadius:3, background:profile?.is_pro?'var(--amber-bg)':'var(--green-bg)', border:`1px solid ${profile?.is_pro?'var(--amber-bg2)':'var(--green-border)'}`, color:profile?.is_pro?'var(--amber2)':'var(--green-text)' }}>{profile?.is_pro?'PRO':'FREE'}</span>
-          },
-          ...(!profile?.is_pro?[{ label:'Upgrade to Pro', sub:'Unlimited paths · Study Mode · AI Tutor', right:<button onClick={()=>window.open(`https://pay.rev.cat/sandbox/skelxidydieztrqy/${user.id}`,`_blank`)} style={btnPrimary}>$9.99/mo</button> }]:[]),
-        ]},
-        { head:'Stats', rows:[
-          { label:'Cards reviewed', sub:'', right:<span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--text2)' }}>{(profile?.cards_reviewed??0).toLocaleString()}</span> },
-          { label:'Total study days', sub:'', right:<span style={{ fontFamily:'var(--mono)', fontSize:13, color:'var(--text2)' }}>{profile?.total_days??0}</span> },
-        ]},
-        { head:'Session', rows:[
-          { label:'Sign out', sub:"You will need to sign in again", right:<button onClick={onSignOut} style={btnSecondary}>Sign out</button> },
-        ]},
-      ].map(section => (
-        <div key={section.head} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', marginBottom:14 }}>
-          <div style={{ padding:'12px 18px', borderBottom:'1px solid var(--border)', fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', background:'var(--bg3)' }}>{section.head}</div>
-          {section.rows.map((row,i) => (
-            <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 18px', borderBottom:'1px solid var(--border)', gap:16 }}>
-              <div>
-                <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>{row.label}</div>
-                {row.sub && <div style={{ fontSize:11, color:'var(--text3)', marginTop:2 }}>{row.sub}</div>}
-              </div>
-              {row.right}
-            </div>
-          ))}
-        </div>
-      ))}
-      <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textAlign:'center' as const, marginTop:20, lineHeight:1.8 }}>
-        Learnpath · MRF Studios · contact@mrfstudios.com
-      </div>
-    </div>
-  )
-}
-
-
-
-
-

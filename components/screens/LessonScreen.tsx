@@ -1,7 +1,7 @@
 ﻿'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson } from '@/lib/db'
+import { loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, completeLessonAndAwardXP, loadStreak } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function PlayIcon() {
@@ -39,6 +39,8 @@ export default function LessonScreen() {
   const [quizAnswers, setQuizAnswers] = useState<Record<number,number>>({})
   const [showPicker, setShowPicker] = useState(false)
   const [view, setView] = useState<'picker'|'lesson'>('picker')
+  const [streak, setStreak] = useState(0)
+  const [showLevelUp, setShowLevelUp] = useState<any>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlCurrId = searchParams.get('id')
@@ -48,6 +50,7 @@ export default function LessonScreen() {
       const { data: { user } } = await createClient().auth.getUser()
       if (!user) return
       setUserId(user.id)
+      loadStreak(user.id).then(s => setStreak(s?.current_streak || 0)).catch(() => {})
       const currs = await loadCurricula(user.id)
       setCurricula(currs)
       if (currs.length > 0) {
@@ -195,6 +198,9 @@ Rules:
       await updateCurriculumProgress(activeCurrId, progress)
       await logActivity(userId, 'lesson', 20)
       await updateStreak(userId)
+      const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
+      if (xpResult?.leveledUp) setShowLevelUp(xpResult.levelInfo)
+      window.__learnpath_refreshProfile?.()
       setIsComplete(true)
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
     } catch(e) { console.error(e) }
@@ -459,9 +465,27 @@ Rules:
           </div>
         )}
       </div>
+    {showLevelUp && (
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowLevelUp(null)}>
+        <div style={{ background:'var(--bg2)', border:'1px solid var(--amber)', borderRadius:18, padding:'40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize:48, marginBottom:16 }}>🎉</div>
+          <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', marginBottom:8 }}>Level Up!</div>
+          <div style={{ fontSize:16, color:'var(--text)', marginBottom:6 }}>You are now a</div>
+          <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber2)', fontWeight:700, marginBottom:20 }}>{showLevelUp?.title}</div>
+          <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>Keep learning to reach the next level.</div>
+          <button onClick={() => setShowLevelUp(null)} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
+        </div>
+      </div>
+    )}
     </div>
   )
 }
+
+
+
+
+
+
 
 
 
