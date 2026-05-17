@@ -360,8 +360,8 @@ Rules:
       </div>
 
       {/* RIGHT PANEL - lesson content */}
-      <div style={{ flex:1, overflowY:'auto' }}>
-        {generating ? (
+      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' }}>
+        <div style={{ flex:1, overflowY:'auto' }}>
           <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
             <div style={{ width:36, height:36, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 20px' }}/>
             <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:6 }}>Generating your lesson</div>
@@ -491,71 +491,44 @@ Rules:
                 ))}
               </div>
             </>}
-
-            {/* ELI5 / Go Deeper */}
-            {lessonData && (
-              <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-                <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ flex:1, padding:'8px', borderRadius:8, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>ELI5 - Simplify</button>
-                <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ flex:1, padding:'8px', borderRadius:8, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
-              </div>
-            )}
+          </div>
+        )}
+        </div>
+        {/* Sticky bottom toolbar */}
+        {lessonData && (
+          <div style={{ borderTop:'1px solid var(--border)', background:'var(--bg2)', padding:'10px 14px', flexShrink:0 }}>
+            {/* ELI5 / Go Deeper panel */}
             {(eliLoading || eliContent) && (
-              <div style={{ background:'var(--bg3)', border:'1px solid var(--amber-bg)', borderRadius:10, padding:'14px 16px', marginBottom:12 }}>
-                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8 }}>{eliMode==='eli5'?'Simplified':'Deeper Dive'}</div>
-                {eliLoading && !eliContent && <div style={{ fontSize:13, color:'var(--text3)' }}>Claude is thinking...</div>}
-                {eliContent && <div style={{ fontSize:14, color:'var(--text2)', lineHeight:1.8, whiteSpace:'pre-wrap' }}>{eliContent}</div>}
+              <div style={{ background:'var(--bg3)', border:'1px solid var(--amber-bg)', borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>{eliMode==='eli5'?'Simplified':'Deeper Dive'}</div>
+                {eliLoading && !eliContent && <div style={{ fontSize:12, color:'var(--text3)' }}>Claude is thinking...</div>}
+                {eliContent && <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.7, maxHeight:120, overflowY:'auto' as const, whiteSpace:'pre-wrap' as const }}>{eliContent}</div>}
               </div>
             )}
-            {/* AI Tutor */}
-            {lessonData && (
-              <div style={{ marginBottom:16 }}>
-                <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! I am your AI Tutor for this lesson. Ask me anything about ' + (lessonData.title||'this topic') + '.'}]) }} style={{ width:'100%', padding:'9px', borderRadius:8, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                  {tutorOpen ? 'Close AI Tutor' : 'Ask AI Tutor'}
-                </button>
-                {tutorOpen && (
-                  <div style={{ marginTop:8, background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, overflow:'hidden' }}>
-                    <div style={{ maxHeight:280, overflowY:'auto', padding:'12px 14px', display:'flex', flexDirection:'column' as const, gap:10 }}>
-                      {tutorMessages.map((msg, i) => (
-                        <div key={i} style={{ display:'flex', flexDirection:'column' as const, alignItems:msg.role==='user'?'flex-end':'flex-start' }}>
-                          <div style={{ maxWidth:'85%', padding:'8px 12px', borderRadius:8, background:msg.role==='user'?'var(--amber)':'var(--bg2)', color:msg.role==='user'?'#0a0b0f':'var(--text2)', fontSize:13, lineHeight:1.6 }}>{msg.content}</div>
-                        </div>
-                      ))}
-                      {tutorLoading && <div style={{ fontSize:12, color:'var(--text3)', fontStyle:'italic' }}>Tutor is thinking...</div>}
+            {/* AI Tutor chat */}
+            {tutorOpen && (
+              <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, marginBottom:8, overflow:'hidden' }}>
+                <div style={{ maxHeight:160, overflowY:'auto', padding:'8px 10px', display:'flex', flexDirection:'column' as const, gap:6 }}>
+                  {tutorMessages.map((msg, i) => (
+                    <div key={i} style={{ display:'flex', justifyContent:msg.role==='user'?'flex-end':'flex-start' }}>
+                      <div style={{ maxWidth:'85%', padding:'6px 10px', borderRadius:7, background:msg.role==='user'?'var(--amber)':'var(--bg2)', color:msg.role==='user'?'#0a0b0f':'var(--text2)', fontSize:12, lineHeight:1.5 }}>{msg.content}</div>
                     </div>
-                    <div style={{ padding:'8px', borderTop:'1px solid var(--border)', display:'flex', gap:6 }}>
-                      <input value={tutorInput} onChange={e => setTutorInput(e.target.value)} onKeyDown={e => { if(e.key==='Enter'&&!tutorLoading) askTutor(tutorInput) }} placeholder='Ask a question...' style={{ flex:1, padding:'7px 10px', background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:6, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none' }}/>
-                      <button onClick={() => askTutor(tutorInput)} disabled={tutorLoading||!tutorInput.trim()} style={{ padding:'7px 14px', borderRadius:6, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>Ask</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* Mark complete */}
-            {isComplete ? (
-              <div style={{ background:'var(--green-bg)', border:'1px solid var(--green-border)', borderRadius:8, padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
-                <div>
-                  <div style={{ fontSize:13, color:'var(--green-text)', fontWeight:500 }}>Lesson complete!</div>
-                  <div style={{ fontSize:11, color:'var(--green-text)', marginTop:2 }}>Great work - keep going.</div>
+                  ))}
+                  {tutorLoading && <div style={{ fontSize:11, color:'var(--text3)', fontStyle:'italic' }}>Tutor is thinking...</div>}
                 </div>
-                <button onClick={() => {
-                  // Auto-advance to next lesson
-                  const weeks2 = activeCurr?.curriculum?.weeks || []
-                  const progress2 = activeCurr?.progress || {}
-                  for (let wi = 0; wi < weeks2.length; wi++) {
-                    for (let di = 0; di < (weeks2[wi].days||[]).length; di++) {
-                      if (!progress2[`${wi}-${di}`]) { setSelectedLesson({wi,di}); return }
-                    }
-                  }
-                  router.push('/app')
-                }} style={{ padding:'6px 14px', borderRadius:6, background:'var(--green-bg)', border:'1px solid var(--green-border)', color:'var(--green-text)', fontSize:12, cursor:'pointer', fontFamily:'var(--sans)', whiteSpace:'nowrap' as const }}>
-                  Next Lesson
-                </button>
+                <div style={{ padding:'6px 8px', borderTop:'1px solid var(--border)', display:'flex', gap:5 }}>
+                  <input value={tutorInput} onChange={e => setTutorInput(e.target.value)} onKeyDown={e => { if(e.key==='Enter'&&!tutorLoading) askTutor(tutorInput) }} placeholder='Ask a question...' style={{ flex:1, padding:'6px 9px', background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:5, color:'var(--text)', fontFamily:'var(--sans)', fontSize:12, outline:'none' }}/>
+                  <button onClick={() => askTutor(tutorInput)} disabled={tutorLoading||!tutorInput.trim()} style={{ padding:'6px 12px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Ask</button>
+                </div>
               </div>
-            ) : (
-              <button onClick={markComplete} disabled={marking} style={{ width:'100%', padding:'13px', borderRadius:10, background:marking?'var(--bg4)':'var(--amber)', border:`1px solid ${marking?'var(--border2)':'var(--amber)'}`, color:marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:marking?'not-allowed':'pointer' }}>
-                {marking ? 'Saving...' : 'Mark Lesson Complete'}
-              </button>
             )}
+            {/* Toolbar buttons */}
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
+              <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
+              <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
+              <button onClick={markComplete} disabled={marking||isComplete} style={{ flex:2, padding:'7px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
+            </div>
           </div>
         )}
       </div>
