@@ -52,6 +52,13 @@ export function xpToNextLevel(xp: number): number | null {
   return info.maxXP + 1 - xp
 }
 
+// ── TYPES
+export interface Profile {
+  id: string; email: string; display_name: string; is_pro: boolean
+  xp: number; level: number; streak: number; last_study: string
+  total_days: number; cards_reviewed: number; created_at: string; updated_at: string
+}
+
 // ── PROFILES
 export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -191,4 +198,5 @@ export async function completeLessonAndAwardXP(
 ): Promise<LevelUpResult | null> {
   return awardXP('lesson_complete', { streak })
 }
+
 
