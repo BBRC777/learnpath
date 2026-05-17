@@ -21,6 +21,9 @@ export default function ProgressScreen() {
   const [heatmap, setHeatmap] = useState<number[]>(Array(28).fill(0))
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [showSummary, setShowSummary] = useState(false)
+  const [summary, setSummary] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -62,6 +65,53 @@ export default function ProgressScreen() {
     load()
   }, [])
 
+  const generateSummary = async () => {
+    setSummaryLoading(true)
+    setShowSummary(true)
+    setSummary('')
+    const totalMinsVal = activityData.reduce((a,b)=>a+b,0)
+    const doneLessonsVal = curricula.reduce((a, c) => a + Object.values(c.progress||{}).filter(Boolean).length, 0)
+    const pathNames = curricula.map(c => c.curriculum?.title || c.topic).join(', ')
+    const prompt = You are a learning coach. Give a warm, encouraging end-of-week summary for a student.
+
+Their stats this week:
+- Study time:  minutes across 7 days
+- Lessons completed: 
+- Current streak:  days
+- Learning paths: 
+- XP earned: 
+- Level: 
+
+Write a 3-paragraph summary:
+1. Celebrate what they accomplished this week (specific, warm)
+2. Identify one area to focus on next week based on their paths
+3. An encouraging closing that motivates them to keep going
+
+Keep it personal, concise, and motivating. No bullet points — flowing prose only.
+
+    try {
+      const res = await fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stream: true, messages: [{ role: 'user', content: prompt }] })
+      })
+      const reader = res.body!.getReader()
+      const decoder = new TextDecoder()
+      let full = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        for (const line of decoder.decode(value).split('\n')) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (data === '[DONE]') break
+          try { const p = JSON.parse(data); if (p.text) { full += p.text; setSummary(full) } } catch {}
+        }
+      }
+    } catch(e) { setSummary('Unable to generate summary. Please try again.') }
+    finally { setSummaryLoading(false) }
+  }
+
   const totalMins = activityData.reduce((a,b)=>a+b,0)
   const maxAct = Math.max(...activityData, 1)
   const totalLessons = curricula.reduce((a, c) => {
@@ -79,6 +129,14 @@ export default function ProgressScreen() {
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:740, margin:'0 auto', padding:'24px 28px 60px' }}>
+
+        {/* Weekly Summary Button */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>Your Progress</div>
+          <button onClick={generateSummary} disabled={summaryLoading} style={{ padding:'8px 16px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>
+            {summaryLoading ? 'Generating...' : '✦ Weekly Summary'}
+          </button>
+        </div>
 
         {/* Stats row */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:9, marginBottom:22 }}>
@@ -222,6 +280,34 @@ export default function ProgressScreen() {
           </div>
         </div>
       </div>
+
+      {/* Weekly Summary Modal */}
+      {showSummary && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setShowSummary(false)}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'32px 36px', width:'100%', maxWidth:560, maxHeight:'80vh', overflowY:'auto' as const }} onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)' }}>✦ Weekly Summary</div>
+              <button onClick={() => setShowSummary(false)} style={{ background:'none', border:'none', color:'var(--text3)', fontSize:18, cursor:'pointer' }}>✕</button>
+            </div>
+            {summaryLoading && !summary && (
+              <div style={{ display:'flex', alignItems:'center', gap:10, color:'var(--text2)', fontSize:13 }}>
+                <div style={{ width:16, height:16, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite' }}/>
+                Claude is writing your summary...
+              </div>
+            )}
+            {summary && (
+              <div style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, whiteSpace:'pre-wrap' as const }}>{summary}</div>
+            )}
+            {!summaryLoading && summary && (
+              <button onClick={() => setShowSummary(false)} style={{ marginTop:24, padding:'10px 24px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }}>Done</button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+
+
+
