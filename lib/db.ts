@@ -52,14 +52,30 @@ export function xpToNextLevel(xp: number): number | null {
   return info.maxXP + 1 - xp
 }
 
-// ── TYPES
+// ── TYPES ─────────────────────────────────────────────────────
 export interface Profile {
   id: string; email: string; display_name: string; is_pro: boolean
   xp: number; level: number; streak: number; last_study: string
   total_days: number; cards_reviewed: number; created_at: string; updated_at: string
 }
 
-// ── PROFILES
+export interface Flashcard {
+  id: string
+  user_id: string
+  curriculum_id: string
+  lesson_key: string
+  front: string
+  reading: string
+  back: string
+  example: string
+  interval: number
+  ease_factor: number
+  repetitions: number
+  last_reviewed: number | null
+  created_at: string
+}
+
+// ── PROFILES ──────────────────────────────────────────────────
 export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -148,6 +164,100 @@ export async function getLeaderboard(limit = 20) {
     .limit(limit)
   if (error) throw new Error(error.message)
   return data || []
+}
+
+// ── FLASHCARDS ────────────────────────────────────────────────
+export async function loadFlashcards(userId: string): Promise<Flashcard[]> {
+  const { data, error } = await (supabase.from('flashcards') as any)
+    .select('*').eq('user_id', userId).order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function loadFlashcardsDueCount(userId: string): Promise<number> {
+  const { data, error } = await (supabase.from('flashcards') as any)
+    .select('id, interval, last_reviewed').eq('user_id', userId)
+  if (error || !data) return 0
+  const now = Date.now()
+  return data.filter((c: any) => {
+    if (!c.last_reviewed) return true
+    const daysSince = Math.floor((now - c.last_reviewed) / 86400000)
+    return daysSince >= c.interval
+  }).length
+}
+
+export async function saveFlashcards(userId: string, curriculumId: string, lessonKey: string, vocab: any[]): Promise<number> {
+  const { data: existing } = await (supabase.from('flashcards') as any)
+    .select('id').eq('user_id', userId).eq('curriculum_id', curriculumId).eq('lesson_key', lessonKey)
+  const existingIds = new Set((existing || []).map((c: any) => c.id))
+
+  const cards = vocab
+    .filter((v: any) => v.word && v.example)
+    .map((v: any) => {
+      const id = `fc_${curriculumId}_${lessonKey}_${v.word.replace(/\s+/g, '_').slice(0, 20)}`
+      return {
+        id,
+        user_id: userId,
+        curriculum_id: curriculumId,
+        lesson_key: lessonKey,
+        front: v.word,
+        reading: v.reading || '',
+        back: v.example || v.word,
+        example: v.example || '',
+        interval: 1,
+        ease_factor: 2.5,
+        repetitions: 0,
+        last_reviewed: null,
+      }
+    })
+    .filter((c: any) => !existingIds.has(c.id))
+
+  if (cards.length === 0) return 0
+  const { error } = await (supabase.from('flashcards') as any).insert(cards)
+  if (error) throw new Error(error.message)
+  return cards.length
+}
+
+export async function updateFlashcard(cardId: string, updates: {
+  interval: number; ease_factor: number; repetitions: number; last_reviewed: number
+}): Promise<void> {
+  const { error } = await (supabase.from('flashcards') as any)
+    .update(updates).eq('id', cardId)
+  if (error) throw new Error(error.message)
+}
+
+// ── SM-2 ALGORITHM ────────────────────────────────────────────
+export function sm2CalcNext(card: Flashcard, rating: number): { interval: number; ease_factor: number; repetitions: number } {
+  const { interval, ease_factor, repetitions } = card
+  if (rating === 1) return { interval: 1, ease_factor: Math.max(1.3, ease_factor - 0.2), repetitions: 0 }
+  if (rating === 2) return { interval: Math.max(1, Math.round(interval * 1.2)), ease_factor: Math.max(1.3, ease_factor - 0.15), repetitions }
+  if (rating === 3) {
+    const n = repetitions === 0 ? 1 : repetitions === 1 ? 3 : Math.round(interval * ease_factor)
+    return { interval: n, ease_factor, repetitions: repetitions + 1 }
+  }
+  const n = repetitions === 0 ? 4 : Math.round(interval * ease_factor * 1.3)
+  return { interval: n, ease_factor: Math.min(2.5, ease_factor + 0.15), repetitions: repetitions + 1 }
+}
+
+export function isCardDue(card: Flashcard): boolean {
+  if (!card.last_reviewed) return true
+  const daysSince = Math.floor((Date.now() - card.last_reviewed) / 86400000)
+  return daysSince >= card.interval
+}
+
+export function getCardState(card: Flashcard): 'new' | 'learning' | 'review' | 'overdue' {
+  if (!card.last_reviewed) return 'new'
+  if (card.repetitions === 0) return 'learning'
+  const daysSince = Math.floor((Date.now() - card.last_reviewed) / 86400000)
+  if (daysSince > card.interval) return 'overdue'
+  return 'review'
+}
+
+export function intervalLabel(d: number): string {
+  if (d <= 1) return '1d'
+  if (d < 7) return `${d}d`
+  if (d < 30) return `${Math.round(d / 7)}w`
+  return `${Math.round(d / 30)}mo`
 }
 
 // ── STREAKS ───────────────────────────────────────────────────

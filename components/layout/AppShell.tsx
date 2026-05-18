@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, type Profile } from '@/lib/db'
+import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, type Profile } from '@/lib/db'
 
 const NEXT_LEVEL: Record<number,string> = { 1:'Scholar', 2:'Expert', 3:'Master' }
 
@@ -55,7 +55,7 @@ const NAV = [
   { href:'/app/curriculum',  label:'New Learning Path', icon:'+' },
   { href:'/app/paths',       label:'All Learning Paths',icon:'◈' },
   { href:'/app/leaderboard', label:'Leaderboard',       icon:'🏆' },
-  { href:'/app/flashcards',  label:'Flashcards',        icon:'⧉', badge:'9' },
+  { href:'/app/flashcards',  label:'Flashcards',        icon:'⧉', badge:'__DUE__' },
   { href:'/app/study',       label:'Study Mode',        icon:'◎', pro:true },
   { href:'/app/progress',    label:'Progress',          icon:'◉' },
 ]
@@ -70,6 +70,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [savingName, setSavingName]       = useState(false)
   const [lessonToolbar, setLessonToolbar] = useState<React.ReactNode>(null)
   const [sidebarOpen, setSidebarOpen]     = useState(true)
+  const [flashcardsDue, setFlashcardsDue] = useState<number>(0)
 
   const refreshProfile = useCallback(async () => {
     const p = await getProfile()
@@ -78,6 +79,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   useEffect(() => {
     refreshProfile()
+    createClient().auth.getUser().then(({ data }) => { if (data.user) loadFlashcardsDueCount(data.user.id).then(setFlashcardsDue).catch(()=>{}) })
     createClient().auth.getUser().then(({ data }) => { if (data.user) setUser(data.user) })
   }, [refreshProfile])
 
@@ -138,7 +140,7 @@ export default function AppShell({ children }: AppShellProps) {
                   title={isLocked?'Upgrade to Pro to unlock Study Mode':undefined}>
                   <span style={{ fontSize:13, width:16, textAlign:'center', flexShrink:0 }}>{item.icon}</span>
                   <span style={{ flex:1 }}>{item.label}</span>
-                  {item.badge && <span style={{ fontFamily:'var(--mono)', fontSize:10, padding:'1px 6px', borderRadius:8, background:'var(--bg4)', color:'var(--text3)', border:'1px solid var(--border2)' }}>{item.badge}</span>}
+                  {item.badge && <span style={{ fontFamily:'var(--mono)', fontSize:10, padding:'1px 6px', borderRadius:8, background:'var(--bg4)', color:'var(--text3)', border:'1px solid var(--border2)' }}>{item.badge === '__DUE__' ? (flashcardsDue > 0 ? flashcardsDue : null) : item.badge}</span>}
                   {item.pro && <span style={{ fontFamily:'var(--mono)', fontSize:9, padding:'1px 6px', borderRadius:4, background:profile?.is_pro?'var(--amber-bg)':'var(--bg4)', color:profile?.is_pro?'var(--amber)':'var(--text3)', border:`1px solid ${profile?.is_pro?'rgba(212,133,58,0.4)':'var(--border2)'}` }}>PRO</span>}
                 </div>
               )
