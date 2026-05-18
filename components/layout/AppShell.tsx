@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -62,11 +62,12 @@ const NAV = [
 export default function AppShell({ children }: AppShellProps) {
   const pathname = usePathname()
   const router   = useRouter()
-  const [profile, setProfile]       = useState<Profile|null>(null)
+  const [profile, setProfile]           = useState<Profile|null>(null)
   const [showSettings, setShowSettings] = useState(false)
-  const [user, setUser]             = useState<any>(null)
-  const [editName, setEditName]     = useState('')
-  const [savingName, setSavingName] = useState(false)
+  const [user, setUser]                 = useState<any>(null)
+  const [editName, setEditName]         = useState('')
+  const [savingName, setSavingName]     = useState(false)
+  const [lessonToolbar, setLessonToolbar] = useState<React.ReactNode>(null)
 
   const refreshProfile = useCallback(async () => {
     const p = await getProfile()
@@ -82,6 +83,11 @@ export default function AppShell({ children }: AppShellProps) {
     ;(window as any).__learnpath_refreshProfile = refreshProfile
     return () => { delete (window as any).__learnpath_refreshProfile }
   }, [refreshProfile])
+
+  useEffect(() => {
+    ;(window as any).__learnpath_setToolbar = (node: React.ReactNode) => setLessonToolbar(node)
+    return () => { delete (window as any).__learnpath_setToolbar }
+  }, [])
 
   const signOut = async () => {
     await createClient().auth.signOut()
@@ -100,8 +106,10 @@ export default function AppShell({ children }: AppShellProps) {
   const sidebarW = 252
   const locked   = (item: typeof NAV[0]) => item.pro && !profile?.is_pro
 
-  const btnPrimary: React.CSSProperties  = { padding:'8px 14px', borderRadius:7, border:'none', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }
+  const btnPrimary: React.CSSProperties   = { padding:'8px 14px', borderRadius:7, border:'none', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }
   const btnSecondary: React.CSSProperties = { padding:'8px 14px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:12, cursor:'pointer' }
+
+  const isLessonPage = pathname?.startsWith('/app/lesson')
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
@@ -119,7 +127,7 @@ export default function AppShell({ children }: AppShellProps) {
         <nav style={{ flex:1, padding:'8px 8px 0' }}>
           <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.1em', padding:'12px 10px 6px' }}>Navigate</div>
           {NAV.map(item => {
-            const active  = pathname === item.href || (item.href !== '/app' && pathname?.startsWith(item.href))
+            const active   = pathname === item.href || (item.href !== '/app' && pathname?.startsWith(item.href))
             const isLocked = locked(item)
             return (
               <div key={item.href} onClick={() => !isLocked && router.push(item.href)}
@@ -164,15 +172,20 @@ export default function AppShell({ children }: AppShellProps) {
 
       {/* MAIN */}
       <main style={{ marginLeft:sidebarW, flex:1, display:'flex', flexDirection:'column', minHeight:'100vh' }}>
+
         {/* Topbar */}
         <div style={{ height:52, borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 24px', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40 }}>
-          <div style={{ fontFamily:'var(--sans)', fontSize:15, fontWeight:500, color:'var(--text)' }}>
+          <div style={{ fontFamily:'var(--sans)', fontSize:15, fontWeight:500, color:'var(--text)', flexShrink:0, marginRight:16 }}>
             {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
           </div>
-          <div style={{ display:'flex', gap:8 }}>
-            {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
-            {!pathname?.includes('/app') && <button onClick={signOut} style={btnSecondary}>Sign out</button>}
-            {!showSettings && pathname==='/app/paths' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
+          <div style={{ display:'flex', gap:8, flex:1, justifyContent:'flex-end', alignItems:'center' }}>
+            {isLessonPage && lessonToolbar ? lessonToolbar : (
+              <>
+                {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
+                {!pathname?.includes('/app') && <button onClick={signOut} style={btnSecondary}>Sign out</button>}
+                {!showSettings && pathname==='/app/paths' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
+              </>
+            )}
           </div>
         </div>
 

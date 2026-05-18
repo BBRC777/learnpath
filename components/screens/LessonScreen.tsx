@@ -152,6 +152,37 @@ export default function LessonScreen() {
     }
   }
 
+  // Push toolbar into AppShell topbar whenever relevant state changes
+  useEffect(() => {
+    const setToolbar = (window as any).__learnpath_setToolbar
+    if (!setToolbar) return
+    if (!lessonData) { setToolbar(null); return }
+    setToolbar(
+      <div style={{ display:'flex', gap:6, alignItems:'center', flex:1 }}>
+        <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
+        <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
+        <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
+        {!isComplete && (showSkipConfirm ? (
+          <div style={{ display:'flex', gap:4 }}>
+            <button onClick={skipLesson} disabled={skipping} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--amber-bg2)', background:'var(--amber-bg)', color:'var(--amber2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>{skipping ? 'Saving...' : 'Yes, skip it'}</button>
+            <button onClick={() => setShowSkipConfirm(false)} style={{ padding:'5px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer' }}>Cancel</button>
+          </div>
+        ) : (
+          <button onClick={() => setShowSkipConfirm(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
+        ))}
+        <button onClick={markComplete} disabled={marking||isComplete} style={{ padding:'5px 16px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
+      </div>
+    )
+  }, [lessonData, isComplete, marking, skipping, showSkipConfirm, eliMode, eliContent, tutorOpen, tutorMessages])
+
+  // Clear toolbar when leaving lesson screen
+  useEffect(() => {
+    return () => {
+      const setToolbar = (window as any).__learnpath_setToolbar
+      if (setToolbar) setToolbar(null)
+    }
+  }, [])
+
   const markComplete = async () => {
     if (!activeCurrId || !userId || isComplete) return
     setMarking(true)
@@ -341,22 +372,20 @@ export default function LessonScreen() {
       </div>
 
       {/* RIGHT PANEL - lesson content */}
-      {/* RIGHT PANEL - lesson content */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', position:'relative' }}>
-        {/* STICKY TOP TOOLBAR */}
-        {/* STICKY TOP TOOLBAR */}
-        {lessonData && (
-          <div style={{ borderBottom:'1px solid var(--border)', background:'var(--bg2)', padding:'8px 14px', flexShrink:0, position:'sticky', top:0, zIndex:10 }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' }}>
+
+        {/* ELI5 / Go Deeper / Tutor content panels - shown below topbar */}
+        {lessonData && (eliLoading || eliContent || tutorOpen) && (
+          <div style={{ borderBottom:'1px solid var(--border)', background:'var(--bg2)', padding:'8px 14px', flexShrink:0 }}>
             {(eliLoading || eliContent) && (
-              <div style={{ background:'var(--bg3)', border:'1px solid var(--amber-bg)', borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
+              <div style={{ background:'var(--bg3)', border:'1px solid var(--amber-bg)', borderRadius:8, padding:'10px 12px', marginBottom:tutorOpen?8:0 }}>
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>{eliMode==='eli5'?'Simplified':'Deeper Dive'}</div>
                 {eliLoading && !eliContent && <div style={{ fontSize:12, color:'var(--text3)' }}>Claude is thinking...</div>}
                 {eliContent && <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.7, maxHeight:120, overflowY:'auto' as const, whiteSpace:'pre-wrap' as const }}>{eliContent}</div>}
               </div>
             )}
-            {/* AI Tutor chat */}
             {tutorOpen && (
-              <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, marginBottom:8, overflow:'hidden' }}>
+              <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
                 <div style={{ maxHeight:160, overflowY:'auto', padding:'8px 10px', display:'flex', flexDirection:'column' as const, gap:6 }}>
                   {tutorMessages.map((msg, i) => (
                     <div key={i} style={{ display:'flex', justifyContent:msg.role==='user'?'flex-end':'flex-start' }}>
@@ -371,21 +400,6 @@ export default function LessonScreen() {
                 </div>
               </div>
             )}
-            {/* Toolbar buttons */}
-            <div style={{ display:'flex', gap:6 }}>
-              <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
-              <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
-              <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
-              {!isComplete && (showSkipConfirm ? (
-                <div style={{ flex:2, display:'flex', gap:4 }}>
-                  <button onClick={skipLesson} disabled={skipping} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--amber-bg2)', background:'var(--amber-bg)', color:'var(--amber2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>{skipping ? 'Saving...' : 'Yes, skip it'}</button>
-                  <button onClick={() => setShowSkipConfirm(false)} style={{ padding:'7px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer' }}>Cancel</button>
-                </div>
-              ) : (
-                <button onClick={() => setShowSkipConfirm(true)} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
-              ))}
-              <button onClick={markComplete} disabled={marking||isComplete} style={{ flex:2, padding:'7px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
-            </div>
           </div>
         )}
 
