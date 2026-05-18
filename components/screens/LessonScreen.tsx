@@ -31,6 +31,8 @@ export default function LessonScreen() {
   const [streamText, setStreamText] = useState('')
   const [isComplete, setIsComplete] = useState(false)
   const [marking, setMarking] = useState(false)
+  const [skipping, setSkipping] = useState(false)
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false)
   const [userId, setUserId] = useState<string|null>(null)
   const [audioPlaying, setAudioPlaying] = useState(false)
   const [audioSpeed, setAudioSpeed] = useState(1)
@@ -65,7 +67,6 @@ export default function LessonScreen() {
         const targetId = urlCurrId || currs[0].id
         const targetCurr = currs.find((c: any) => c.id === targetId) || currs[0]
         setActiveCurrId(targetCurr.id)
-        // Find first incomplete lesson for THIS specific curriculum
         const targetProgress = targetCurr.progress || {}
         const targetWeeks = targetCurr.curriculum?.weeks || []
         let found = false
@@ -81,7 +82,6 @@ export default function LessonScreen() {
         if (!found && targetWeeks.length > 0) {
           setSelectedLesson({ wi:0, di:0 })
         }
-
       }
     }
     load()
@@ -97,26 +97,25 @@ export default function LessonScreen() {
       setExAnswers({})
       setExInputs({})
       setQuizAnswers({})
+      setShowSkipConfirm(false)
       setLessonData(null)
       loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)
     }
   }, [selectedLesson, activeCurrId])
+
   const loadLesson = async (curr: any, wi: number, di: number) => {
     const key = wi + '-' + di
-    // Check cache first
     const cached = await getCachedLesson(curr.id, key)
     if (cached) {
       setLessonData(cached)
       return
     }
-    // Generate with Claude
     const week = curr.curriculum?.weeks?.[wi]
     const day = week?.days?.[di]
     if (!day) return
     setGenerating(true)
     setStreamText('')
     const prompt = "You are an expert educator. Generate a complete, engaging lesson as a single valid JSON object. Return ONLY the JSON, no markdown, no explanation.\n\nTopic: " + curr.topic + "\nLevel: " + curr.level + "\nWeek " + (wi+1) + " Theme: " + week.theme + "\nSession: " + day.title + "\nType: " + day.type + "\nDuration: " + day.duration + "\nDescription: " + day.description + "\n\nGenerate this JSON:\n{\n  \"title\": \"Engaging lesson title\",\n  \"subject\": \"" + curr.topic + "\",\n  \"level\": \"" + curr.level + "\",\n  \"duration\": \"" + day.duration + "\",\n  \"eyebrow\": \"Week " + (wi+1) + " - Day " + (di+1) + "\",\n  \"intro\": \"2-3 sentence introduction.\",\n  \"content\": \"Full lesson in markdown, 600-900 words. Use ## headers and > for insights.\",\n  \"keyPoints\": [\"Point 1\", \"Point 2\", \"Point 3\"],\n  \"vocab\": [{\"word\": \"term\", \"reading\": \"type\", \"example\": \"usage\"}],\n  \"exercises\": [{\"type\": \"Multiple Choice\", \"question\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}],\n  \"quiz\": [{\"q\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}]\n}\nRules: vocab 4-8 terms, exercises 2-3 mixed types, quiz 3 questions, content rich and specific."
-
     try {
       const res = await fetch('/api/claude', {
         method: 'POST',
@@ -141,10 +140,8 @@ export default function LessonScreen() {
       const match = full.match(/\{[\s\S]*\}/)
       if (!match) throw new Error('Could not parse lesson')
       const parsed = JSON.parse(match[0])
-      // Fix content: replace literal \n with newlines
       if (parsed.content) parsed.content = parsed.content.replace(/\\n/g, '\n')
       setLessonData(parsed)
-      // Cache it
       if (activeCurrId) await cacheLesson(activeCurrId, key, parsed)
     } catch(e: any) {
       console.error('Lesson generation failed:', e)
@@ -169,7 +166,6 @@ export default function LessonScreen() {
       await updateStreak(userId)
       const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
       if (xpResult && xpResult.leveledUp) { setShowLevelUp(xpResult.levelInfo as Record<string,any>) }
-      // Check badges
       if (userId && xpResult) {
         const earned = await checkAndAwardBadges(userId, { xp: xpResult.newXP, streak })
         if (earned.length > 0) setNewBadges(earned)
@@ -180,6 +176,33 @@ export default function LessonScreen() {
     } catch(e) { console.error(e) }
     finally { setMarking(false) }
   }
+
+  const skipLesson = async () => {
+    if (!activeCurrId || !userId || isComplete) return
+    setSkipping(true)
+    setShowSkipConfirm(false)
+    try {
+      const currs = await loadCurricula(userId)
+      const curr = currs.find((c: any) => c.id === activeCurrId)
+      const progress = { ...(curr?.progress || {}) }
+      const key = selectedLesson!.wi + '-' + selectedLesson!.di
+      progress[key] = true
+      await updateCurriculumProgress(activeCurrId, progress)
+      await logActivity(userId, 'lesson_skip', 5)
+      await updateStreak(userId)
+      const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
+      if (xpResult && xpResult.leveledUp) { setShowLevelUp(xpResult.levelInfo as Record<string,any>) }
+      if (userId && xpResult) {
+        const earned = await checkAndAwardBadges(userId, { xp: xpResult.newXP, streak })
+        if (earned.length > 0) setNewBadges(earned)
+      }
+      ;(window as any).__learnpath_refreshProfile?.()
+      setIsComplete(true)
+      setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
+    } catch(e) { console.error(e) }
+    finally { setSkipping(false) }
+  }
+
   const fetchEli = async (mode: 'eli5'|'deeper') => {
     if (!lessonData) return
     setEliMode(mode); setEliLoading(true); setEliContent('')
@@ -199,6 +222,7 @@ export default function LessonScreen() {
     } catch(e) { setEliContent('Unable to generate. Please try again.') }
     finally { setEliLoading(false) }
   }
+
   const askTutor = async (question: string) => {
     if (!question.trim() || !lessonData) return
     const userMsg = { role: 'user' as const, content: question }
@@ -247,7 +271,6 @@ export default function LessonScreen() {
   const doneSessions = Object.values(progress).filter(Boolean).length
   const currPct = totalSessions ? Math.round((doneSessions/totalSessions)*100) : 0
 
-  // No curricula
   if (!activeCurr && curricula.length === 0 && !generating) {
     return (
       <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
@@ -269,7 +292,6 @@ export default function LessonScreen() {
       {/* LEFT PANEL - lesson picker */}
       <div style={{ width:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)' }}>
 
-        {/* Curriculum selector */}
         {curricula.length > 1 && (
           <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)' }}>
             <select value={activeCurrId||''} onChange={e => { setActiveCurrId(e.target.value); setSelectedLesson(null); setLessonData(null) }}
@@ -279,7 +301,6 @@ export default function LessonScreen() {
           </div>
         )}
 
-        {/* Curriculum header */}
         {activeCurr && (
           <div style={{ padding:'14px', borderBottom:'1px solid var(--border)' }}>
             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:4 }}>{activeCurr.topic}</div>
@@ -291,7 +312,6 @@ export default function LessonScreen() {
           </div>
         )}
 
-        {/* Week/day list */}
         {weeks.map((wk: any, wi: number) => (
           <div key={wi}>
             <div style={{ padding:'8px 14px 4px', fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', background:'var(--bg3)', borderBottom:'1px solid var(--border)' }}>
@@ -322,143 +342,10 @@ export default function LessonScreen() {
 
       {/* RIGHT PANEL - lesson content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' }}>
-        <div style={{ flex:1, overflowY:'auto' }}>
-          {generating ? (
-          <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
-            <div style={{ width:36, height:36, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 20px' }}/>
-            <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:6 }}>Generating your lesson</div>
-            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>{selectedDay?.title}</div>
-            {streamText && (
-              <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 14px', fontFamily:'var(--mono)', fontSize:10, color:'var(--text3)', maxWidth:400, width:'100%', textAlign:'left' as const, lineHeight:1.6, maxHeight:80, overflow:'hidden' }}>
-                {streamText}
-              </div>
-            )}
-          </div>
-        ) : !selectedLesson || !lessonData ? (
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
-            <div style={{ textAlign:'center' as const, color:'var(--text3)', padding:32 }}>
-              <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text2)', marginBottom:6 }}>Select a lesson</div>
-              <div style={{ fontSize:13 }}>Pick any session from the left panel to begin.</div>
-            </div>
-          </div>
-        ) : lessonData.error ? (
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
-            <div style={{ textAlign:'center' as const, padding:32 }}>
-              <div style={{ fontSize:14, color:'var(--red-text)', marginBottom:12 }}>Failed to generate lesson</div>
-              <button onClick={() => loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)} style={{ padding:'8px 18px', borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Try again</button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 28px 80px' }}>
 
-            {/* Header */}
-            <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
-              <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>
-                {lessonData.eyebrow} - {lessonData.subject}
-                {isComplete && <span style={{ marginLeft:8, color:'var(--green-text)' }}>- Complete</span>}
-              </div>
-              <h1 style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', lineHeight:1.2, marginBottom:10 }}>{lessonData.title}</h1>
-              <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.6, marginBottom:12 }}>{lessonData.intro}</div>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap' as const }}>
-                {(lessonData.keyPoints||[]).map((p: string, i: number) => (
-                  <span key={i} style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)' }}>{p}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Audio bar */}
-            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, marginBottom:20 }}>
-              <button onClick={toggleAudio} style={{ width:30, height:30, borderRadius:'50%', background:'var(--amber)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                {audioPlaying ? <PauseIcon/> : <PlayIcon/>}
-              </button>
-              <div style={{ flex:1, height:3, background:'var(--bg5)', borderRadius:2 }}/>
-              <div style={{ display:'flex', gap:3 }}>
-                {[0.75,1,1.25,1.5].map(s => (
-                  <button key={s} onClick={() => setAudioSpeed(s)} style={{ padding:'2px 6px', borderRadius:4, border:`1px solid ${audioSpeed===s?'var(--amber)':'var(--border2)'}`, background:audioSpeed===s?'var(--amber-bg)':'var(--bg4)', color:audioSpeed===s?'var(--amber)':'var(--text3)', fontSize:9, fontFamily:'var(--mono)', cursor:'pointer' }}>{s}x</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Lesson content */}
-            <div style={{ lineHeight:1.85 }}>
-              {renderContent(lessonData.content || '')}
-            </div>
-
-            {/* Vocab */}
-            {(lessonData.vocab||[]).length > 0 && <>
-              {sectionLabel('Key Terms')}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:7, marginBottom:8 }}>
-                {lessonData.vocab.map((v: any, i: number) => (
-                  <div key={i} onClick={() => { if(window.speechSynthesis){window.speechSynthesis.cancel();window.speechSynthesis.speak(new SpeechSynthesisUtterance(v.word))} }} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 12px', cursor:'pointer' }}>
-                    <div style={{ fontFamily:'var(--serif)', fontSize:14, color:'var(--text)', fontStyle:'italic', marginBottom:2 }}>{v.word}</div>
-                    <div style={{ fontSize:10, color:'var(--amber)', fontFamily:'var(--mono)', marginBottom:4 }}>{v.reading}</div>
-                    <div style={{ fontSize:10.5, color:'var(--text3)', lineHeight:1.45 }}>{v.example}</div>
-                    <div style={{ fontSize:8.5, color:'var(--blue-text)', fontFamily:'var(--mono)', marginTop:3 }}>tap to hear</div>
-                  </div>
-                ))}
-              </div>
-            </>}
-
-            {/* Exercises */}
-            {(lessonData.exercises||[]).length > 0 && <>
-              {sectionLabel('Practice')}
-              <div style={{ display:'flex', flexDirection:'column' as const, gap:9 }}>
-                {lessonData.exercises.map((ex: any, ei: number) => (
-                  <div key={ei} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, padding:'14px 16px' }}>
-                    <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.08em', marginBottom:7 }}>{ex.type}</div>
-                    <div style={{ fontSize:13.5, fontWeight:500, color:'var(--text)', marginBottom:10, lineHeight:1.5 }}>{ex.question}</div>
-                    {ex.type === 'Fill in the Blank' ? (
-                      <>
-                        <input style={{ width:'100%', padding:'8px 11px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none', marginBottom:7 }}
-                          placeholder="Your answer..." value={exInputs[ei]||''} onChange={e => setExInputs(p=>({...p,[ei]:e.target.value}))}
-                          disabled={exAnswers[ei]!==undefined}
-                          onKeyDown={e => { if(e.key==='Enter'&&exAnswers[ei]===undefined){ const correct=(exInputs[ei]||'').trim().toLowerCase()===ex.answer.toLowerCase(); setExAnswers(p=>({...p,[ei]:correct?'correct':'wrong'})) } }}
-                        />
-                        {exAnswers[ei]===undefined && <button onClick={() => { const correct=(exInputs[ei]||'').trim().toLowerCase()===ex.answer.toLowerCase(); setExAnswers(p=>({...p,[ei]:correct?'correct':'wrong'})) }} style={{ padding:'6px 14px', borderRadius:6, background:'var(--bg4)', border:'1px solid var(--border2)', color:'var(--text2)', fontSize:12, cursor:'pointer', fontFamily:'var(--sans)' }}>Check</button>}
-                        {exAnswers[ei]!==undefined && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, lineHeight:1.6, background:exAnswers[ei]==='correct'?'var(--green-bg)':'var(--red-bg)', border:`1px solid ${exAnswers[ei]==='correct'?'var(--green-border)':'var(--red-border)'}`, color:exAnswers[ei]==='correct'?'var(--green-text)':'var(--red-text)', marginTop:6 }}>{exAnswers[ei]==='correct'?'Correct! ':`Answer: "${ex.answer}". `}{ex.explanation}</div>}
-                      </>
-                    ) : (
-                      <>
-                        <div style={{ display:'flex', flexDirection:'column' as const, gap:5 }}>
-                          {(ex.opts||[]).map((opt: string, oi: number) => {
-                            let bg='var(--bg3)', border='1px solid var(--border2)', color='var(--text2)'
-                            if(exAnswers[ei]!==undefined){ if(oi===ex.correct){bg='var(--green-bg)';border='1px solid var(--green-border)';color='var(--green-text)'}else if(oi===exAnswers[ei]){bg='var(--red-bg)';border='1px solid var(--red-border)';color='var(--red-text)'} }
-                            return <button key={oi} onClick={() => { if(exAnswers[ei]===undefined) setExAnswers(p=>({...p,[ei]:oi})) }} style={{ padding:'8px 12px', borderRadius:7, border, background:bg, color, cursor:'pointer', fontSize:13, textAlign:'left' as const, lineHeight:1.4 }}>{opt}</button>
-                          })}
-                        </div>
-                        {exAnswers[ei]!==undefined && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, lineHeight:1.6, background:exAnswers[ei]===ex.correct?'var(--green-bg)':'var(--red-bg)', border:`1px solid ${exAnswers[ei]===ex.correct?'var(--green-border)':'var(--red-border)'}`, color:exAnswers[ei]===ex.correct?'var(--green-text)':'var(--red-text)', marginTop:8 }}>{exAnswers[ei]===ex.correct?'Correct! ':'Not quite. '}{ex.explanation}</div>}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>}
-
-            {/* Quiz */}
-            {(lessonData.quiz||[]).length > 0 && <>
-              {sectionLabel('Check Your Understanding')}
-              <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'16px 18px', marginBottom:20 }}>
-                {lessonData.quiz.map((q: any, qi: number) => (
-                  <div key={qi} style={{ marginBottom:14, paddingBottom:14, borderBottom: qi<lessonData.quiz.length-1?'1px solid var(--border)':'none' }}>
-                    <div style={{ fontSize:13, fontWeight:500, color:'var(--text)', marginBottom:8, lineHeight:1.5 }}>{qi+1}. {q.q}</div>
-                    <div style={{ display:'flex', flexDirection:'column' as const, gap:5 }}>
-                      {(q.opts||[]).map((opt: string, oi: number) => {
-                        let bg='var(--bg3)', border='1px solid var(--border2)', color='var(--text2)'
-                        if(quizAnswers[qi]!==undefined){ if(oi===q.correct){bg='var(--green-bg)';border='1px solid var(--green-border)';color='var(--green-text)'}else if(oi===quizAnswers[qi]){bg='var(--red-bg)';border='1px solid var(--red-border)';color='var(--red-text)'} }
-                        return <button key={oi} onClick={() => { if(quizAnswers[qi]===undefined) setQuizAnswers(p=>({...p,[qi]:oi})) }} style={{ padding:'7px 12px', borderRadius:7, border, background:bg, color, cursor:'pointer', fontSize:13, textAlign:'left' as const }}>{opt}</button>
-                      })}
-                    </div>
-                    {quizAnswers[qi]!==undefined && <div style={{ fontSize:11, color:'var(--text2)', marginTop:5, padding:'6px 10px', background:'var(--bg4)', borderRadius:6, lineHeight:1.5 }}>{q.explanation}</div>}
-                  </div>
-                ))}
-              </div>
-            </>}
-          </div>
-        )}
-        </div>
-        {/* Sticky bottom toolbar */}
+        {/* STICKY TOP TOOLBAR */}
         {lessonData && (
-          <div style={{ borderTop:'1px solid var(--border)', background:'var(--bg2)', padding:'10px 14px', flexShrink:0 }}>
+          <div style={{ borderBottom:'1px solid var(--border)', background:'var(--bg2)', padding:'8px 14px', flexShrink:0, zIndex:10 }}>
             {/* ELI5 / Go Deeper panel */}
             {(eliLoading || eliContent) && (
               <div style={{ background:'var(--bg3)', border:'1px solid var(--amber-bg)', borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
@@ -489,66 +376,191 @@ export default function LessonScreen() {
               <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
               <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
               <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
+              {!isComplete && (showSkipConfirm ? (
+                <div style={{ flex:2, display:'flex', gap:4 }}>
+                  <button onClick={skipLesson} disabled={skipping} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--amber-bg2)', background:'var(--amber-bg)', color:'var(--amber2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>{skipping ? 'Saving...' : 'Yes, skip it'}</button>
+                  <button onClick={() => setShowSkipConfirm(false)} style={{ padding:'7px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer' }}>Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowSkipConfirm(true)} style={{ flex:1, padding:'7px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
+              ))}
               <button onClick={markComplete} disabled={marking||isComplete} style={{ flex:2, padding:'7px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
             </div>
           </div>
         )}
-      </div>
-    {newBadges.length > 0 && !showLevelUp && (
-      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setNewBadges([])}>
-        <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
-          <div style={{ fontSize:40, marginBottom:12 }}>Trophy</div>
-          <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Badge{newBadges.length>1?'s':''} Earned!</div>
-          <div style={{ display:'flex', flexDirection:'column' as const, gap:8, marginBottom:24 }}>
-            {newBadges.map(id => {
-              const b = BADGES.find((x: any) => x.id === id)
-              return b ? (
-                <div key={id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
-                  <span style={{ fontSize:24 }}>{b.icon}</span>
-                  <div style={{ textAlign:'left' as const }}>
-                    <div style={{ fontSize:14, fontWeight:500, color:'var(--amber)' }}>{b.label}</div>
-                    <div style={{ fontSize:12, color:'var(--text2)' }}>{b.desc}</div>
-                  </div>
+
+        {/* SCROLLABLE LESSON CONTENT */}
+        <div style={{ flex:1, overflowY:'auto' }}>
+          {generating ? (
+            <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
+              <div style={{ width:36, height:36, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 20px' }}/>
+              <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:6 }}>Generating your lesson</div>
+              <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>{selectedDay?.title}</div>
+              {streamText && (
+                <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 14px', fontFamily:'var(--mono)', fontSize:10, color:'var(--text3)', maxWidth:400, width:'100%', textAlign:'left' as const, lineHeight:1.6, maxHeight:80, overflow:'hidden' }}>
+                  {streamText}
                 </div>
-              ) : null
-            })}
+              )}
+            </div>
+          ) : !selectedLesson || !lessonData ? (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
+              <div style={{ textAlign:'center' as const, color:'var(--text3)', padding:32 }}>
+                <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text2)', marginBottom:6 }}>Select a lesson</div>
+                <div style={{ fontSize:13 }}>Pick any session from the left panel to begin.</div>
+              </div>
+            </div>
+          ) : lessonData.error ? (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%' }}>
+              <div style={{ textAlign:'center' as const, padding:32 }}>
+                <div style={{ fontSize:14, color:'var(--red-text)', marginBottom:12 }}>Failed to generate lesson</div>
+                <button onClick={() => loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)} style={{ padding:'8px 18px', borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Try again</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 28px 40px' }}>
+
+              {/* Header */}
+              <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>
+                  {lessonData.eyebrow} - {lessonData.subject}
+                  {isComplete && <span style={{ marginLeft:8, color:'var(--green-text)' }}>- Complete</span>}
+                </div>
+                <h1 style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', lineHeight:1.2, marginBottom:10 }}>{lessonData.title}</h1>
+                <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.6, marginBottom:12 }}>{lessonData.intro}</div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' as const }}>
+                  {(lessonData.keyPoints||[]).map((p: string, i: number) => (
+                    <span key={i} style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)' }}>{p}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Audio bar */}
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, marginBottom:20 }}>
+                <button onClick={toggleAudio} style={{ width:30, height:30, borderRadius:'50%', background:'var(--amber)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  {audioPlaying ? <PauseIcon/> : <PlayIcon/>}
+                </button>
+                <div style={{ flex:1, height:3, background:'var(--bg5)', borderRadius:2 }}/>
+                <div style={{ display:'flex', gap:3 }}>
+                  {[0.75,1,1.25,1.5].map(s => (
+                    <button key={s} onClick={() => setAudioSpeed(s)} style={{ padding:'2px 6px', borderRadius:4, border:`1px solid ${audioSpeed===s?'var(--amber)':'var(--border2)'}`, background:audioSpeed===s?'var(--amber-bg)':'var(--bg4)', color:audioSpeed===s?'var(--amber)':'var(--text3)', fontSize:9, fontFamily:'var(--mono)', cursor:'pointer' }}>{s}x</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lesson content */}
+              <div style={{ lineHeight:1.85 }}>
+                {renderContent(lessonData.content || '')}
+              </div>
+
+              {/* Vocab */}
+              {(lessonData.vocab||[]).length > 0 && <>
+                {sectionLabel('Key Terms')}
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:7, marginBottom:8 }}>
+                  {lessonData.vocab.map((v: any, i: number) => (
+                    <div key={i} onClick={() => { if(window.speechSynthesis){window.speechSynthesis.cancel();window.speechSynthesis.speak(new SpeechSynthesisUtterance(v.word))} }} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 12px', cursor:'pointer' }}>
+                      <div style={{ fontFamily:'var(--serif)', fontSize:14, color:'var(--text)', fontStyle:'italic', marginBottom:2 }}>{v.word}</div>
+                      <div style={{ fontSize:10, color:'var(--amber)', fontFamily:'var(--mono)', marginBottom:4 }}>{v.reading}</div>
+                      <div style={{ fontSize:10.5, color:'var(--text3)', lineHeight:1.45 }}>{v.example}</div>
+                      <div style={{ fontSize:8.5, color:'var(--blue-text)', fontFamily:'var(--mono)', marginTop:3 }}>tap to hear</div>
+                    </div>
+                  ))}
+                </div>
+              </>}
+
+              {/* Exercises */}
+              {(lessonData.exercises||[]).length > 0 && <>
+                {sectionLabel('Practice')}
+                <div style={{ display:'flex', flexDirection:'column' as const, gap:9 }}>
+                  {lessonData.exercises.map((ex: any, ei: number) => (
+                    <div key={ei} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, padding:'14px 16px' }}>
+                      <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.08em', marginBottom:7 }}>{ex.type}</div>
+                      <div style={{ fontSize:13.5, fontWeight:500, color:'var(--text)', marginBottom:10, lineHeight:1.5 }}>{ex.question}</div>
+                      {ex.type === 'Fill in the Blank' ? (
+                        <>
+                          <input style={{ width:'100%', padding:'8px 11px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none', marginBottom:7 }}
+                            placeholder="Your answer..." value={exInputs[ei]||''} onChange={e => setExInputs(p=>({...p,[ei]:e.target.value}))}
+                            disabled={exAnswers[ei]!==undefined}
+                            onKeyDown={e => { if(e.key==='Enter'&&exAnswers[ei]===undefined){ const correct=(exInputs[ei]||'').trim().toLowerCase()===ex.answer.toLowerCase(); setExAnswers(p=>({...p,[ei]:correct?'correct':'wrong'})) } }}
+                          />
+                          {exAnswers[ei]===undefined && <button onClick={() => { const correct=(exInputs[ei]||'').trim().toLowerCase()===ex.answer.toLowerCase(); setExAnswers(p=>({...p,[ei]:correct?'correct':'wrong'})) }} style={{ padding:'6px 14px', borderRadius:6, background:'var(--bg4)', border:'1px solid var(--border2)', color:'var(--text2)', fontSize:12, cursor:'pointer', fontFamily:'var(--sans)' }}>Check</button>}
+                          {exAnswers[ei]!==undefined && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, lineHeight:1.6, background:exAnswers[ei]==='correct'?'var(--green-bg)':'var(--red-bg)', border:`1px solid ${exAnswers[ei]==='correct'?'var(--green-border)':'var(--red-border)'}`, color:exAnswers[ei]==='correct'?'var(--green-text)':'var(--red-text)', marginTop:6 }}>{exAnswers[ei]==='correct'?'Correct! ':`Answer: "${ex.answer}". `}{ex.explanation}</div>}
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ display:'flex', flexDirection:'column' as const, gap:5 }}>
+                            {(ex.opts||[]).map((opt: string, oi: number) => {
+                              let bg='var(--bg3)', border='1px solid var(--border2)', color='var(--text2)'
+                              if(exAnswers[ei]!==undefined){ if(oi===ex.correct){bg='var(--green-bg)';border='1px solid var(--green-border)';color='var(--green-text)'}else if(oi===exAnswers[ei]){bg='var(--red-bg)';border='1px solid var(--red-border)';color='var(--red-text)'} }
+                              return <button key={oi} onClick={() => { if(exAnswers[ei]===undefined) setExAnswers(p=>({...p,[ei]:oi})) }} style={{ padding:'8px 12px', borderRadius:7, border, background:bg, color, cursor:'pointer', fontSize:13, textAlign:'left' as const, lineHeight:1.4 }}>{opt}</button>
+                            })}
+                          </div>
+                          {exAnswers[ei]!==undefined && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, lineHeight:1.6, background:exAnswers[ei]===ex.correct?'var(--green-bg)':'var(--red-bg)', border:`1px solid ${exAnswers[ei]===ex.correct?'var(--green-border)':'var(--red-border)'}`, color:exAnswers[ei]===ex.correct?'var(--green-text)':'var(--red-text)', marginTop:8 }}>{exAnswers[ei]===ex.correct?'Correct! ':'Not quite. '}{ex.explanation}</div>}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>}
+
+              {/* Quiz */}
+              {(lessonData.quiz||[]).length > 0 && <>
+                {sectionLabel('Check Your Understanding')}
+                <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'16px 18px', marginBottom:20 }}>
+                  {lessonData.quiz.map((q: any, qi: number) => (
+                    <div key={qi} style={{ marginBottom:14, paddingBottom:14, borderBottom: qi<lessonData.quiz.length-1?'1px solid var(--border)':'none' }}>
+                      <div style={{ fontSize:13, fontWeight:500, color:'var(--text)', marginBottom:8, lineHeight:1.5 }}>{qi+1}. {q.q}</div>
+                      <div style={{ display:'flex', flexDirection:'column' as const, gap:5 }}>
+                        {(q.opts||[]).map((opt: string, oi: number) => {
+                          let bg='var(--bg3)', border='1px solid var(--border2)', color='var(--text2)'
+                          if(quizAnswers[qi]!==undefined){ if(oi===q.correct){bg='var(--green-bg)';border='1px solid var(--green-border)';color='var(--green-text)'}else if(oi===quizAnswers[qi]){bg='var(--red-bg)';border='1px solid var(--red-border)';color='var(--red-text)'} }
+                          return <button key={oi} onClick={() => { if(quizAnswers[qi]===undefined) setQuizAnswers(p=>({...p,[qi]:oi})) }} style={{ padding:'7px 12px', borderRadius:7, border, background:bg, color, cursor:'pointer', fontSize:13, textAlign:'left' as const }}>{opt}</button>
+                        })}
+                      </div>
+                      {quizAnswers[qi]!==undefined && <div style={{ fontSize:11, color:'var(--text2)', marginTop:5, padding:'6px 10px', background:'var(--bg4)', borderRadius:6, lineHeight:1.5 }}>{q.explanation}</div>}
+                    </div>
+                  ))}
+                </div>
+              </>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {newBadges.length > 0 && !showLevelUp && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setNewBadges([])}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:40, marginBottom:12 }}>🏆</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Badge{newBadges.length>1?'s':''} Earned!</div>
+            <div style={{ display:'flex', flexDirection:'column' as const, gap:8, marginBottom:24 }}>
+              {newBadges.map(id => {
+                const b = BADGES.find((x: any) => x.id === id)
+                return b ? (
+                  <div key={id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)' }}>
+                    <span style={{ fontSize:24 }}>{b.icon}</span>
+                    <div style={{ textAlign:'left' as const }}>
+                      <div style={{ fontSize:14, fontWeight:500, color:'var(--amber)' }}>{b.label}</div>
+                      <div style={{ fontSize:12, color:'var(--text2)' }}>{b.desc}</div>
+                    </div>
+                  </div>
+                ) : null
+              })}
+            </div>
+            <button onClick={() => setNewBadges([])} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
           </div>
-          <button onClick={() => setNewBadges([])} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
         </div>
-      </div>
-    )}
-    {showLevelUp && (
-      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowLevelUp(null)}>
-        <div style={{ background:'var(--bg2)', border:'1px solid var(--amber)', borderRadius:18, padding:'40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
-          <div style={{ fontSize:48, marginBottom:16 }}>Star</div>
-          <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', marginBottom:8 }}>Level Up!</div>
-          <div style={{ fontSize:16, color:'var(--text)', marginBottom:6 }}>You are now a</div>
-          <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber2)', fontWeight:700, marginBottom:20 }}>{showLevelUp?.title}</div>
-          <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>Keep learning to reach the next level.</div>
-          <button onClick={() => setShowLevelUp(null)} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
+      )}
+      {showLevelUp && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowLevelUp(null)}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--amber)', borderRadius:18, padding:'40px', textAlign:'center', maxWidth:380, width:'90%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:48, marginBottom:16 }}>⭐</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', marginBottom:8 }}>Level Up!</div>
+            <div style={{ fontSize:16, color:'var(--text)', marginBottom:6 }}>You are now a</div>
+            <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber2)', fontWeight:700, marginBottom:20 }}>{showLevelUp?.title}</div>
+            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>Keep learning to reach the next level.</div>
+            <button onClick={() => setShowLevelUp(null)} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
