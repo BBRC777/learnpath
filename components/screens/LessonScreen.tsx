@@ -300,7 +300,7 @@ Rules:
   }
 
   const selectedDay = selectedLesson ? weeks[selectedLesson.wi]?.days?.[selectedLesson.di] : null
-  const lessonKey = selectedLesson ? `${selectedLesson.wi}-${selectedLesson.di}` : null
+  const lessonKey = selectedLesson ? (selectedLesson.wi + '-' + selectedLesson.di) : null
 
   return (
     <div style={{ display:'flex', height:'100%', overflow:'hidden' }}>
