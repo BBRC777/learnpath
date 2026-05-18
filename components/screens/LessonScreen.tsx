@@ -89,9 +89,9 @@ export default function LessonScreen() {
 
   const activeCurr = curricula.find(c => c.id === activeCurrId)
 
-  useEffect(() => {
+      const key = selectedLesson.wi + '-' + selectedLesson.di
     if (activeCurr && selectedLesson) {
-      const key = `${selectedLesson.wi}-${selectedLesson.di}`
+      const key = selectedLesson.wi + '-' + selectedLesson.di
       const done = !!(activeCurr.progress || {})[key]
       setIsComplete(done)
       setExAnswers({})
@@ -101,9 +101,9 @@ export default function LessonScreen() {
       loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)
     }
   }, [selectedLesson, activeCurrId])
-
+    const key = wi + '-' + di
   const loadLesson = async (curr: any, wi: number, di: number) => {
-    const key = `${wi}-${di}`
+    const key = wi + '-' + di
     // Check cache first
     const cached = await getCachedLesson(curr.id, key)
     if (cached) {
@@ -163,7 +163,7 @@ export default function LessonScreen() {
       const currs = await loadCurricula(userId)
       const curr = currs.find((c: any) => c.id === activeCurrId)
       const progress = { ...(curr?.progress || {}) }
-      const key = `${selectedLesson!.wi}-${selectedLesson!.di}`
+      const key = selectedLesson!.wi + '-' + selectedLesson!.di
       progress[key] = true
       await updateCurriculumProgress(activeCurrId, progress)
       await logActivity(userId, 'lesson', 20)
@@ -228,7 +228,7 @@ export default function LessonScreen() {
   const toggleAudio = () => {
     if (!lessonData) return
     if (audioPlaying) { window.speechSynthesis?.cancel(); setAudioPlaying(false); return }
-    const text = `${lessonData.title}. ${lessonData.intro} ${lessonData.content?.replace(/#{1,3} /g,'').replace(/>/g,'') || ''}`
+    const text = lessonData.title + '. ' + lessonData.intro + ' ' + (lessonData.content?.replace(/#{1,3} /g,'').replace(/>/g,'') || '')
     const u = new SpeechSynthesisUtterance(text)
     u.rate = audioSpeed
     u.onend = () => setAudioPlaying(false)
@@ -299,7 +299,7 @@ export default function LessonScreen() {
               Week {wi+1} - {wk.theme}
             </div>
             {(wk.days||[]).map((d: any, di: number) => {
-              const key = `${wi}-${di}`
+              const key = wi + '-' + di
               const done = !!progress[key]
               const isSelected = selectedLesson?.wi===wi && selectedLesson?.di===di
               const typeColors: Record<string,string> = { lesson:'var(--blue-text)', flashcards:'var(--purple-text)', exercise:'var(--green-text)', review:'var(--amber2)', practice:'var(--green-text)' }
