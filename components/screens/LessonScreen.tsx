@@ -89,7 +89,7 @@ export default function LessonScreen() {
 
   const activeCurr = curricula.find(c => c.id === activeCurrId)
 
-      const key = selectedLesson.wi + '-' + selectedLesson.di
+  useEffect(() => {
     if (activeCurr && selectedLesson) {
       const key = selectedLesson.wi + '-' + selectedLesson.di
       const done = !!(activeCurr.progress || {})[key]
