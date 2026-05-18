@@ -101,7 +101,6 @@ export default function LessonScreen() {
       loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)
     }
   }, [selectedLesson, activeCurrId])
-    const key = wi + '-' + di
   const loadLesson = async (curr: any, wi: number, di: number) => {
     const key = wi + '-' + di
     // Check cache first
