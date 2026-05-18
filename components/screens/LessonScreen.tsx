@@ -454,6 +454,7 @@ export default function LessonScreen() {
               </div>
             </>}
           </div>
+        )}
         </div>
         {/* Sticky bottom toolbar */}
         {lessonData && (
