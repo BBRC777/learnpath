@@ -113,6 +113,43 @@ export async function deleteCurriculum(curriculumId: string) {
   if (error) throw new Error(error.message)
 }
 
+// ── SHARE CURRICULUM ──────────────────────────────────────────
+export async function shareCurriculum(curriculumId: string): Promise<string> {
+  const shareId = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
+  const { error } = await (supabase.from('curricula') as any)
+    .update({ share_id: shareId, is_shared: true, updated_at: new Date().toISOString() })
+    .eq('id', curriculumId)
+  if (error) throw new Error(error.message)
+  return shareId
+}
+
+export async function unshareCurriculum(curriculumId: string): Promise<void> {
+  const { error } = await (supabase.from('curricula') as any)
+    .update({ is_shared: false, updated_at: new Date().toISOString() })
+    .eq('id', curriculumId)
+  if (error) throw new Error(error.message)
+}
+
+export async function getSharedCurriculum(shareId: string) {
+  const { data, error } = await (supabase.from('curricula') as any)
+    .select('id, topic, level, dur_label, curriculum, progress')
+    .eq('share_id', shareId)
+    .eq('is_shared', true)
+    .single()
+  if (error || !data) return null
+  return data
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────
+export async function getLeaderboard(limit = 20) {
+  const { data, error } = await (supabase.from('profiles') as any)
+    .select('id, display_name, xp, level, streak, badges')
+    .order('xp', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
 // ── STREAKS ───────────────────────────────────────────────────
 export async function loadStreak(userId: string) {
   const { data } = await (supabase.from('streaks') as any)
@@ -214,6 +251,7 @@ export async function checkAndAwardBadges(userId: string, context: {
   }
   return newBadges
 }
+
 // ── XP ────────────────────────────────────────────────────────
 export async function awardXP(
   activityType: XPRewardKey,
@@ -254,9 +292,3 @@ export async function completeLessonAndAwardXP(
     return null
   }
 }
-
-
-
-
-
-
