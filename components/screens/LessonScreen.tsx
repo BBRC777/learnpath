@@ -51,6 +51,13 @@ export default function LessonScreen() {
   const [tutorInput, setTutorInput] = useState('')
   const [tutorLoading, setTutorLoading] = useState(false)
   const [newBadges, setNewBadges] = useState<string[]>([])
+  const [mnemonics, setMnemonics] = useState<Record<number,string>>({})
+  const [mnemonicLoading, setMnemonicLoading] = useState<Record<number,boolean>>({})
+  const [adaptiveMode, setAdaptiveMode] = useState<'easier'|'harder'|null>(null)
+  const [adaptiveContent, setAdaptiveContent] = useState('')
+  const [adaptiveLoading, setAdaptiveLoading] = useState(false)
+  const [relatedTopics, setRelatedTopics] = useState<string[]>([])
+  const [relatedLoading, setRelatedLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const urlCurrId = searchParams.get('id')
@@ -98,6 +105,11 @@ export default function LessonScreen() {
       setExInputs({})
       setQuizAnswers({})
       setShowSkipConfirm(false)
+    setMnemonics({})
+    setMnemonicLoading({})
+    setAdaptiveMode(null)
+    setAdaptiveContent('')
+    setRelatedTopics([])
       setLessonData(null)
       loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)
     }
@@ -204,6 +216,7 @@ export default function LessonScreen() {
       ;(window as any).__learnpath_refreshProfile?.()
       setIsComplete(true)
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
+      fetchRelatedTopics()
     } catch(e) { console.error(e) }
     finally { setMarking(false) }
   }
@@ -229,9 +242,64 @@ export default function LessonScreen() {
       }
       ;(window as any).__learnpath_refreshProfile?.()
       setIsComplete(true)
+      fetchRelatedTopics()
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
     } catch(e) { console.error(e) }
     finally { setSkipping(false) }
+  }
+
+  const fetchMnemonic = async (word: string, example: string, idx: number) => {
+    setMnemonicLoading(p => ({...p,[idx]:true}))
+    const prompt = 'Create a single vivid, memorable mnemonic or memory trick to remember this vocabulary word. Be creative, funny, or surprising. Keep it to 1-2 sentences.\n\nWord: ' + word + '\nUsage example: ' + example
+    try {
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
+      const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break
+        for (const line of decoder.decode(value).split('\n')) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim(); if (data === '[DONE]') break
+          try { const p = JSON.parse(data); if (p.text) { full += p.text; setMnemonics(m => ({...m,[idx]:full})) } } catch {}
+        }
+      }
+    } catch(e) { setMnemonics(m => ({...m,[idx]:'Could not generate. Try again.'})) }
+    finally { setMnemonicLoading(p => ({...p,[idx]:false})) }
+  }
+
+  const fetchAdaptive = async (mode: 'easier'|'harder') => {
+    if (!lessonData) return
+    setAdaptiveMode(mode); setAdaptiveLoading(true); setAdaptiveContent('')
+    const modePrompt = mode === 'easier'
+      ? 'The student struggled with this lesson (scored below 60%). Create a simplified version of this lesson using simpler language, more analogies, and a slower pace. Focus on the core concept only.'
+      : 'The student aced this lesson (100% score). Create an advanced follow-up lesson that goes deeper, adds complexity, and challenges them further on this topic.'
+    const prompt = modePrompt + '\n\nOriginal lesson title: ' + (lessonData.title||'') + '\n\nOriginal lesson content:\n' + (lessonData.content||'')
+    try {
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
+      const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
+      while (true) {
+        const { done, value } = await reader.read(); if (done) break
+        for (const line of decoder.decode(value).split('\n')) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim(); if (data === '[DONE]') break
+          try { const p = JSON.parse(data); if (p.text) { full += p.text; setAdaptiveContent(full) } } catch {}
+        }
+      }
+    } catch(e) { setAdaptiveContent('Could not generate. Please try again.') }
+    finally { setAdaptiveLoading(false) }
+  }
+
+  const fetchRelatedTopics = async () => {
+    if (!lessonData || relatedTopics.length > 0) return
+    setRelatedLoading(true)
+    const prompt = 'Based on this lesson, suggest exactly 3 related topics the student could explore next. Return ONLY a JSON array of 3 short topic strings, no explanation.\n\nLesson: ' + (lessonData.title||'')
+    try {
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:false, messages:[{ role:'user', content:prompt }] }) })
+      const data = await res.json()
+      const text = data.content?.[0]?.text || ''
+      const match = text.match(/\[[\s\S]*\]/)
+      if (match) { const topics = JSON.parse(match[0]); if (Array.isArray(topics)) setRelatedTopics(topics.slice(0,3)) }
+    } catch(e) { console.error('Related topics error:', e) }
+    finally { setRelatedLoading(false) }
   }
 
   const fetchEli = async (mode: 'eli5'|'deeper') => {
@@ -475,7 +543,9 @@ export default function LessonScreen() {
                       <div style={{ fontFamily:'var(--serif)', fontSize:14, color:'var(--text)', fontStyle:'italic', marginBottom:2 }}>{v.word}</div>
                       <div style={{ fontSize:10, color:'var(--amber)', fontFamily:'var(--mono)', marginBottom:4 }}>{v.reading}</div>
                       <div style={{ fontSize:10.5, color:'var(--text3)', lineHeight:1.45 }}>{v.example}</div>
-                      <div style={{ fontSize:8.5, color:'var(--blue-text)', fontFamily:'var(--mono)', marginTop:3 }}>tap to hear</div>
+                          <div style={{ fontSize:8.5, color:'var(--blue-text)', fontFamily:'var(--mono)', marginTop:3 }}>tap to hear</div>
+                          {!mnemonics[i] && <button onClick={e => { e.stopPropagation(); fetchMnemonic(v.word, v.example, i) }} disabled={mnemonicLoading[i]} style={{ marginTop:6, width:'100%', padding:'4px', borderRadius:5, border:'1px solid var(--border2)', background:'var(--bg4)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:9, cursor:'pointer' }}>{mnemonicLoading[i] ? 'Generating...' : '✦ Remember it'}</button>}
+                          {mnemonics[i] && <div style={{ marginTop:6, fontSize:10, color:'var(--amber2)', lineHeight:1.5, fontStyle:'italic', borderTop:'1px solid var(--border)', paddingTop:5 }}>{mnemonics[i]}</div>}
                     </div>
                   ))}
                 </div>
@@ -534,6 +604,44 @@ export default function LessonScreen() {
                     </div>
                   ))}
                 </div>
+                    {/* Adaptive Difficulty */}
+                    {lessonData.quiz && lessonData.quiz.length > 0 && Object.keys(quizAnswers).length === lessonData.quiz.length && (() => {
+                    const total = lessonData.quiz.length
+                    const correct = lessonData.quiz.filter((_: any, qi: number) => quizAnswers[qi] === lessonData.quiz[qi].correct).length
+                    const pct = Math.round((correct/total)*100)
+                    return (
+                      <div style={{ marginTop:16, padding:'14px 16px', borderRadius:10, border:'1px solid var(--border)', background:'var(--bg2)' }}>
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                          <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>Quiz Score: {correct}/{total} ({pct}%)</div>
+                          <div style={{ fontFamily:'var(--mono)', fontSize:11, color:pct===100?'var(--green-text)':pct<60?'var(--red-text)':'var(--amber2)' }}>{pct===100?'Perfect!':pct<60?'Keep going':'Good work'}</div>
+                        </div>
+                        {pct < 60 && !adaptiveContent && <div style={{ fontSize:12, color:'var(--text2)', marginBottom:8 }}>This one was tough. Want a simpler version to reinforce the basics?
+                          <button onClick={() => fetchAdaptive('easier')} disabled={adaptiveLoading} style={{ marginLeft:10, padding:'4px 12px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer' }}>{adaptiveLoading && adaptiveMode==='easier' ? 'Generating...' : 'Simplify it'}</button></div>}
+                        {pct === 100 && !adaptiveContent && <div style={{ fontSize:12, color:'var(--text2)', marginBottom:8 }}>Perfect score! Ready for a harder challenge?
+                          <button onClick={() => fetchAdaptive('harder')} disabled={adaptiveLoading} style={{ marginLeft:10, padding:'4px 12px', borderRadius:6, border:'1px solid var(--border2)', background:'var(--amber-bg)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer' }}>{adaptiveLoading && adaptiveMode==='harder' ? 'Generating...' : 'Challenge me'}</button></div>}
+                        {adaptiveLoading && !adaptiveContent && <div style={{ fontSize:12, color:'var(--text3)', fontStyle:'italic' }}>Claude is generating your lesson...</div>}
+                        {adaptiveContent && <div style={{ marginTop:8, paddingTop:8, borderTop:'1px solid var(--border)' }}>
+                          <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.08em', marginBottom:6 }}>{adaptiveMode==='easier'?'Simplified Lesson':'Advanced Challenge'}</div>
+                          <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.8, whiteSpace:'pre-wrap' as const, maxHeight:300, overflowY:'auto' as const }}>{adaptiveContent}</div>
+                        </div>}
+                      </div>
+                    )
+                  })()}
+                  {/* Related Topics */}
+                  {isComplete && (
+                    <div style={{ marginTop:20, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+                      <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:12 }}>What to explore next</div>
+                      {relatedLoading && <div style={{ fontSize:12, color:'var(--text3)', fontStyle:'italic' }}>Finding related topics...</div>}
+                      {relatedTopics.length > 0 && <div style={{ display:'flex', flexDirection:'column' as const, gap:8 }}>
+                        {relatedTopics.map((topic, i) => (
+                          <div key={i} onClick={() => router.push('/app/curriculum?topic=' + encodeURIComponent(topic))} style={{ padding:'10px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--bg3)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                            <span style={{ fontSize:13, color:'var(--text)' }}>{topic}</span>
+                            <span style={{ fontSize:11, color:'var(--amber)', fontFamily:'var(--mono)' }}>Explore →</span>
+                          </div>
+                        ))}
+                      </div>}
+                    </div>
+                  )}
               </>}
             </div>
           )}
