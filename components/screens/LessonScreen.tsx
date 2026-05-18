@@ -341,12 +341,12 @@ export default function LessonScreen() {
       </div>
 
       {/* RIGHT PANEL - lesson content */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' }}>
-
+      {/* RIGHT PANEL - lesson content */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', position:'relative' }}>
+        {/* STICKY TOP TOOLBAR */}
         {/* STICKY TOP TOOLBAR */}
         {lessonData && (
-          <div style={{ borderBottom:'1px solid var(--border)', background:'var(--bg2)', padding:'8px 14px', flexShrink:0, zIndex:10 }}>
-            {/* ELI5 / Go Deeper panel */}
+          <div style={{ borderBottom:'1px solid var(--border)', background:'var(--bg2)', padding:'8px 14px', flexShrink:0, position:'sticky', top:0, zIndex:10 }}>
             {(eliLoading || eliContent) && (
               <div style={{ background:'var(--bg3)', border:'1px solid var(--amber-bg)', borderRadius:8, padding:'10px 12px', marginBottom:8 }}>
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>{eliMode==='eli5'?'Simplified':'Deeper Dive'}</div>
