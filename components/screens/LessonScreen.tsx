@@ -493,7 +493,6 @@ Rules:
             </>}
           </div>
         </div>
-        )}
         {/* Sticky bottom toolbar */}
         {lessonData && (
           <div style={{ borderTop:'1px solid var(--border)', background:'var(--bg2)', padding:'10px 14px', flexShrink:0 }}>
