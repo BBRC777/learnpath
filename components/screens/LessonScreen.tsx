@@ -116,45 +116,7 @@ export default function LessonScreen() {
     if (!day) return
     setGenerating(true)
     setStreamText('')
-    const prompt = `You are an expert educator. Generate a complete, engaging lesson for this learning session.
-
-Topic: ${curr.topic}
-Level: ${curr.level}
-Week ${wi+1} Theme: ${week.theme}
-Today's Session: ${day.title}
-Session Type: ${day.type}
-Duration: ${day.duration}
-Description: ${day.description}
-
-Generate a complete lesson as a single valid JSON object. Return ONLY the JSON, no markdown, no explanation.
-
-{
-  "title": "Engaging lesson title",
-  "subject": "${curr.topic}",
-  "level": "${curr.level}",
-  "duration": "${day.duration}",
-  "eyebrow": "Week ${wi+1} - Day ${di+1}",
-  "intro": "2-3 sentence introduction that hooks the learner and explains what they will master.",
-  "content": "Full lesson content in markdown. Use ## for section headers. Use > for key insights. Write 600-900 words. Be specific, practical, and engaging. Include real examples.",
-  "keyPoints": ["Point 1", "Point 2", "Point 3", "Point 4"],
-  "vocab": [
-    {"word": "term", "reading": "pronunciation or type", "example": "example usage"}
-  ],
-  "exercises": [
-    {"type": "Multiple Choice", "question": "Question text?", "opts": ["A","B","C","D"], "correct": 0, "explanation": "Why this is correct."},
-    {"type": "Fill in the Blank", "question": "Complete this: ___", "answer": "answer", "explanation": "Explanation."}
-  ],
-  "quiz": [
-    {"q": "Quiz question?", "opts": ["A","B","C","D"], "correct": 0, "explanation": "Explanation."}
-  ]
-}
-
-Rules:
-- vocab: 4-8 key terms relevant to this session
-- exercises: 2-3 exercises mixing Multiple Choice and Fill in the Blank
-- quiz: 3 questions to check understanding
-- content: rich, educational, specific to the topic and level
-- Keep all strings on single lines (no literal newlines in JSON strings, use \\n)`
+    const prompt = "You are an expert educator. Generate a complete, engaging lesson as a single valid JSON object. Return ONLY the JSON, no markdown, no explanation.\n\nTopic: " + curr.topic + "\nLevel: " + curr.level + "\nWeek " + (wi+1) + " Theme: " + week.theme + "\nSession: " + day.title + "\nType: " + day.type + "\nDuration: " + day.duration + "\nDescription: " + day.description + "\n\nGenerate this JSON:\n{\n  \"title\": \"Engaging lesson title\",\n  \"subject\": \"" + curr.topic + "\",\n  \"level\": \"" + curr.level + "\",\n  \"duration\": \"" + day.duration + "\",\n  \"eyebrow\": \"Week " + (wi+1) + " - Day " + (di+1) + "\",\n  \"intro\": \"2-3 sentence introduction.\",\n  \"content\": \"Full lesson in markdown, 600-900 words. Use ## headers and > for insights.\",\n  \"keyPoints\": [\"Point 1\", \"Point 2\", \"Point 3\"],\n  \"vocab\": [{\"word\": \"term\", \"reading\": \"type\", \"example\": \"usage\"}],\n  \"exercises\": [{\"type\": \"Multiple Choice\", \"question\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}],\n  \"quiz\": [{\"q\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}]\n}\nRules: vocab 4-8 terms, exercises 2-3 mixed types, quiz 3 questions, content rich and specific."
 
     try {
       const res = await fetch('/api/claude', {
