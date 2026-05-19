@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, buyStreakFreeze, type Profile } from '@/lib/db'
+import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, loadCurricula, buyStreakFreeze, type Profile } from '@/lib/db'
 
 const NEXT_LEVEL: Record<number,string> = { 1:'Scholar', 2:'Expert', 3:'Master' }
 
@@ -72,6 +72,9 @@ export default function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen]     = useState(true)
   const [flashcardsDue, setFlashcardsDue] = useState<number>(0)
   const [buyingFreeze, setBuyingFreeze]   = useState(false)
+  const [searchQuery, setSearchQuery]     = useState('')
+  const [searchOpen, setSearchOpen]       = useState(false)
+  const [curricula, setCurricula]         = useState<any[]>([])
 
   const refreshProfile = useCallback(async () => {
     const p = await getProfile()
@@ -84,6 +87,7 @@ export default function AppShell({ children }: AppShellProps) {
       if (data.user) {
         setUser(data.user)
         loadFlashcardsDueCount(data.user.id).then(setFlashcardsDue).catch(() => {})
+        loadCurricula(data.user.id).then(setCurricula).catch(() => {})
       }
     })
   }, [refreshProfile])
@@ -223,7 +227,47 @@ export default function AppShell({ children }: AppShellProps) {
               {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
             </div>
           </div>
-          <div style={{ display:'flex', gap:8, flex:1, justifyContent:'flex-end', alignItems:'center' }}>
+          {/* Search */}
+          <div style={{ position:'relative', flex:1, maxWidth:280, margin:'0 12px' }}>
+            <input
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true) }}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+              placeholder='Search paths...'
+              style={{ width:'100%', padding:'6px 12px 6px 30px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:12, outline:'none', boxSizing:'border-box' as const }}
+            />
+            <span style={{ position:'absolute' as const, left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none' as const }}>⌕</span>
+            {searchOpen && searchQuery.trim().length > 0 && (() => {
+              const results = curricula.filter((cr: any) => (cr.curriculum?.title || cr.topic || '').toLowerCase().includes(searchQuery.toLowerCase()) || (cr.topic||'').toLowerCase().includes(searchQuery.toLowerCase()))
+              if (results.length === 0) return (
+                <div style={{ position:'absolute' as const, top:'calc(100% + 4px)', left:0, right:0, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 14px', fontSize:12, color:'var(--text3)', zIndex:200 }}>No paths found</div>
+              )
+              return (
+                <div style={{ position:'absolute' as const, top:'calc(100% + 4px)', left:0, right:0, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', zIndex:200 }}>
+                  {results.slice(0,6).map((r: any) => {
+                    const weeks = r.curriculum?.weeks || []
+                    const total = weeks.reduce((a: number, w: any) => a + (w.days?.length||0), 0)
+                    const done = Object.values(r.progress||{}).filter(Boolean).length
+                    const pct = total ? Math.round((done/total)*100) : 0
+                    return (
+                      <div key={r.id} onMouseDown={() => { router.push(`/app/lesson?id=`+r.id); setSearchQuery(''); setSearchOpen(false) }}
+                        style={{ padding:'10px 14px', cursor:'pointer', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}
+                        onMouseEnter={e => (e.currentTarget.style.background='var(--bg3)')}
+                        onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
+                        <div>
+                          <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', marginBottom:1 }}>{r.curriculum?.title || r.topic}</div>
+                          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{r.topic} · {r.level}</div>
+                        </div>
+                        <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', flexShrink:0 }}>{pct}%</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()} 
+          </div>
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end', alignItems:'center', flexShrink:0 }}>
             {isLessonPage && lessonToolbar ? lessonToolbar : (
               <>
                 {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
