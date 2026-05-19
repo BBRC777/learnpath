@@ -118,9 +118,12 @@ export default function LessonScreen() {
 
   const loadLesson = async (curr: any, wi: number, di: number) => {
     const key = wi + '-' + di
+    const lsKey = 'lp_lesson_' + curr.id + '_' + key
+    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); return } } catch {}
     const cached = await getCachedLesson(curr.id, key)
     if (cached) {
       setLessonData(cached)
+      try { localStorage.setItem(lsKey, JSON.stringify(cached)) } catch {}
       return
     }
     const week = curr.curriculum?.weeks?.[wi]
@@ -156,6 +159,7 @@ export default function LessonScreen() {
       if (parsed.content) parsed.content = parsed.content.replace(/\\n/g, '\n')
       setLessonData(parsed)
       if (activeCurrId) await cacheLesson(activeCurrId, key, parsed)
+      try { localStorage.setItem(lsKey, JSON.stringify(parsed)) } catch {}
     } catch(e: any) {
       console.error('Lesson generation failed:', e)
       setLessonData({ error: e.message })
@@ -258,6 +262,7 @@ export default function LessonScreen() {
     try {
       const key = selectedLesson.wi + '-' + selectedLesson.di
       await clearCachedLesson(activeCurrId, key)
+      try { localStorage.removeItem('lp_lesson_' + activeCurrId + '_' + key) } catch {}
       setLessonData(null)
       await loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)
     } catch(e) { console.error(e) }
