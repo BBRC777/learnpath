@@ -72,9 +72,21 @@ export default function AppShell({ children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen]     = useState(true)
   const [flashcardsDue, setFlashcardsDue] = useState<number>(0)
   const [buyingFreeze, setBuyingFreeze]   = useState(false)
+  const [theme, setTheme]                 = useState<'dark'|'light'>('dark')
   const [searchQuery, setSearchQuery]     = useState('')
   const [searchOpen, setSearchOpen]       = useState(false)
   const [curricula, setCurricula]         = useState<any[]>([])
+
+  useEffect(() => {
+    const saved = localStorage.getItem('lp-theme') as 'dark'|'light'|null
+    if (saved) setTheme(saved)
+    document.documentElement.setAttribute('data-theme', saved || 'dark')
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('lp-theme', theme)
+  }, [theme])
 
   const refreshProfile = useCallback(async () => {
     const p = await getProfile()
@@ -227,6 +239,7 @@ export default function AppShell({ children }: AppShellProps) {
               {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
             </div>
           </div>
+          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? '☀️' : '🌙'}</button>
           {/* Search */}
           <div style={{ position:'relative', flex:1, maxWidth:280, margin:'0 12px' }}>
             <input

@@ -1,6 +1,5 @@
-﻿/* app/globals.css */
+/* app/globals.css */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 :root {
   /* Brand */
   --amber: #d4853a;
@@ -8,7 +7,6 @@
   --amber3: #f0c080;
   --amber-bg: rgba(212,133,58,0.1);
   --amber-bg2: rgba(212,133,58,0.18);
-
   /* Semantic colours */
   --green-bg: rgba(58,138,90,0.12);
   --green-text: #6abf8a;
@@ -22,28 +20,53 @@
   --red-bg: rgba(191,58,58,0.12);
   --red-text: #ef7a7a;
   --red-border: rgba(191,58,58,0.3);
-
   /* Surface */
   --bg: #0a0b0f;
   --bg2: #111318;
   --bg3: #1a1c24;
   --bg4: #22252f;
   --bg5: #2a2d38;
-
   /* Borders */
   --border: #2a2d38;
   --border2: #363a48;
   --border3: #454858;
-
   /* Text */
   --text: #e8e6df;
   --text2: #9a9790;
   --text3: #5a5856;
-
   /* Typography */
   --serif: 'Playfair Display', Georgia, serif;
   --sans: 'DM Sans', system-ui, sans-serif;
   --mono: 'JetBrains Mono', monospace;
+}
+
+[data-theme='light'] {
+  /* Surface */
+  --bg: #f5f3ef;
+  --bg2: #ffffff;
+  --bg3: #ede9e2;
+  --bg4: #e2ddd6;
+  --bg5: #d4cfc8;
+  /* Borders */
+  --border: #ddd9d2;
+  --border2: #ccc8c0;
+  --border3: #b8b4ac;
+  /* Text */
+  --text: #1a1814;
+  --text2: #4a4844;
+  --text3: #8a8784;
+  /* Semantic - slightly adjusted for light bg */
+  --green-bg: rgba(58,138,90,0.1);
+  --green-text: #2d8a5a;
+  --green-border: rgba(58,138,90,0.3);
+  --blue-bg: rgba(58,106,191,0.08);
+  --blue-text: #3a6abf;
+  --blue-border: rgba(58,106,191,0.25);
+  --red-bg: rgba(191,58,58,0.08);
+  --red-text: #bf3a3a;
+  --red-border: rgba(191,58,58,0.25);
+  --amber-bg: rgba(212,133,58,0.12);
+  --amber-bg2: rgba(212,133,58,0.2);
 }
 
 html, body { height: 100%; }
@@ -54,12 +77,10 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
-
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
 /* Animations */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
@@ -76,7 +97,6 @@ body {
   0%, 100% { opacity: 0.2; }
   50%       { opacity: 1; }
 }
-
 .fade-up   { animation: fadeUp  0.3s ease both; }
 .fade-up-2 { animation: fadeUp  0.3s 0.07s ease both; }
 .fade-up-3 { animation: fadeUp  0.3s 0.14s ease both; }
