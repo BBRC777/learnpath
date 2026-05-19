@@ -474,7 +474,7 @@ export default function LessonScreen() {
         {/* SCROLLABLE LESSON CONTENT */}
         <div style={{ flex:1, overflowY:'auto' }}>
           {generating ? (
-            <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', height:'100%', padding:32, textAlign:'center' }}>
+                <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', paddingTop:60, padding:32, textAlign:'center' }}>
               <div style={{ width:36, height:36, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 20px' }}/>
               <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:6 }}>Generating your lesson</div>
               <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>{selectedDay?.title}</div>
