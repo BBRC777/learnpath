@@ -75,6 +75,7 @@ export default function CurriculumScreen() {
   const [isPro, setIsPro] = useState(false)
   const [pathCount, setPathCount] = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [showProTab, setShowProTab] = useState(false)
   const [selectedWeek, setSelectedWeek] = useState<number|null>(null)
   const [selectedDay, setSelectedDay] = useState<number|null>(null)
 
@@ -335,7 +336,7 @@ export default function CurriculumScreen() {
             { v:'pdf', label:'📄 From PDF', desc:'Upload a document', pro:true },
             { v:'youtube', label:'▶ From YouTube', desc:'Paste a URL', pro:true },
           ].map(tab => (
-            <button key={tab.v} onClick={() => { setMode(tab.v as any); setError('') }} style={{ flex:1, padding:'8px 10px', borderRadius:7, border:'none', background:mode===tab.v?'var(--bg2)':'transparent', color:mode===tab.v?'var(--amber)':'var(--text3)', fontFamily:'var(--sans)', fontSize:12, fontWeight:mode===tab.v?500:400, cursor:'pointer', transition:'all 0.15s', position:'relative' as const }}>
+                <button key={tab.v} onClick={() => { if((tab as any).pro && !isPro){ setShowProTab(true); return }; setMode(tab.v as any); setError('') }} style={{ flex:1, padding:'8px 10px', borderRadius:7, border:'none', background:mode===tab.v?'var(--bg2)':'transparent', color:(tab as any).pro && !isPro?'var(--text3)':mode===tab.v?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:mode===tab.v?500:400, cursor:'pointer', transition:'all 0.15s', position:'relative' as const, opacity:(tab as any).pro && !isPro?0.6:1 }}>
               {tab.label}
               {tab.pro && !isPro && <span style={{ marginLeft:4, fontSize:8, fontFamily:'var(--mono)', padding:'1px 4px', borderRadius:3, background:'var(--amber-bg)', color:'var(--amber)', border:'1px solid rgba(212,133,58,0.3)' }}>PRO</span>}
             </button>
@@ -564,6 +565,19 @@ export default function CurriculumScreen() {
         )}
 
       </div>
+      {showProTab && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => setShowProTab(false)}>
+          <div style={{ background:'var(--bg2)', border:'1px solid rgba(212,133,58,0.3)', borderRadius:20, padding:'36px 32px', maxWidth:400, width:'100%', textAlign:'center' as const }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:32, marginBottom:16 }}>◆</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)', marginBottom:8 }}>Pro Feature</div>
+            <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.7, marginBottom:28 }}>PDF and YouTube curriculum generation is a Learnpath Pro feature. Upgrade to unlock unlimited paths, AI Tutor, Study Mode, and more.</div>
+            <div style={{ display:'flex', flexDirection:'column' as const, gap:10 }}>
+              <button onClick={() => window.open('https://pay.rev.cat/sandbox/skelxidydieztrqy/'+(userId||''), '_blank')} style={{ padding:'12px', borderRadius:9, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Upgrade to Pro</button>
+              <button onClick={() => setShowProTab(false)} style={{ padding:'11px', borderRadius:9, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back to builder</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
