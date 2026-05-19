@@ -239,6 +239,15 @@ export default function AppShell({ children }: AppShellProps) {
               {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
             </div>
           </div>
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end', alignItems:'center', flexShrink:0 }}>
+            {isLessonPage && lessonToolbar ? lessonToolbar : (
+              <>
+                {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
+                {!pathname?.includes('/app') && <button onClick={signOut} style={btnSecondary}>Sign out</button>}
+                {!showSettings && pathname==='/app/paths' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
+              </>
+            )}
+          </div>
           <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? '☀️' : '🌙'}</button>
           {/* Search */}
           <div style={{ position:'relative', flex:1, maxWidth:280, margin:'0 12px' }}>
@@ -279,15 +288,6 @@ export default function AppShell({ children }: AppShellProps) {
                 </div>
               )
             })()} 
-          </div>
-          <div style={{ display:'flex', gap:8, justifyContent:'flex-end', alignItems:'center', flexShrink:0 }}>
-            {isLessonPage && lessonToolbar ? lessonToolbar : (
-              <>
-                {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
-                {!pathname?.includes('/app') && <button onClick={signOut} style={btnSecondary}>Sign out</button>}
-                {!showSettings && pathname==='/app/paths' && <button onClick={()=>router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
-              </>
-            )}
           </div>
         </div>
 
