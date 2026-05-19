@@ -124,6 +124,15 @@ export async function cacheLesson(curriculumId: string, lessonKey: string, lesso
     .update({ lesson_cache: cache, updated_at: new Date().toISOString() }).eq('id', curriculumId)
 }
 
+export async function clearCachedLesson(curriculumId: string, lessonKey: string) {
+  const { data: curr } = await (supabase.from('curricula') as any)
+    .select('lesson_cache').eq('id', curriculumId).single()
+  const cache = curr?.lesson_cache || {}
+  delete cache[lessonKey]
+  await (supabase.from('curricula') as any)
+    .update({ lesson_cache: cache, updated_at: new Date().toISOString() }).eq('id', curriculumId)
+}
+
 export async function deleteCurriculum(curriculumId: string) {
   const { error } = await (supabase.from('curricula') as any).delete().eq('id', curriculumId)
   if (error) throw new Error(error.message)

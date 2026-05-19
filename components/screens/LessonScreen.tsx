@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function PlayIcon() {
@@ -32,6 +32,7 @@ export default function LessonScreen() {
   const [isComplete, setIsComplete] = useState(false)
   const [marking, setMarking] = useState(false)
   const [skipping, setSkipping] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
   const [showSkipConfirm, setShowSkipConfirm] = useState(false)
   const [userId, setUserId] = useState<string|null>(null)
   const [audioPlaying, setAudioPlaying] = useState(false)
@@ -180,12 +181,15 @@ export default function LessonScreen() {
             <button onClick={() => setShowSkipConfirm(false)} style={{ padding:'5px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer' }}>Cancel</button>
           </div>
         ) : (
-          <button onClick={() => setShowSkipConfirm(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
+          <>
+            <button onClick={regenLesson} disabled={regenerating||generating} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>{regenerating ? 'Regenerating...' : '\u21ba Regenerate'}</button>
+            <button onClick={() => setShowSkipConfirm(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
+          </>
         ))}
         <button onClick={markComplete} disabled={marking||isComplete} style={{ padding:'5px 16px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
       </div>
     )
-  }, [lessonData, isComplete, marking, skipping, showSkipConfirm, eliMode, eliContent, tutorOpen, tutorMessages])
+  }, [lessonData, isComplete, marking, skipping, showSkipConfirm, eliMode, eliContent, tutorOpen, tutorMessages, regenerating, generating])
 
   // Clear toolbar when leaving lesson screen
   useEffect(() => {
@@ -246,6 +250,18 @@ export default function LessonScreen() {
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
     } catch(e) { console.error(e) }
     finally { setSkipping(false) }
+  }
+
+  const regenLesson = async () => {
+    if (!activeCurrId || !selectedLesson) return
+    setRegenerating(true)
+    try {
+      const key = selectedLesson.wi + '-' + selectedLesson.di
+      await clearCachedLesson(activeCurrId, key)
+      setLessonData(null)
+      await loadLesson(activeCurr, selectedLesson.wi, selectedLesson.di)
+    } catch(e) { console.error(e) }
+    finally { setRegenerating(false) }
   }
 
   const fetchMnemonic = async (word: string, example: string, idx: number) => {
