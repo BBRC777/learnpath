@@ -1,0 +1,204 @@
+// app/page.tsx
+import Link from 'next/link'
+
+const FEATURES = [
+  {
+    icon: '◆',
+    title: 'AI-Generated Curriculums',
+    desc: 'Tell us what you want to learn. Claude builds you a complete multi-week curriculum with structured lessons, key concepts, and exercises — in seconds.',
+  },
+  {
+    icon: '⧉',
+    title: 'Spaced Repetition Flashcards',
+    desc: 'Every lesson generates flashcards automatically. Our SM-2 algorithm schedules reviews at the perfect moment so you never forget what you learn.',
+  },
+  {
+    icon: '▶',
+    title: 'AI Tutor Built In',
+    desc: 'Stuck on a concept? Ask your AI tutor anything mid-lesson. Get an ELI5 explanation, go deeper, or have the lesson simplified — all without leaving the page.',
+  },
+  {
+    icon: '◉',
+    title: 'Adaptive Difficulty',
+    desc: 'Score below 60% on a quiz and get a simpler follow-up. Ace it and unlock an advanced challenge. The curriculum adapts to how you actually perform.',
+  },
+  {
+    icon: '🔥',
+    title: 'Streaks & XP',
+    desc: 'Daily streaks, XP rewards, level-ups, and 10 badge types keep you coming back. Learning is more fun when progress feels real.',
+  },
+  {
+    icon: '🔗',
+    title: 'Share Your Path',
+    desc: 'Finished building a great curriculum? Share it with a public link. Anyone can browse your full lesson outline and start learning with one click.',
+  },
+]
+
+const STEPS = [
+  { n: '01', title: 'Pick a topic', desc: 'Type anything — a language, a skill, a subject, a career goal. Learnpath handles the rest.' },
+  { n: '02', title: 'Get your curriculum', desc: 'In seconds, Claude generates a structured multi-week learning path tailored to your level and schedule.' },
+  { n: '03', title: 'Learn every day', desc: 'Work through lessons, review flashcards, quiz yourself, and chat with your AI tutor — all in one place.' },
+]
+
+const TESTIMONIALS = [
+  { text: 'I built a 4-week Python curriculum in 30 seconds. The lessons are genuinely good — better than most YouTube tutorials.', name: 'Marcus T.', role: 'Self-taught developer' },
+  { text: 'The AI tutor is a game changer. I can ask questions mid-lesson without breaking my flow. It feels like having a private teacher.', name: 'Priya S.', role: 'Medical student' },
+  { text: 'I have tried Duolingo, Anki, and a dozen courses. Learnpath is the first thing that actually kept me consistent.', name: 'Jordan K.', role: 'Language learner' },
+]
+
+export default function LandingPage() {
+  return (
+    <div style={{ minHeight: '100vh', background: '#0a0b0f', color: '#e8e6df', fontFamily: "'DM Sans', system-ui, sans-serif", overflowX: 'hidden' }}>
+
+      {/* NAV */}
+      <nav style={{ position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid #2a2d38', background: 'rgba(10,11,15,0.85)', backdropFilter: 'blur(12px)', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: '#d4853a', letterSpacing: '-0.01em' }}>◆ Learnpath</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Link href="/pricing" style={{ padding: '7px 14px', borderRadius: 7, color: '#9a9790', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>Pricing</Link>
+          <Link href="/auth" style={{ padding: '7px 14px', borderRadius: 7, color: '#9a9790', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>Sign in</Link>
+          <Link href="/auth" style={{ padding: '8px 16px', borderRadius: 7, background: '#d4853a', color: '#0a0b0f', fontSize: 13, fontWeight: 500, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>Get started free</Link>
+        </div>
+      </nav>
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+
+        {/* HERO */}
+        <div style={{ textAlign: 'center', padding: '100px 0 80px' }}>
+          <div style={{ display: 'inline-block', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.14em', padding: '4px 14px', borderRadius: 20, border: '1px solid rgba(212,133,58,0.3)', background: 'rgba(212,133,58,0.08)', marginBottom: 28 }}>
+            Powered by Claude AI
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(40px, 7vw, 72px)', lineHeight: 1.1, color: '#e8e6df', marginBottom: 24, maxWidth: 800, margin: '0 auto 24px' }}>
+            Learn anything with<br/>
+            <span style={{ color: '#d4853a', fontStyle: 'italic' }}>AI-generated curriculums</span>
+          </h1>
+          <p style={{ fontSize: 18, color: '#9a9790', lineHeight: 1.7, maxWidth: 540, margin: '0 auto 40px' }}>
+            Tell Learnpath what you want to learn. Get a complete structured curriculum with lessons, flashcards, quizzes, and an AI tutor — in seconds.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/auth" style={{ padding: '14px 28px', borderRadius: 10, background: '#d4853a', color: '#0a0b0f', fontSize: 15, fontWeight: 600, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
+              Start learning free →
+            </Link>
+            <Link href="/pricing" style={{ padding: '14px 28px', borderRadius: 10, border: '1px solid #2a2d38', color: '#9a9790', fontSize: 15, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
+              See pricing
+            </Link>
+          </div>
+          <p style={{ fontSize: 12, color: '#5a5856', marginTop: 16, fontFamily: "'JetBrains Mono', monospace" }}>Free forever · No credit card required</p>
+        </div>
+
+        {/* APP PREVIEW */}
+        <div style={{ background: '#111318', border: '1px solid #2a2d38', borderRadius: 16, padding: '28px', marginBottom: 100, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            {['#ef7a7a','#e8a55a','#6abf8a'].map((c,i) => <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }}/>)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 16, minHeight: 320 }}>
+            {/* Fake sidebar */}
+            <div style={{ background: '#0a0b0f', borderRadius: 10, padding: '16px 12px' }}>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: '#d4853a', marginBottom: 20 }}>◆ Learnpath</div>
+              {['Home','Current Lesson','Flashcards','Progress'].map((item, i) => (
+                <div key={i} style={{ padding: '8px 10px', borderRadius: 6, marginBottom: 4, background: i === 1 ? 'rgba(212,133,58,0.1)' : 'transparent', color: i === 1 ? '#d4853a' : '#5a5856', fontSize: 12 }}>{item}</div>
+              ))}
+              <div style={{ marginTop: 20, padding: '10px 12px', background: 'rgba(212,133,58,0.08)', borderRadius: 8, border: '1px solid rgba(212,133,58,0.2)' }}>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, color: '#d4853a' }}>7</div>
+                <div style={{ fontSize: 10, color: '#9a9790', marginTop: 2 }}>Day streak 🔥</div>
+              </div>
+            </div>
+            {/* Fake lesson */}
+            <div style={{ background: '#0a0b0f', borderRadius: 10, padding: '20px 24px' }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {['ELI5','Go Deeper','AI Tutor','Skip'].map((btn, i) => (
+                  <div key={i} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #2a2d38', background: '#111318', color: '#9a9790', fontSize: 11 }}>{btn}</div>
+                ))}
+                <div style={{ padding: '5px 16px', borderRadius: 6, background: '#d4853a', color: '#0a0b0f', fontSize: 11, fontWeight: 500 }}>Mark Complete</div>
+              </div>
+              <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Week 2 — Day 3 · Japanese</div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: '#e8e6df', marginBottom: 12 }}>Numbers & Counting in Japanese</div>
+              <div style={{ fontSize: 13, color: '#9a9790', lineHeight: 1.7, marginBottom: 16 }}>Japanese numbers follow a logical pattern once you learn the base words. Unlike English, Japanese counting is highly regular — master the numbers 1–10 and you can count to 99 with simple combinations.</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['ichi · 1','ni · 2','san · 3','yon · 4'].map((v,i) => (
+                  <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: '#111318', border: '1px solid #2a2d38', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#e8a55a' }}>{v}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* HOW IT WORKS */}
+        <div style={{ textAlign: 'center', marginBottom: 80 }}>
+          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 16 }}>How it works</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, color: '#e8e6df', marginBottom: 56 }}>From idea to lesson in seconds</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
+            {STEPS.map(step => (
+              <div key={step.n} style={{ textAlign: 'left', padding: '28px 24px', background: '#111318', border: '1px solid #2a2d38', borderRadius: 14 }}>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, color: 'rgba(212,133,58,0.3)', fontWeight: 500, marginBottom: 16 }}>{step.n}</div>
+                <div style={{ fontSize: 16, fontWeight: 500, color: '#e8e6df', marginBottom: 8 }}>{step.title}</div>
+                <div style={{ fontSize: 13.5, color: '#9a9790', lineHeight: 1.65 }}>{step.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* FEATURES */}
+        <div style={{ marginBottom: 100 }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 16 }}>Everything you need</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, color: '#e8e6df' }}>Built for serious learners</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            {FEATURES.map(f => (
+              <div key={f.title} style={{ padding: '24px', background: '#111318', border: '1px solid #2a2d38', borderRadius: 14 }}>
+                <div style={{ fontSize: 22, marginBottom: 12 }}>{f.icon}</div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: '#e8e6df', marginBottom: 8 }}>{f.title}</div>
+                <div style={{ fontSize: 13.5, color: '#9a9790', lineHeight: 1.65 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* TESTIMONIALS */}
+        <div style={{ marginBottom: 100 }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 16 }}>What learners say</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, color: '#e8e6df' }}>Real results, real learners</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            {TESTIMONIALS.map(t => (
+              <div key={t.name} style={{ padding: '24px', background: '#111318', border: '1px solid #2a2d38', borderRadius: 14 }}>
+                <div style={{ fontSize: 14, color: '#e8e6df', lineHeight: 1.7, marginBottom: 20, fontStyle: 'italic' }}>"{t.text}"</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#d4853a' }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: '#5a5856', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>{t.role}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* PRICING TEASER */}
+        <div style={{ textAlign: 'center', marginBottom: 100, padding: '60px 40px', background: 'linear-gradient(135deg, rgba(212,133,58,0.08), rgba(212,133,58,0.03))', border: '1px solid rgba(212,133,58,0.2)', borderRadius: 20 }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, color: '#e8e6df', marginBottom: 12 }}>Start free today</div>
+          <div style={{ fontSize: 15, color: '#9a9790', marginBottom: 8 }}>2 learning paths free forever. Upgrade for unlimited.</div>
+          <div style={{ fontSize: 13, color: '#5a5856', marginBottom: 36, fontFamily: "'JetBrains Mono', monospace" }}>Pro from $9.99/mo · $79.99/yr (save 33%)</div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/auth" style={{ padding: '14px 28px', borderRadius: 10, background: '#d4853a', color: '#0a0b0f', fontSize: 15, fontWeight: 600, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
+              Get started free →
+            </Link>
+            <Link href="/pricing" style={{ padding: '14px 28px', borderRadius: 10, border: '1px solid #2a2d38', color: '#9a9790', fontSize: 15, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
+              Compare plans
+            </Link>
+          </div>
+        </div>
+
+      </div>
+
+      {/* FOOTER */}
+      <div style={{ borderTop: '1px solid #2a2d38', padding: '32px 24px', textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: '#d4853a', marginBottom: 8 }}>◆ Learnpath</div>
+        <div style={{ fontSize: 12, color: '#5a5856', marginBottom: 16 }}>Learn Anything · All Inside · Built by MRF Studios</div>
+        <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+          <Link href="/pricing" style={{ fontSize: 12, color: '#5a5856', textDecoration: 'none' }}>Pricing</Link>
+          <Link href="/auth" style={{ fontSize: 12, color: '#5a5856', textDecoration: 'none' }}>Sign in</Link>
+          <Link href="/auth" style={{ fontSize: 12, color: '#5a5856', textDecoration: 'none' }}>Sign up</Link>
+        </div>
+      </div>
+
+    </div>
+  )
+}
