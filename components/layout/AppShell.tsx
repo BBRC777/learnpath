@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, type Profile } from '@/lib/db'
+import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, buyStreakFreeze, type Profile } from '@/lib/db'
 
 const NEXT_LEVEL: Record<number,string> = { 1:'Scholar', 2:'Expert', 3:'Master' }
 
@@ -71,16 +71,21 @@ export default function AppShell({ children }: AppShellProps) {
   const [lessonToolbar, setLessonToolbar] = useState<React.ReactNode>(null)
   const [sidebarOpen, setSidebarOpen]     = useState(true)
   const [flashcardsDue, setFlashcardsDue] = useState<number>(0)
+  const [buyingFreeze, setBuyingFreeze]   = useState(false)
 
   const refreshProfile = useCallback(async () => {
     const p = await getProfile()
-    if (p) setProfile(p)
+    if (p) setProfile(p as Profile)
   }, [])
 
   useEffect(() => {
     refreshProfile()
-    createClient().auth.getUser().then(({ data }) => { if (data.user) loadFlashcardsDueCount(data.user.id).then(setFlashcardsDue).catch(()=>{}) })
-    createClient().auth.getUser().then(({ data }) => { if (data.user) setUser(data.user) })
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUser(data.user)
+        loadFlashcardsDueCount(data.user.id).then(setFlashcardsDue).catch(() => {})
+      }
+    })
   }, [refreshProfile])
 
   useEffect(() => {
@@ -107,8 +112,18 @@ export default function AppShell({ children }: AppShellProps) {
     setShowSettings(false)
   }
 
+  const handleBuyFreeze = async () => {
+    if (!user) return
+    setBuyingFreeze(true)
+    const r = await buyStreakFreeze(user.id)
+    if (r.success) refreshProfile()
+    setBuyingFreeze(false)
+  }
+
   const sidebarW = sidebarOpen ? 252 : 0
   const locked   = (item: typeof NAV[0]) => item.pro && !profile?.is_pro
+  const freezes  = (profile as any)?.streak_freezes ?? 0
+  const canBuy   = freezes < 3 && (profile?.xp ?? 0) >= 50
 
   const btnPrimary: React.CSSProperties   = { padding:'8px 14px', borderRadius:7, border:'none', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }
   const btnSecondary: React.CSSProperties = { padding:'8px 14px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:12, cursor:'pointer' }
@@ -134,13 +149,14 @@ export default function AppShell({ children }: AppShellProps) {
             {NAV.map(item => {
               const active   = pathname === item.href || (item.href !== '/app' && pathname?.startsWith(item.href))
               const isLocked = locked(item)
+              const badgeVal = item.badge === '__DUE__' ? (flashcardsDue > 0 ? String(flashcardsDue) : null) : item.badge
               return (
                 <div key={item.href} onClick={() => !isLocked && router.push(item.href)}
                   style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, marginBottom:2, cursor:isLocked?'default':'pointer', background:active?'var(--amber-bg)':'transparent', color:active?'var(--amber)':isLocked?'var(--text3)':'var(--text2)', fontSize:13, transition:'all 0.12s', whiteSpace:'nowrap' }}
                   title={isLocked?'Upgrade to Pro to unlock Study Mode':undefined}>
                   <span style={{ fontSize:13, width:16, textAlign:'center', flexShrink:0 }}>{item.icon}</span>
                   <span style={{ flex:1 }}>{item.label}</span>
-                  {item.badge && <span style={{ fontFamily:'var(--mono)', fontSize:10, padding:'1px 6px', borderRadius:8, background:'var(--bg4)', color:'var(--text3)', border:'1px solid var(--border2)' }}>{item.badge === '__DUE__' ? (flashcardsDue > 0 ? flashcardsDue : null) : item.badge}</span>}
+                  {badgeVal && <span style={{ fontFamily:'var(--mono)', fontSize:10, padding:'1px 6px', borderRadius:8, background:'var(--bg4)', color:'var(--text3)', border:'1px solid var(--border2)' }}>{badgeVal}</span>}
                   {item.pro && <span style={{ fontFamily:'var(--mono)', fontSize:9, padding:'1px 6px', borderRadius:4, background:profile?.is_pro?'var(--amber-bg)':'var(--bg4)', color:profile?.is_pro?'var(--amber)':'var(--text3)', border:`1px solid ${profile?.is_pro?'rgba(212,133,58,0.4)':'var(--border2)'}` }}>PRO</span>}
                 </div>
               )
@@ -149,9 +165,21 @@ export default function AppShell({ children }: AppShellProps) {
 
           {/* Streak */}
           <div style={{ margin:'8px 8px 0', padding:'10px 12px', background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.25)', borderRadius:10, flexShrink:0 }}>
-            <div style={{ fontFamily:'var(--mono)', fontSize:22, fontWeight:500, color:'var(--amber)', lineHeight:1 }}>{profile?.streak ?? 0}</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:2 }}>
+              <div style={{ fontFamily:'var(--mono)', fontSize:22, fontWeight:500, color:'var(--amber)', lineHeight:1 }}>{profile?.streak ?? 0}</div>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--blue-text)' }}>🧊 {freezes}/3</div>
+            </div>
             <div style={{ fontSize:11, color:'var(--text2)', marginTop:2, whiteSpace:'nowrap' }}>Day streak 🔥</div>
-            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>Keep the chain alive!</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4 }}>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', whiteSpace:'nowrap' }}>Keep the chain alive!</div>
+              <button
+                disabled={buyingFreeze || !canBuy}
+                onClick={handleBuyFreeze}
+                title={freezes >= 3 ? 'Max freezes reached' : (profile?.xp ?? 0) < 50 ? 'Need 50 XP' : 'Buy freeze for 50 XP'}
+                style={{ fontSize:9, fontFamily:'var(--mono)', padding:'2px 6px', borderRadius:4, border:'1px solid var(--blue-border)', background:'var(--blue-bg)', color:canBuy?'var(--blue-text)':'var(--text3)', cursor:canBuy?'pointer':'default', whiteSpace:'nowrap' as const }}>
+                {buyingFreeze ? '...' : '+🧊 50 XP'}
+              </button>
+            </div>
           </div>
 
           {/* XP Widget */}
@@ -183,7 +211,6 @@ export default function AppShell({ children }: AppShellProps) {
         {/* Topbar */}
         <div style={{ height:52, borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px 0 12px', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
-            {/* Hamburger button */}
             <button
               onClick={() => setSidebarOpen(o => !o)}
               style={{ width:32, height:32, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:5, background:'none', border:'none', cursor:'pointer', padding:4, borderRadius:6, flexShrink:0 }}
@@ -223,12 +250,31 @@ export default function AppShell({ children }: AppShellProps) {
               <input value={editName} onChange={e => setEditName(e.target.value)} style={{ width:'100%', padding:'9px 12px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:8, color:'var(--text)', fontFamily:'var(--sans)', fontSize:14, outline:'none', boxSizing:'border-box' as const }}/>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
-              {[{label:'Streak',v:profile?.streak??0},{label:'XP',v:profile?.xp??0},{label:'Level',v:getLevelInfo(profile?.xp??0).title},{label:'Plan',v:profile?.is_pro?'Pro':'Free'}].map((s,i) => (
+              {[
+                {label:'Streak',   v: profile?.streak ?? 0},
+                {label:'XP',       v: profile?.xp ?? 0},
+                {label:'Level',    v: getLevelInfo(profile?.xp ?? 0).title},
+                {label:'Plan',     v: profile?.is_pro ? 'Pro' : 'Free'},
+                {label:'Freezes',  v: `🧊 ${freezes}/3`},
+              ].map((s,i) => (
                 <div key={i} style={{ background:'var(--bg3)', borderRadius:8, padding:'10px 12px' }}>
                   <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{s.label}</div>
                   <div style={{ fontSize:14, fontWeight:500, color:'var(--text)', marginTop:2 }}>{s.v}</div>
                 </div>
               ))}
+            </div>
+            {/* Freeze buy in settings */}
+            <div style={{ background:'rgba(58,106,191,0.08)', border:'1px solid var(--blue-border)', borderRadius:8, padding:'10px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <div>
+                <div style={{ fontSize:12, fontWeight:500, color:'var(--blue-text)' }}>🧊 Streak Freeze</div>
+                <div style={{ fontSize:11, color:'var(--text2)' }}>{freezes >= 3 ? 'Maximum freezes held' : 'Protects your streak if you miss a day'}</div>
+              </div>
+              <button
+                disabled={buyingFreeze || !canBuy}
+                onClick={handleBuyFreeze}
+                style={{ padding:'6px 12px', borderRadius:6, border:'1px solid var(--blue-border)', background:canBuy?'var(--blue-bg)':'var(--bg4)', color:canBuy?'var(--blue-text)':'var(--text3)', fontFamily:'var(--sans)', fontSize:11, cursor:canBuy?'pointer':'default', whiteSpace:'nowrap' as const }}>
+                {buyingFreeze ? 'Buying...' : freezes >= 3 ? 'Full' : '50 XP'}
+              </button>
             </div>
             {!profile?.is_pro && (
               <div style={{ background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.3)', borderRadius:8, padding:'10px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>

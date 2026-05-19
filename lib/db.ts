@@ -1,4 +1,4 @@
-﻿// lib/db.ts — Learnpath database helpers (Supabase)
+// lib/db.ts — Learnpath database helpers (Supabase)
 
 import { createBrowserClient } from '@supabase/ssr'
 
@@ -269,20 +269,43 @@ export async function loadStreak(userId: string) {
 
 export async function updateStreak(userId: string) {
   const today = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   const { data: existing } = await (supabase.from('streaks') as any)
     .select('*').eq('user_id', userId).single()
+  const { data: profile } = await (supabase.from('profiles') as any)
+    .select('streak_freezes').eq('id', userId).single()
   const last = existing?.last_active
   const isToday = last === today
-  const isYesterday = last === new Date(Date.now() - 86400000).toISOString().split('T')[0]
-  const newStreak = isToday ? existing.current_streak : isYesterday ? existing.current_streak + 1 : 1
+  const isYesterday = last === yesterday
+  const freezes = profile?.streak_freezes ?? 0
+  const missedDays = last ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000) - 1 : 0
+  const canFreeze = !isToday && !isYesterday && missedDays > 0 && freezes > 0
+  const freezesToUse = canFreeze ? Math.min(missedDays, freezes) : 0
+  let newStreak = isToday ? existing.current_streak : isYesterday ? existing.current_streak + 1 : canFreeze ? existing.current_streak + 1 : 1
   const longest = Math.max(newStreak, existing?.longest_streak || 0)
   await (supabase.from('streaks') as any).upsert({
     user_id: userId, current_streak: newStreak, longest_streak: longest,
     last_active: today, updated_at: new Date().toISOString()
   }, { onConflict: 'user_id' })
   await (supabase.from('profiles') as any).update({
-    streak: newStreak, last_study: today, updated_at: new Date().toISOString()
+    streak: newStreak, last_study: today, updated_at: new Date().toISOString(),
+    ...(freezesToUse > 0 ? { streak_freezes: Math.max(0, freezes - freezesToUse) } : {})
   }).eq('id', userId)
+}
+
+export async function buyStreakFreeze(userId: string): Promise<{ success: boolean; message: string; freezes: number }> {
+  const { data: profile } = await (supabase.from('profiles') as any)
+    .select('xp, streak_freezes').eq('id', userId).single()
+  if (!profile) return { success: false, message: 'Profile not found', freezes: 0 }
+  const freezes = profile.streak_freezes ?? 0
+  const xp = profile.xp ?? 0
+  if (freezes >= 3) return { success: false, message: 'You already have the maximum 3 freezes', freezes }
+  if (xp < 50) return { success: false, message: 'You need at least 50 XP to buy a freeze', freezes }
+  const { data, error } = await (supabase as any).rpc('award_lesson_xp', { p_user_id: userId, p_xp_amount: -50 }).single()
+  if (error) return { success: false, message: 'Failed to deduct XP', freezes }
+  const newFreezes = freezes + 1
+  await (supabase.from('profiles') as any).update({ streak_freezes: newFreezes, updated_at: new Date().toISOString() }).eq('id', userId)
+  return { success: true, message: 'Freeze purchased!', freezes: newFreezes }
 }
 
 // ── ACTIVITY ──────────────────────────────────────────────────
