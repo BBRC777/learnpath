@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { loadCurricula, loadStreak, loadWeekActivity } from '@/lib/db'
@@ -30,6 +30,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string>('')
   const router = useRouter()
+  const [showWelcome, setShowWelcome] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -45,6 +46,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
         setCurricula(currs)
         setStreak(streakData.current_streak || 0)
         setActivityData(activity)
+              if (currs.length === 0 && !localStorage.getItem('lp_welcomed')) setShowWelcome(true)
       } catch(e) { console.error(e) }
       finally { setLoading(false) }
     }
@@ -212,6 +214,19 @@ export default function HomeScreen({ profile }: { profile: any }) {
               <button onClick={() => router.push('/app/flashcards')} style={{ width:'100%', padding:8, borderRadius:7, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer' }}>
                 Start review
               </button>
+      {showWelcome && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={() => { setShowWelcome(false); localStorage.setItem('lp_welcomed','1') }}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:20, padding:'40px 36px', maxWidth:480, width:'100%', textAlign:'center' as const }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontFamily:'var(--serif)', fontSize:13, color:'var(--amber)', letterSpacing:'0.08em', textTransform:'uppercase' as const, marginBottom:12 }}>◆ Welcome to Learnpath</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--text)', lineHeight:1.2, marginBottom:14 }}>Learn anything with AI-generated curriculums</div>
+            <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.75, marginBottom:28 }}>Tell us what you want to learn and we will build you a complete structured curriculum — lessons, flashcards, quizzes, and an AI tutor — in seconds.</div>
+            <div style={{ display:'flex', flexDirection:'column' as const, gap:10 }}>
+              <button onClick={() => { setShowWelcome(false); localStorage.setItem('lp_welcomed','1'); router.push('/app/curriculum') }} style={{ padding:'13px 24px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:600, cursor:'pointer' }}>Build my first learning path →</button>
+              <button onClick={() => { setShowWelcome(false); localStorage.setItem('lp_welcomed','1') }} style={{ padding:'10px 24px', borderRadius:10, background:'none', border:'none', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:12, cursor:'pointer' }}>I will explore on my own</button>
+            </div>
+          </div>
+        </div>
+      )}
             </div>
           </div>
         </div>
