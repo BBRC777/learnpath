@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getTeam, createTeam, getTeamMembers, inviteMember, removeMember, getAssignments, createAssignment, getMemberProgress, loadCurricula, loadTeamCurricula, importToTeam, deleteTeamCurriculum } from '@/lib/db'
 import { useRouter } from 'next/navigation'
+import TeamCurriculumBuilder from './TeamCurriculumBuilder'
 
 type Tab = 'overview' | 'members' | 'library' | 'assign'
 
@@ -27,6 +28,7 @@ export default function TeamScreen() {
   const [importing, setImporting] = useState<string|null>(null)
   const [deleting, setDeleting] = useState<string|null>(null)
   const [showImport, setShowImport] = useState(false)
+  const [showBuilder, setShowBuilder] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -140,6 +142,15 @@ export default function TeamScreen() {
   )
 
   return (
+    <>
+      {showBuilder && userId && team && (
+        <TeamCurriculumBuilder
+          userId={userId}
+          teamId={team.id}
+          onClose={() => setShowBuilder(false)}
+          onSaved={(curr) => { setTeamCurricula(prev => [curr, ...prev]); setShowBuilder(false) }}
+        />
+      )}
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:900, margin:'0 auto', padding:'24px 28px 60px' }}>
 
@@ -234,7 +245,7 @@ export default function TeamScreen() {
           <div>
             {/* Actions */}
             <div style={{ display:'flex', gap:8, marginBottom:16 }}>
-              <button onClick={() => router.push('/app/curriculum?team=' + team.id)} style={btnPrimary}>+ Build Team Path</button>
+              <button onClick={() => setShowBuilder(true)} style={btnPrimary}>+ Build Team Path</button>
               <button onClick={() => setShowImport(o => !o)} style={{ ...btnSecondary, background: showImport ? accentBg : 'var(--bg3)', color: showImport ? accent : 'var(--text2)', border: showImport ? '1px solid '+accentBorder : '1px solid var(--border2)' }}>
                 {showImport ? 'Hide Import' : 'Import from My Paths'}
               </button>
@@ -346,5 +357,6 @@ export default function TeamScreen() {
         )}
       </div>
     </div>
+    </>
   )
 }
