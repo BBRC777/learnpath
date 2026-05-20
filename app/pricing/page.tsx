@@ -2,55 +2,196 @@
 import Link from 'next/link'
 
 const FREE_FEATURES = [
-  '2 learning paths',
-  'Up to 4 weeks per path',
-  'AI-generated lessons',
-  'Flashcards with spaced repetition',
-  'Basic quiz & exercises',
-  'XP, streaks & badges',
-  'Leaderboard',
-  'Share a curriculum publicly',
+  "2 learning paths",
+  "Up to 4 weeks per path",
+  "AI-generated lessons",
+  "Flashcards with spaced repetition",
+  "Basic quiz & exercises",
+  "XP, streaks & badges",
+  "Leaderboard",
+  "Share a curriculum publicly"
 ]
 
 const PRO_FEATURES = [
-  'Unlimited learning paths',
-  'Unlimited path length',
-  'Everything in Free',
-  'AI Tutor (unlimited questions)',
-  'Study Mode',
-  'ELI5 & Go Deeper explanations',
-  'Adaptive difficulty',
-  'AI mnemonics per vocab word',
-  'PDF → Curriculum (coming soon)',
-  'YouTube → Curriculum (coming soon)',
-  'Priority support',
+  "Unlimited learning paths",
+  "Unlimited path length",
+  "Everything in Free",
+  "AI Tutor (unlimited questions)",
+  "Study Mode",
+  "ELI5 & Go Deeper explanations",
+  "Adaptive difficulty",
+  "AI mnemonics per vocab word",
+  "PDF → Curriculum",
+  "YouTube → Curriculum",
+  "Priority support"
+]
+
+const BUSINESS_FEATURES = [
+  "Everything in Pro",
+  "Unlimited team members",
+  "Team curriculum library",
+  "Assign paths with due dates",
+  "Member progress dashboard",
+  "End-of-training assessments",
+  "Pass/fail thresholds per course",
+  "Completion certificates (PDF)",
+  "Import personal paths to team",
+  "Business theme",
+  "Priority support"
+]
+
+const COMPARISON = [
+  {
+    "feature": "Learning paths",
+    "free": "2",
+    "pro": "Unlimited",
+    "biz": "Unlimited"
+  },
+  {
+    "feature": "Path length",
+    "free": "4 weeks max",
+    "pro": "Unlimited",
+    "biz": "Unlimited"
+  },
+  {
+    "feature": "AI-generated lessons",
+    "free": "✓",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Flashcards + spaced rep.",
+    "free": "✓",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Quizzes & exercises",
+    "free": "✓",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "XP, streaks & badges",
+    "free": "✓",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Leaderboard",
+    "free": "✓",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Share curriculum",
+    "free": "✓",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "AI Tutor",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Study Mode",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "ELI5 & Go Deeper",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Adaptive difficulty",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "AI mnemonics",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "PDF → Curriculum",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "YouTube → Curriculum",
+    "free": "—",
+    "pro": "✓",
+    "biz": "✓"
+  },
+  {
+    "feature": "Team dashboard",
+    "free": "—",
+    "pro": "—",
+    "biz": "✓"
+  },
+  {
+    "feature": "Assign paths + due dates",
+    "free": "—",
+    "pro": "—",
+    "biz": "✓"
+  },
+  {
+    "feature": "Progress tracking",
+    "free": "—",
+    "pro": "—",
+    "biz": "✓"
+  },
+  {
+    "feature": "End-of-training assessment",
+    "free": "—",
+    "pro": "—",
+    "biz": "✓"
+  },
+  {
+    "feature": "Completion certificates",
+    "free": "—",
+    "pro": "—",
+    "biz": "✓"
+  }
 ]
 
 const FAQ = [
   {
-    q: 'Can I try Pro before paying?',
-    a: 'Yes — every new account gets 2 free learning paths with full access to all lesson features. No credit card required to start.',
+    "q": "Can I try Pro before paying?",
+    "a": "Yes — every new account gets 2 free learning paths with full access to all lesson features. No credit card required to start."
   },
   {
-    q: 'What counts as a learning path?',
-    a: 'A learning path is a full AI-generated curriculum on a topic you choose — for example "Japanese for beginners" or "Python fundamentals". Free accounts can have 2 active paths at a time.',
+    "q": "What counts as a learning path?",
+    "a": "A learning path is a full AI-generated curriculum on a topic you choose — for example \"Japanese for beginners\" or \"Python fundamentals\". Free accounts can have 2 active paths at a time."
   },
   {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel from your account settings at any time. You keep Pro access until the end of your billing period.',
+    "q": "Can I cancel anytime?",
+    "a": "Yes. Cancel from your account settings at any time. You keep Pro access until the end of your billing period."
   },
   {
-    q: 'What is the AI Tutor?',
-    a: 'The AI Tutor is a Claude-powered chat panel built into every lesson. Ask questions about the material, request clarifications, or go deeper on any concept — mid-lesson, without losing your place.',
+    "q": "What is the AI Tutor?",
+    "a": "The AI Tutor is a Claude-powered chat panel built into every lesson. Ask questions about the material, request clarifications, or go deeper on any concept — mid-lesson, without losing your place."
   },
   {
-    q: 'How does spaced repetition work?',
-    a: 'Learnpath uses the SM-2 algorithm to schedule flashcard reviews at the optimal interval for long-term retention. Cards you find easy get pushed further out; difficult cards come back sooner.',
+    "q": "How does spaced repetition work?",
+    "a": "Learnpath uses the SM-2 algorithm to schedule flashcard reviews at the optimal interval for long-term retention. Cards you find easy get pushed further out; difficult cards come back sooner."
   },
   {
-    q: 'Is my data private?',
-    a: 'Yes. Your curricula, progress, and flashcards are stored securely in Supabase and are only visible to you — unless you explicitly choose to share a curriculum publicly.',
+    "q": "Is my data private?",
+    "a": "Yes. Your curricula, progress, and flashcards are stored securely in Supabase and are only visible to you — unless you explicitly choose to share a curriculum publicly."
   },
+  {
+    "q": "How does Business pricing work?",
+    "a": "Business is $99/month for your whole team — unlimited members, no per-seat fees up to 10 members. Building a larger team? Contact us about per-seat pricing at $15/seat/month."
+  }
 ]
 
 export default function PricingPage() {
@@ -68,7 +209,7 @@ export default function PricingPage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
 
         {/* HEADER */}
         <div style={{ textAlign: 'center', padding: '80px 0 64px' }}>
@@ -82,7 +223,7 @@ export default function PricingPage() {
         </div>
 
         {/* PLANS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20, marginBottom: 80 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 80 }}>
 
           {/* FREE */}
           <div style={{ padding: '32px', background: '#111318', border: '1px solid #2a2d38', borderRadius: 16 }}>
@@ -111,8 +252,6 @@ export default function PricingPage() {
               Most popular
             </div>
             <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Pro</div>
-
-            {/* Toggle hint */}
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
               <div style={{ flex: 1, padding: '10px', borderRadius: 8, background: '#111318', border: '1px solid #2a2d38', textAlign: 'center' }}>
                 <div style={{ fontSize: 11, color: '#5a5856', fontFamily: "'JetBrains Mono', monospace", marginBottom: 2 }}>Monthly</div>
@@ -123,17 +262,43 @@ export default function PricingPage() {
                 <div style={{ fontSize: 18, fontWeight: 600, color: '#e8e6df' }}>$6.67<span style={{ fontSize: 11, color: '#9a9790' }}>/mo</span></div>
               </div>
             </div>
-
             <div style={{ fontSize: 13, color: '#9a9790', marginBottom: 28, lineHeight: 1.5 }}>Unlimited paths, AI Tutor, Study Mode, and everything we build next.</div>
-
             <Link href="/auth" style={{ display: 'block', padding: '12px', borderRadius: 9, background: '#d4853a', color: '#0a0b0f', fontSize: 14, fontWeight: 600, textDecoration: 'none', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", marginBottom: 28 }}>
               Start free, upgrade anytime
             </Link>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {PRO_FEATURES.map(f => (
-                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: f.includes('coming soon') ? '#5a5856' : '#e8e6df' }}>
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#e8e6df' }}>
                   <span style={{ color: '#d4853a', flexShrink: 0, fontSize: 12 }}>◆</span>
+                  {f}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* BUSINESS */}
+          <div style={{ padding: '32px', background: 'linear-gradient(160deg, rgba(74,127,212,0.10), rgba(74,127,212,0.04))', border: '1px solid rgba(74,127,212,0.45)', borderRadius: 16, position: 'relative' }}>
+            <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#4a7fd4', color: '#fff', fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fontWeight: 500, padding: '3px 14px', borderRadius: 20, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+              For teams
+            </div>
+            <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#4a7fd4', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Business</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 44, color: '#e8e6df', fontWeight: 600 }}>$99</span>
+              <span style={{ fontSize: 13, color: '#5a5856' }}>/month per team</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#4a7fd4', marginBottom: 20, fontFamily: "'JetBrains Mono', monospace" }}>
+              Unlimited members · scales with you
+            </div>
+            <div style={{ fontSize: 13, color: '#9a9790', marginBottom: 28, lineHeight: 1.5 }}>
+              Deploy structured training to your whole team. Track progress, enforce deadlines, prove compliance.
+            </div>
+            <a href="mailto:contact@mrfstudios.com?subject=Learnpath%20Business" style={{ display: 'block', padding: '12px', borderRadius: 9, background: '#4a7fd4', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", marginBottom: 28 }}>
+              Contact us to get started
+            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {BUSINESS_FEATURES.map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#e8e6df' }}>
+                  <span style={{ color: '#4a7fd4', flexShrink: 0, fontSize: 12 }}>◆</span>
                   {f}
                 </div>
               ))}
@@ -146,27 +311,19 @@ export default function PricingPage() {
         <div style={{ marginBottom: 80 }}>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, color: '#e8e6df', textAlign: 'center', marginBottom: 32 }}>Full comparison</h2>
           <div style={{ background: '#111318', border: '1px solid #2a2d38', borderRadius: 14, overflow: 'hidden' }}>
-            {[
-              { feature: 'Learning paths', free: '2', pro: 'Unlimited' },
-              { feature: 'Path length', free: '4 weeks max', pro: 'Unlimited' },
-              { feature: 'AI-generated lessons', free: '✓', pro: '✓' },
-              { feature: 'Flashcards + spaced repetition', free: '✓', pro: '✓' },
-              { feature: 'Quizzes & exercises', free: '✓', pro: '✓' },
-              { feature: 'XP, streaks & badges', free: '✓', pro: '✓' },
-              { feature: 'Leaderboard', free: '✓', pro: '✓' },
-              { feature: 'Share curriculum', free: '✓', pro: '✓' },
-              { feature: 'AI Tutor', free: '—', pro: '✓' },
-              { feature: 'Study Mode', free: '—', pro: '✓' },
-              { feature: 'ELI5 & Go Deeper', free: '—', pro: '✓' },
-              { feature: 'Adaptive difficulty', free: '—', pro: '✓' },
-              { feature: 'AI mnemonics', free: '—', pro: '✓' },
-              { feature: 'PDF → Curriculum', free: '—', pro: 'Coming soon' },
-              { feature: 'YouTube → Curriculum', free: '—', pro: 'Coming soon' },
-            ].map((row, i) => (
-              <div key={row.feature} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', borderBottom: i < 14 ? '1px solid #2a2d38' : 'none' }}>
+            {/* Header row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 100px', background: '#0a0b0f', borderBottom: '1px solid #2a2d38' }}>
+              <div style={{ padding: '12px 20px', fontSize: 11, color: '#5a5856', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.08em' }}>Feature</div>
+              <div style={{ padding: '12px 12px', fontSize: 11, color: '#5a5856', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', borderLeft: '1px solid #2a2d38' }}>Free</div>
+              <div style={{ padding: '12px 12px', fontSize: 11, color: '#d4853a', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', borderLeft: '1px solid #2a2d38' }}>Pro</div>
+              <div style={{ padding: '12px 12px', fontSize: 11, color: '#4a7fd4', fontFamily: "'JetBrains Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', borderLeft: '1px solid #2a2d38' }}>Business</div>
+            </div>
+            {COMPARISON.map((row, i) => (
+              <div key={row.feature} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 100px', borderBottom: i < COMPARISON.length - 1 ? '1px solid #2a2d38' : 'none' }}>
                 <div style={{ padding: '13px 20px', fontSize: 13.5, color: '#9a9790' }}>{row.feature}</div>
-                <div style={{ padding: '13px 20px', fontSize: 13, color: row.free === '✓' ? '#6abf8a' : row.free === '—' ? '#2a2d38' : '#9a9790', textAlign: 'center', borderLeft: '1px solid #2a2d38', fontFamily: "'JetBrains Mono', monospace" }}>{row.free}</div>
-                <div style={{ padding: '13px 20px', fontSize: 13, color: row.pro === '✓' ? '#d4853a' : row.pro === '—' ? '#2a2d38' : '#5a5856', textAlign: 'center', borderLeft: '1px solid #2a2d38', fontFamily: "'JetBrains Mono', monospace" }}>{row.pro}</div>
+                <div style={{ padding: '13px 12px', fontSize: 13, color: row.free === '✓' ? '#6abf8a' : row.free === '—' ? '#2a2d38' : '#9a9790', textAlign: 'center', borderLeft: '1px solid #2a2d38', fontFamily: "'JetBrains Mono', monospace" }}>{row.free}</div>
+                <div style={{ padding: '13px 12px', fontSize: 13, color: row.pro === '✓' ? '#d4853a' : row.pro === '—' ? '#2a2d38' : '#9a9790', textAlign: 'center', borderLeft: '1px solid #2a2d38', fontFamily: "'JetBrains Mono', monospace" }}>{row.pro}</div>
+                <div style={{ padding: '13px 12px', fontSize: 13, color: row.biz === '✓' ? '#4a7fd4' : row.biz === '—' ? '#2a2d38' : '#9a9790', textAlign: 'center', borderLeft: '1px solid #2a2d38', fontFamily: "'JetBrains Mono', monospace" }}>{row.biz}</div>
               </div>
             ))}
           </div>
