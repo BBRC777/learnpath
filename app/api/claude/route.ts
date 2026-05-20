@@ -14,24 +14,28 @@ export async function POST(request: Request) {
     const { stream, ...params } = body
 
     if (stream) {
-      const streamResponse = await client.messages.create({
-        model: MODEL,
-        max_tokens: params.max_tokens || 8000,
-        stream: true,
-        messages: params.messages,
-        system: params.system,
-      })
       const encoder = new TextEncoder()
       const readable = new ReadableStream({
         async start(controller) {
-          for await (const event of streamResponse) {
-            if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`))
+          try {
+            const streamResponse = client.messages.stream({
+              model: MODEL,
+              max_tokens: params.max_tokens || 8000,
+              messages: params.messages,
+              ...(params.system ? { system: params.system } : {}),
+            })
+            for await (const event of streamResponse) {
+              if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`))
+              }
+              if (event.type === "message_stop") {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+              }
             }
-            if (event.type === "message_stop") {
-              controller.enqueue(encoder.encode("data: [DONE]\n\n"))
-              controller.close()
-            }
+          } catch(e) {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: String(e) })}\n\n`))
+          } finally {
+            controller.close()
           }
         },
       })
@@ -42,9 +46,9 @@ export async function POST(request: Request) {
 
     const response = await client.messages.create({
       model: MODEL,
-      max_tokens: params.max_tokens || 600,
+      max_tokens: params.max_tokens || 2000,
       messages: params.messages,
-      system: params.system,
+      ...(params.system ? { system: params.system } : {}),
     })
     return Response.json(response)
 
