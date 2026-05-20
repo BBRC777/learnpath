@@ -27,6 +27,7 @@ export default function LessonScreen() {
   const [activeCurrId, setActiveCurrId] = useState<string|null>(null)
   const [selectedLesson, setSelectedLesson] = useState<{wi:number,di:number}|null>(null)
   const [lessonData, setLessonData] = useState<any>(null)
+  const [fromCache, setFromCache] = useState<'local'|'remote'|null>(null)
   const [generating, setGenerating] = useState(false)
   const [streamText, setStreamText] = useState('')
   const [isComplete, setIsComplete] = useState(false)
@@ -119,7 +120,7 @@ export default function LessonScreen() {
   const loadLesson = async (curr: any, wi: number, di: number) => {
     const key = wi + '-' + di
     const lsKey = 'lp_lesson_' + curr.id + '_' + key
-    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); return } } catch {}
+    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); setFromCache('local'); return } } catch {}
     const cached = await getCachedLesson(curr.id, key)
     if (cached) {
       setLessonData(cached)
