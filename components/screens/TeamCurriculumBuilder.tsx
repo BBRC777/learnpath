@@ -29,7 +29,7 @@ interface Props {
 }
 
 export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved }: Props) {
-  const [mode, setMode] = useState<'scratch'|'pdf'|'youtube'>('scratch')
+  const [mode, setMode] = useState<'scratch'|'file'|'youtube'>('scratch')
   const [step, setStep] = useState(0)
   const [topic, setTopic] = useState('')
   const [goal, setGoal] = useState('')
@@ -67,22 +67,34 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
   const btnPrimary: React.CSSProperties = { padding:'9px 20px', borderRadius:8, border:'none', background:accent, color:'#fff', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }
   const btnSecondary: React.CSSProperties = { padding:'9px 16px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }
 
-  const handlePdfUpload = async (file: File) => {
+  const handleFileUpload = async (file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    const accepted = ['pdf','docx','txt']
+    if (!ext || !accepted.includes(ext)) { setError('Unsupported file type. Please upload a PDF, Word document (.docx), or text file (.txt).'); return }
     setPdfLoading(true); setPdfName(file.name); setError('')
     try {
-      const pdfjsLib = await import('pdfjs-dist')
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + pdfjsLib.version + '/pdf.worker.min.js'
-      const arrayBuffer = await file.arrayBuffer()
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
       let text = ''
-      for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
-        const page = await pdf.getPage(i)
-        const content = await page.getTextContent()
-        text += content.items.map((item: any) => item.str).join(' ') + '\n'
+      if (ext === 'txt') {
+        text = await file.text()
+      } else if (ext === 'docx') {
+        const mammoth = await import('mammoth')
+        const arrayBuffer = await file.arrayBuffer()
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        text = result.value
+      } else {
+        const pdfjsLib = await import('pdfjs-dist')
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + pdfjsLib.version + '/pdf.worker.min.js'
+        const arrayBuffer = await file.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
+          const page = await pdf.getPage(i)
+          const content = await page.getTextContent()
+          text += content.items.map((item: any) => item.str).join(' ') + '\n'
+        }
       }
       setPdfText(text.slice(0, 12000))
-      setTopic(file.name.replace(/\\.[^.]+$/, '').replace(/[-_]/g, ' '))
-    } catch { setError('Could not read PDF.') }
+      setTopic(file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '))
+    } catch { setError('Could not read file. Make sure it is a valid PDF, Word document, or text file.') }
     finally { setPdfLoading(false) }
   }
 
@@ -105,7 +117,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
     setError(''); setGenerating(true); setStreamText(''); setCurriculum(null)
 
     let prompt = ''
-    if (mode === 'pdf' && pdfText) {
+    if (mode === 'file' && pdfText) {
     } else if (mode === 'youtube' && youtubeTranscript) {
     } else {
     }
@@ -126,7 +138,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
       const parsed = JSON.parse(match[0]); setCurriculum(parsed)
       setSaving(true)
       try {
-        const topicLabel = mode === 'pdf' ? (pdfName || topic) : topic
+        const topicLabel = mode === 'file' ? (pdfName || topic) : topic
         const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel:duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum:parsed })
         setSavedId(saved.id)
         onSaved(saved)
@@ -155,7 +167,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
 
           {/* Mode tabs */}
           <div style={{ display:'flex', gap:6, marginBottom:24, background:'var(--bg3)', padding:4, borderRadius:10, border:'1px solid var(--border)' }}>
-            {[{v:'scratch',label:'From Scratch'},{v:'pdf',label:'From PDF'},{v:'youtube',label:'From YouTube'}].map(tab => (
+            {[{v:'scratch',label:'From Scratch'},{v:'file',label:'From File'},{v:'youtube',label:'From YouTube'}].map(tab => (
               <button key={tab.v} onClick={() => { setMode(tab.v as any); setError('') }} style={{ flex:1, padding:'7px 10px', borderRadius:7, border:'none', background:mode===tab.v?'var(--bg2)':'transparent', color:mode===tab.v?accent:'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:mode===tab.v?500:400, cursor:'pointer' }}>
                 {tab.label}
               </button>
@@ -190,17 +202,17 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
           {/* Builder form */}
           {!generating && !curriculum && (
             <>
-              {/* PDF MODE */}
-              {mode === 'pdf' && (
+              {/* FILE MODE */}
+              {mode === 'file' && (
                 <div style={{ marginBottom:20 }}>
-                  <input ref={fileRef} type='file' accept='.pdf' style={{ display:'none' }} onChange={e => { if(e.target.files?.[0]) handlePdfUpload(e.target.files[0]) }}/>
+                  <input ref={fileRef} type='file' accept='.pdf,.docx,.txt' style={{ display:'none' }} onChange={e => { if(e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}/>
                   {!pdfText ? (
                     <div onClick={() => fileRef.current?.click()} style={{ border:'2px dashed '+accentBorder, borderRadius:12, padding:'40px 24px', textAlign:'center' as const, cursor:'pointer', background:'var(--bg3)' }}>
-                      {pdfLoading ? <div style={{ fontSize:13, color:'var(--text2)' }}>Reading PDF...</div> : <><div style={{ fontSize:28, marginBottom:8 }}>📄</div><div style={{ fontSize:13, color:'var(--text)' }}>Click to upload a PDF</div><div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>Text-based PDFs · Up to 20 pages</div></>}
+                      {pdfLoading ? <div style={{ fontSize:13, color:'var(--text2)' }}>Reading file...</div> : <><div style={{ fontSize:28, marginBottom:8 }}>📁</div><div style={{ fontSize:13, color:'var(--text)' }}>Click to upload a file</div><div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>Supported: PDF, Word (.docx), Text (.txt)</div></>}
                     </div>
                   ) : (
                     <div style={{ background:'var(--bg3)', border:'1px solid #3fb95044', borderRadius:8, padding:'12px 14px', marginBottom:12 }}>
-                      <div style={{ fontSize:12, color:'#3fb950', marginBottom:2 }}>PDF loaded: {pdfName}</div>
+                      <div style={{ fontSize:12, color:'#3fb950', marginBottom:2 }}>File loaded: {pdfName}</div>
                       <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{pdfText.length.toLocaleString()} characters</div>
                     </div>
                   )}
@@ -308,7 +320,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                     setError(''); setStep(s => s+1)
                   }} style={btnPrimary}>Next</button>
                 )}
-                {((mode === 'scratch' && step === 3) || (mode === 'pdf' && pdfText) || (mode === 'youtube' && youtubeTranscript)) && (
+                {((mode === 'scratch' && step === 3) || (mode === 'file' && pdfText) || (mode === 'youtube' && youtubeTranscript)) && (
                   <button onClick={generate} style={btnPrimary}>Generate with Claude</button>
                 )}
               </div>

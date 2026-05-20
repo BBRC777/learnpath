@@ -54,7 +54,7 @@ function extractYouTubeId(url: string): string | null {
 }
 
 export default function CurriculumScreen() {
-  const [mode, setMode] = useState<'scratch'|'pdf'|'youtube'>('scratch')
+  const [mode, setMode] = useState<'scratch'|'file'|'youtube'>('scratch')
   const [step, setStep] = useState(0)
   const [topic, setTopic] = useState('')
   const [goal, setGoal] = useState('')
@@ -122,33 +122,39 @@ export default function CurriculumScreen() {
   const nextBtn: React.CSSProperties = { padding:'10px 24px', borderRadius:8, border:'none', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }
   const backBtn: React.CSSProperties = { padding:'10px 20px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }
 
-  const handlePdfUpload = async (file: File) => {
+  const handleFileUpload = async (file: File) => {
     if (!isPro) { setShowPaywall(true); return }
-    setPdfLoading(true)
-    setPdfName(file.name)
-    setError('')
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    const accepted = ['pdf','docx','txt']
+    if (!ext || !accepted.includes(ext)) { setError('Unsupported file type. Please upload a PDF, Word document (.docx), or text file (.txt).'); return }
+    setPdfLoading(true); setPdfName(file.name); setError('')
     try {
-      const pdfjsLib = await import('pdfjs-dist')
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-      const arrayBuffer = await file.arrayBuffer()
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
       let text = ''
-      for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
-        const page = await pdf.getPage(i)
-        const content = await page.getTextContent()
-        text += content.items.map((item: any) => item.str).join(' ') + '\n'
+      if (ext === 'txt') {
+        text = await file.text()
+      } else if (ext === 'docx') {
+        const mammoth = await import('mammoth')
+        const arrayBuffer = await file.arrayBuffer()
+        const result = await mammoth.extractRawText({ arrayBuffer })
+        text = result.value
+      } else {
+        const pdfjsLib = await import('pdfjs-dist')
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + pdfjsLib.version + '/pdf.worker.min.js'
+        const arrayBuffer = await file.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        let pdfText2 = ''
+        for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
+          const page = await pdf.getPage(i)
+          const content = await page.getTextContent()
+          pdfText2 += content.items.map((item: any) => item.str).join(' ') + '\n'
+        }
+        text = pdfText2
       }
       setPdfText(text.slice(0, 12000))
-      // Extract topic from filename
-      const guessedTopic = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
-      setTopic(guessedTopic)
-    } catch(e: any) {
-      setError('Could not read PDF. Make sure it is a text-based PDF (not a scanned image).')
-    } finally {
-      setPdfLoading(false)
-    }
+      setTopic(file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '))
+    } catch(e: any) { setError('Could not read file. Please upload a PDF, Word document (.docx), or text file (.txt).') }
+    finally { setPdfLoading(false) }
   }
-
   const fetchYouTubeTranscript = async () => {
     if (!isPro) { setShowPaywall(true); return }
     const videoId = extractYouTubeId(youtubeUrl)
@@ -175,7 +181,7 @@ export default function CurriculumScreen() {
     setError(''); setGenerating(true); setStreamText(''); setCurriculum(null); setSavedId(null)
 
     let prompt = ''
-    if (mode === 'pdf' && pdfText) {
+    if (mode === 'file' && pdfText) {
       prompt = `You are an expert educator. A user has uploaded a document and wants to learn from it. Extract the key topics and create a structured learning curriculum as a single valid JSON object. No markdown. No explanation.\n\nDocument content (excerpt):\n${pdfText}\n\nLevel: ${level}\nDuration: ${duration.weeks} weeks\nDays per week: ${activeDays.length} (${daysLabel})\nSession length: ${sessionTime}\nLearning style: ${styles.join(', ')}\n\nReturn ONLY valid JSON:\n{\n  "title": "Curriculum title based on document",\n  "subtitle": "One-line subtitle",\n  "overview": "2-3 sentence overview of what this curriculum covers.",\n  "totalWeeks": ${duration.weeks},\n  "daysPerWeek": ${activeDays.length},\n  "sessionTime": "${sessionTime}",\n  "level": "${level}",\n  "weeks": [{"week": 1,"theme": "Week theme","milestone": "By end of week you can...","days": [{"day": 1,"title": "Day title","description": "One sentence.","type": "lesson","duration": "${sessionTime}"}],"quizCount": 3}]\n}\n\nRules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. Base everything on the document content. Vary types: lesson, flashcards, exercise, review, practice.`
     } else if (mode === 'youtube' && youtubeTranscript) {
       prompt = `You are an expert educator. A user has provided a YouTube video transcript and wants to learn from it. Extract the key topics and create a structured learning curriculum as a single valid JSON object. No markdown. No explanation.\n\nVideo transcript (excerpt):\n${youtubeTranscript}\n\nLevel: ${level}\nDuration: ${duration.weeks} weeks\nDays per week: ${activeDays.length} (${daysLabel})\nSession length: ${sessionTime}\nLearning style: ${styles.join(', ')}\n\nReturn ONLY valid JSON:\n{\n  "title": "Curriculum title based on video content",\n  "subtitle": "One-line subtitle",\n  "overview": "2-3 sentence overview of what this curriculum covers.",\n  "totalWeeks": ${duration.weeks},\n  "daysPerWeek": ${activeDays.length},\n  "sessionTime": "${sessionTime}",\n  "level": "${level}",\n  "weeks": [{"week": 1,"theme": "Week theme","milestone": "By end of week you can...","days": [{"day": 1,"title": "Day title","description": "One sentence.","type": "lesson","duration": "${sessionTime}"}],"quizCount": 3}]\n}\n\nRules: Exactly ${duration.weeks} weeks, exactly ${activeDays.length} days each. Base everything on the video content. Vary types: lesson, flashcards, exercise, review, practice.`
@@ -200,7 +206,7 @@ export default function CurriculumScreen() {
       const parsed = JSON.parse(match[0]); setCurriculum(parsed); setOpenWeeks({0:true})
       if (userId) {
         setSaving(true)
-        const topicLabel = mode === 'pdf' ? (pdfName || topic) : mode === 'youtube' ? (youtubeTitle || topic) : topic
+        const topicLabel = mode === 'file' ? (pdfName || topic) : mode === 'youtube' ? (youtubeTitle || topic) : topic
         try { const saved = await saveCurriculum(userId,{topic:topicLabel,level,durLabel:duration.label,days:activeDays.length,time:sessionTime,style:styles.join(', '),curriculum:parsed}); setSavedId(saved.id); setPathCount(c=>c+1) }
         catch(e: any) { console.error('Save failed:',e.message) } finally { setSaving(false) }
       }
@@ -232,7 +238,7 @@ export default function CurriculumScreen() {
       <div style={{ width:40, height:40, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 24px' }}/>
       <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)', marginBottom:8 }}>Claude is designing your path</div>
       <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>
-        {mode === 'pdf' ? `Building curriculum from ${pdfName}` : mode === 'youtube' ? 'Building curriculum from YouTube video' : `Building a ${duration.weeks}-week curriculum for ${topic}`}
+        {mode === 'file' ? 'Building curriculum from ' + pdfName : mode === 'youtube' ? 'Building curriculum from YouTube video' : 'Building a ' + duration.weeks + '-week curriculum for ' + topic}
       </div>
       {streamText && <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, padding:'12px 14px', fontFamily:'var(--mono)', fontSize:10.5, color:'var(--text3)', lineHeight:1.6, maxHeight:120, overflow:'hidden', maxWidth:440, width:'100%', textAlign:'left' as const }}>{streamText}</div>}
     </div>
@@ -242,7 +248,7 @@ export default function CurriculumScreen() {
     <div style={{ overflowY:'auto', height:'100%' }}>
       <div style={{ maxWidth:740, margin:'0 auto', padding:'28px 32px 80px' }}>
         <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, padding:'24px 26px', marginBottom:20 }}>
-          <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>{level} · {duration.label} Path {mode === 'pdf' ? '· From PDF' : mode === 'youtube' ? '· From YouTube' : ''}</div>
+          <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>{level} · {duration.label} Path {mode === 'file' ? '· From File' : mode === 'youtube' ? '· From YouTube' : ''}</div>
           <div style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', marginBottom:6, lineHeight:1.2 }}>{curriculum.title}</div>
           <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:16 }}>{curriculum.overview}</div>
           <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom:savedId?12:0 }}>
@@ -333,7 +339,7 @@ export default function CurriculumScreen() {
         <div style={{ display:'flex', gap:6, marginBottom:28, background:'var(--bg3)', padding:4, borderRadius:10, border:'1px solid var(--border)' }}>
           {[
             { v:'scratch', label:'✦ From Scratch', desc:'Type a topic' },
-            { v:'pdf', label:'📄 From PDF', desc:'Upload a document', pro:true },
+            { v:'file', label:'📁 From File', desc:'PDF, Word, or Text', pro:true },
             { v:'youtube', label:'▶ From YouTube', desc:'Paste a URL', pro:true },
           ].map(tab => (
                 <button key={tab.v} onClick={() => { if((tab as any).pro && !isPro){ setShowProTab(true); return }; setMode(tab.v as any); setError('') }} style={{ flex:1, padding:'8px 10px', borderRadius:7, border:'none', background:mode===tab.v?'var(--bg2)':'transparent', color:(tab as any).pro && !isPro?'var(--text3)':mode===tab.v?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:mode===tab.v?500:400, cursor:'pointer', transition:'all 0.15s', position:'relative' as const, opacity:(tab as any).pro && !isPro?0.6:1 }}>
@@ -344,11 +350,11 @@ export default function CurriculumScreen() {
         </div>
 
         {/* PDF MODE */}
-        {mode === 'pdf' && (
+        {mode === 'file' && (
           <div style={{ marginBottom:24 }}>
             <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:4 }}>Upload a document</div>
             <div style={{ fontSize:12.5, color:'var(--text3)', marginBottom:20 }}>Upload a PDF and Claude will extract the key topics and build a curriculum from it.</div>
-            <input ref={fileRef} type="file" accept=".pdf" style={{ display:'none' }} onChange={e => { if(e.target.files?.[0]) handlePdfUpload(e.target.files[0]) }}/>
+            <input ref={fileRef} type='file' accept='.pdf,.docx,.txt' style={{ display:'none' }} onChange={e => { if(e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}/>
             {!pdfText ? (
               <div onClick={() => { if(!isPro){setShowPaywall(true);return}; fileRef.current?.click() }} style={{ border:`2px dashed ${pdfLoading?'var(--amber)':'var(--border2)'}`, borderRadius:12, padding:'48px 24px', textAlign:'center' as const, cursor:'pointer', background:'var(--bg3)', transition:'all 0.15s' }}>
                 {pdfLoading ? (
@@ -359,8 +365,8 @@ export default function CurriculumScreen() {
                 ) : (
                   <>
                     <div style={{ fontSize:32, marginBottom:12 }}>📄</div>
-                    <div style={{ fontSize:14, fontWeight:500, color:'var(--text)', marginBottom:6 }}>Click to upload a PDF</div>
-                    <div style={{ fontSize:12, color:'var(--text3)' }}>Text-based PDFs only · Up to 20 pages</div>
+                    <div style={{ fontSize:14, fontWeight:500, color:'var(--text)', marginBottom:6 }}>Click to upload a file</div>
+                    <div style={{ fontSize:12, color:'var(--text3)' }}>Supported: PDF, Word (.docx), Text (.txt)</div>
                   </>
                 )}
               </div>
@@ -368,7 +374,7 @@ export default function CurriculumScreen() {
               <div style={{ background:'var(--bg3)', border:'1px solid var(--green-border)', borderRadius:10, padding:'14px 16px', marginBottom:16 }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:500, color:'var(--green-text)', marginBottom:2 }}>✓ PDF loaded</div>
+                    <div style={{ fontSize:13, fontWeight:500, color:'var(--green-text)', marginBottom:2 }}>File loaded</div>
                     <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>{pdfName} · {pdfText.length.toLocaleString()} characters extracted</div>
                   </div>
                   <button onClick={() => { setPdfText(''); setPdfName(''); setTopic('') }} style={{ fontSize:11, padding:'4px 9px', borderRadius:5, border:'1px solid var(--border2)', background:'var(--bg4)', color:'var(--text3)', cursor:'pointer', fontFamily:'var(--sans)' }}>Remove</button>
@@ -526,7 +532,7 @@ export default function CurriculumScreen() {
         )}
 
         {/* Schedule + Style for PDF/YouTube modes */}
-        {(mode === 'pdf' || mode === 'youtube') && (pdfText || youtubeTranscript) && (
+        {(mode === 'file' || mode === 'youtube') && (pdfText || youtubeTranscript) && (
           <div>
             <div style={{ marginBottom:14 }}>
               <label style={lbl}>Your level</label>
@@ -557,7 +563,7 @@ export default function CurriculumScreen() {
         )}
 
         {/* Show prompt to upload/fetch if nothing loaded yet in PDF/YouTube mode */}
-        {(mode === 'pdf' && !pdfText && !pdfLoading) && error && (
+        {(mode === 'file' && !pdfText && !pdfLoading) && error && (
           <div style={{ padding:'9px 12px', borderRadius:7, fontSize:12, marginTop:12, background:'var(--red-bg)', border:'1px solid var(--red-border)', color:'var(--red-text)' }}>{error}</div>
         )}
         {(mode === 'youtube' && !youtubeTranscript) && error && (
