@@ -216,7 +216,7 @@ export default function AppShell({ children }: AppShellProps) {
           {/* User footer */}
           <div style={{ padding:'10px 8px 12px', borderTop:'1px solid var(--border)', marginTop:8, flexShrink:0 }}>
             <div onClick={() => { setShowSettings(true); setEditName(profile?.display_name||'') }}
-              style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, cursor:'pointer', background:'var(--bg3)' }}>
+              style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, cursor:'pointer', background:'var(--bg3)', border:'1px solid var(--border)', transition:'background 0.15s' }}>
               <div style={{ width:32, height:32, borderRadius:'50%', background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.4)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--serif)', fontSize:13, color:'var(--amber)', flexShrink:0 }}>
                 {(profile?.display_name||'?')[0].toUpperCase()}
               </div>
@@ -267,7 +267,7 @@ export default function AppShell({ children }: AppShellProps) {
               onFocus={() => setSearchOpen(true)}
               onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
               placeholder='Search paths...'
-              style={{ width:'100%', padding:'6px 12px 6px 30px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:12, outline:'none', boxSizing:'border-box' as const }}
+              style={{ width:'100%', padding:'6px 12px 6px 30px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:12, outline:'none', boxSizing:'border-box' as const, colorScheme:'light dark' }}
             />
             <span style={{ position:'absolute' as const, left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none' as const }}>⌕</span>
             {searchOpen && searchQuery.trim().length > 0 && (() => {
@@ -316,7 +316,7 @@ export default function AppShell({ children }: AppShellProps) {
               <label style={{ display:'block', fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:6 }}>Display Name</label>
               <input value={editName} onChange={e => setEditName(e.target.value)} style={{ width:'100%', padding:'9px 12px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:8, color:'var(--text)', fontFamily:'var(--sans)', fontSize:14, outline:'none', boxSizing:'border-box' as const }}/>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:16 }}>
               {[
                 {label:'Streak',   v: profile?.streak ?? 0},
                 {label:'XP',       v: profile?.xp ?? 0},
