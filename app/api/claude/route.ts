@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@/lib/supabase/server"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const MODEL = 'claude-sonnet-4-5-20251001'
+const MODEL = "claude-sonnet-4-5"
 
 export async function POST(request: Request) {
   try {
