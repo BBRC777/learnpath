@@ -363,7 +363,7 @@ export default function StudyScreen() {
               <div style={{ fontSize:11, color:'var(--text3)' }}>{s.desc}</div>
             </div>
           ))}
-        </div>
+        </div>s
         <button style={{ ...btnPrimary, width:'100%', justifyContent:'center', display:'flex', alignItems:'center', gap:8 }} onClick={launch}>
           Start Session
         </button>
