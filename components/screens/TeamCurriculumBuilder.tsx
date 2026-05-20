@@ -83,13 +83,13 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
         text = result.value
       } else {
         const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + pdfjsLib.version + '/pdf.worker.min.js'
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@' + pdfjsLib.version + '/build/pdf.worker.min.mjs'
         const arrayBuffer = await file.arrayBuffer()
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise
         for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
           const page = await pdf.getPage(i)
           const content = await page.getTextContent()
-          text += content.items.map((item: any) => item.str).join(' ') + '\n'
+          text += content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n'
         }
       }
       setPdfText(text.slice(0, 12000))

@@ -139,14 +139,14 @@ export default function CurriculumScreen() {
         text = result.value
       } else {
         const pdfjsLib = await import('pdfjs-dist')
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + pdfjsLib.version + '/pdf.worker.min.js'
-        const arrayBuffer = await file.arrayBuffer()
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@' + pdfjsLib.version + '/build/pdf.worker.min.mjs'
+        const arrayBuffer2 = await file.arrayBuffer()
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer2) }).promise
         let pdfText2 = ''
         for (let i = 1; i <= Math.min(pdf.numPages, 20); i++) {
           const page = await pdf.getPage(i)
           const content = await page.getTextContent()
-          pdfText2 += content.items.map((item: any) => item.str).join(' ') + '\n'
+          pdfText2 += content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n'
         }
         text = pdfText2
       }
