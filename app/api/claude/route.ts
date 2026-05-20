@@ -1,8 +1,8 @@
-﻿import Anthropic from "@anthropic-ai/sdk"
+import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@/lib/supabase/server"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const MODEL = "claude-sonnet-4-5"
+const MODEL = 'claude-sonnet-4-5-20251001'
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     if (stream) {
       const streamResponse = await client.messages.create({
         model: MODEL,
-        max_tokens: params.max_tokens || 4000,
+        max_tokens: params.max_tokens || 8000,
         stream: true,
         messages: params.messages,
         system: params.system,
