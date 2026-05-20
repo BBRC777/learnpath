@@ -13,6 +13,7 @@
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.43.0",
+    "mammoth": "^1.12.0",
     "next": "14.2.3",
     "pdfjs-dist": "^5.7.284",
     "react": "^18",
