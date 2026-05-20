@@ -4,7 +4,14 @@ import { saveTeamCurriculum } from '@/lib/db'
 
 const TOPICS = ['Onboarding','Compliance Training','Data Privacy','Leadership','Sales Skills','Python','Excel','Project Management','Public Speaking','Customer Service','Cybersecurity','Finance Basics']
 const LEVEL_OPTS = ['Complete Beginner','Beginner','Intermediate','Advanced']
-const DUR_OPTS = [{ label:'2 Weeks', weeks:2 },{ label:'4 Weeks', weeks:4 },{ label:'6 Weeks', weeks:6 },{ label:'8 Weeks', weeks:8 },{ label:'12 Weeks', weeks:12 }]
+const TRAINING_MODES = [
+  { v:'quick',     label:'Quick',      desc:'15 min – 8 hrs total',    icon:'⚡' },
+  { v:'multiday',  label:'Multi-day',  desc:'2 – 5 days',              icon:'📅' },
+  { v:'multiweek', label:'Multi-week', desc:'2 – 12 weeks',            icon:'📚' },
+]
+const QUICK_OPTS  = ['15 min','30 min','1 hr','2 hrs','4 hrs','8 hrs']
+const MDAY_OPTS   = [{ label:'2 Days', days:2 },{ label:'3 Days', days:3 },{ label:'4 Days', days:4 },{ label:'5 Days', days:5 }]
+const DUR_OPTS    = [{ label:'2 Weeks', weeks:2 },{ label:'4 Weeks', weeks:4 },{ label:'6 Weeks', weeks:6 },{ label:'8 Weeks', weeks:8 },{ label:'12 Weeks', weeks:12 }]
 const TIME_OPTS = ['15 min','20 min','30 min','45 min','60 min']
 const DAY_LABELS = ['M','T','W','T','F','S','S']
 const STYLE_OPTS = [
@@ -35,6 +42,9 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
   const [goal, setGoal] = useState('')
   const [level, setLevel] = useState('Beginner')
   const [duration, setDuration] = useState(DUR_OPTS[1])
+  const [trainingMode, setTrainingMode] = useState<'quick'|'multiday'|'multiweek'>('multiweek')
+  const [quickDuration, setQuickDuration] = useState('1 hr')
+  const [multiDayCount, setMultiDayCount] = useState(MDAY_OPTS[0])
   const [sessionTime, setSessionTime] = useState('30 min')
   const [activeDays, setActiveDays] = useState([0,1,2,3,4])
   const [styles, setStyles] = useState(['structured'])
@@ -60,7 +70,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
   const toggleDay = (i: number) => setActiveDays(d => d.includes(i)?d.filter(x=>x!==i):[...d,i].sort())
   const toggleStyle = (v: string) => setStyles(s => s.includes(v)?(s.length>1?s.filter(x=>x!==v):s):[...s,v])
   const daysLabel = activeDays.map(i => DAY_LABELS[i]).join(', ')
-  const totalLessons = duration.weeks * activeDays.length
+  const totalLessons = trainingMode === 'quick' ? 1 : trainingMode === 'multiday' ? multiDayCount.days : duration.weeks * activeDays.length
 
   const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:8, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none', boxSizing:'border-box' as const }
   const lbl: React.CSSProperties = { display:'block', fontSize:9, fontFamily:'var(--mono)', textTransform:'uppercase' as const, letterSpacing:'0.1em', color:'var(--text3)', marginBottom:6 }
@@ -118,12 +128,12 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
 
     let prompt = ''
     if (mode === 'file' && pdfText) {
-      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from the document below. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Document: ' + pdfText.slice(0,5000) + ' Weeks:' + duration.weeks + ' Days:' + activeDays.length + ' Session:' + sessionTime + ' Level:' + level + '. Now return the JSON.';
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from the document below. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Document: ' + pdfText.slice(0,5000) + ' Duration:' + (trainingMode==='quick' ? quickDuration+' total (single session)' : trainingMode==='multiday' ? multiDayCount.label : duration.weeks+' weeks') + ' Level:' + level + '. Now return the JSON.';
     } else if (mode === 'youtube' && youtubeTranscript) {
-      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from this video transcript. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Transcript: ' + youtubeTranscript.slice(0,5000) + ' Weeks:' + duration.weeks + ' Days:' + activeDays.length + ' Session:' + sessionTime + '. Now return the JSON.';
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from this video transcript. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Transcript: ' + youtubeTranscript.slice(0,5000) + ' Duration:' + (trainingMode==='quick' ? quickDuration+' total (single session)' : trainingMode==='multiday' ? multiDayCount.label : duration.weeks+' weeks') + '. Now return the JSON.';
     } else {
       const goalText = goal || 'Build team proficiency';
-      prompt = 'You are an expert corporate trainer. Build a team learning curriculum. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Topic:' + topic + ' Goal:' + goalText + ' Level:' + level + ' Weeks:' + duration.weeks + ' Days:' + activeDays.length + ' Session:' + sessionTime + ' Style:' + styles.join(',') + '. Now return the JSON.';
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Topic:' + topic + ' Goal:' + goalText + ' Level:' + level + ' Duration:' + (trainingMode==='quick' ? quickDuration+' total (single session)' : trainingMode==='multiday' ? multiDayCount.label : duration.weeks+' weeks, '+activeDays.length+' days/week') + ' Style:' + styles.join(',') + '. Now return the JSON.';
     }
     try {
       const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
@@ -142,7 +152,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
       setSaving(true)
       try {
         const topicLabel = mode === 'file' ? (pdfName || topic) : topic
-        const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel:duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum:parsed })
+        const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel: trainingMode === 'quick' ? quickDuration : trainingMode === 'multiday' ? multiDayCount.label : duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum:parsed })
         setSavedId(saved.id)
         onSaved(saved)
       } catch(e: any) { console.error('Save failed:', e.message) }
@@ -297,7 +307,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                     <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'16px 18px' }}>
                       <div style={{ fontFamily:'var(--serif)', fontSize:16, color:'var(--text)', marginBottom:12 }}>{topic || 'Your Team Path'}</div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                        {[{label:'Level',value:level},{label:'Duration',value:duration.label},{label:'Per session',value:sessionTime},{label:'Days/week',value:activeDays.length+' ('+daysLabel+')'},{label:'Total sessions',value:String(totalLessons)},{label:'Style',value:styles.join(', ')}].map((r,i) => (
+                        {[{label:'Level',value:level},{label:'Duration',value: trainingMode==='quick' ? quickDuration : trainingMode==='multiday' ? multiDayCount.label : duration.label},{label:'Per session',value:sessionTime},{label:'Days/week',value:activeDays.length+' ('+daysLabel+')'},{label:'Total sessions',value:String(totalLessons)},{label:'Style',value:styles.join(', ')}].map((r,i) => (
                           <div key={i} style={{ padding:'8px 10px', background:'var(--bg2)', borderRadius:7 }}>
                             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{r.label}</div>
                             <div style={{ fontSize:12, color:'var(--text)', fontWeight:500, marginTop:2 }}>{r.value}</div>
