@@ -118,10 +118,13 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
 
     let prompt = ''
     if (mode === 'file' && pdfText) {
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from the document below. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Document: ' + pdfText.slice(0,5000) + ' Weeks:' + duration.weeks + ' Days:' + activeDays.length + ' Session:' + sessionTime + ' Level:' + level + '. Now return the JSON.';
     } else if (mode === 'youtube' && youtubeTranscript) {
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from this video transcript. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Transcript: ' + youtubeTranscript.slice(0,5000) + ' Weeks:' + duration.weeks + ' Days:' + activeDays.length + ' Session:' + sessionTime + '. Now return the JSON.';
     } else {
+      const goalText = goal || 'Build team proficiency';
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Topic:' + topic + ' Goal:' + goalText + ' Level:' + level + ' Weeks:' + duration.weeks + ' Days:' + activeDays.length + ' Session:' + sessionTime + ' Style:' + styles.join(',') + '. Now return the JSON.';
     }
-
     try {
       const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
       if (!res.ok) throw new Error('API error')
