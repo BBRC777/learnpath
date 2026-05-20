@@ -502,7 +502,7 @@ export async function getMyAssignments(userId: string) {
 
 export async function getMemberProgress(teamId: string) {
   const { data, error } = await (supabase.from('assignments') as any)
-    .select('*, profiles(id, display_name, xp, streak), curricula(id, topic, curriculum, progress)')
+    .select('*, curricula(id, topic, curriculum, progress)')
     .eq('team_id', teamId)
   if (error) throw new Error(error.message)
   return data || []
