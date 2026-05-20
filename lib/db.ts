@@ -434,3 +434,76 @@ export async function completeLessonAndAwardXP(
     return null
   }
 }
+
+// -- TEAMS ----------------------------------------------------------------
+
+export async function createTeam(adminId: string, name: string) {
+  const id = 'team_' + Math.random().toString(36).slice(2, 14)
+  const { data, error } = await (supabase.from('teams') as any)
+    .insert({ id, name, admin_id: adminId }).select().single()
+  if (error) throw new Error(error.message)
+  await (supabase.from('profiles') as any)
+    .update({ team_id: id, is_team_admin: true, is_business: true, updated_at: new Date().toISOString() })
+    .eq('id', adminId)
+  return data
+}
+
+export async function getTeam(adminId: string) {
+  const { data } = await (supabase.from('teams') as any)
+    .select('*').eq('admin_id', adminId).single()
+  return data
+}
+
+export async function getTeamMembers(teamId: string) {
+  const { data, error } = await (supabase.from('team_members') as any)
+    .select('*').eq('team_id', teamId).order('created_at', { ascending: true })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function inviteMember(teamId: string, email: string, invitedBy: string) {
+  const id = 'tm_' + Math.random().toString(36).slice(2, 14)
+  const { data, error } = await (supabase.from('team_members') as any)
+    .insert({ id, team_id: teamId, email, role: 'member', status: 'invited' })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function removeMember(memberId: string) {
+  const { error } = await (supabase.from('team_members') as any)
+    .delete().eq('id', memberId)
+  if (error) throw new Error(error.message)
+}
+
+export async function createAssignment(teamId: string, curriculumId: string, assignedTo: string, assignedBy: string, dueDate?: string) {
+  const id = 'asgn_' + Math.random().toString(36).slice(2, 14)
+  const { data, error } = await (supabase.from('assignments') as any)
+    .insert({ id, team_id: teamId, curriculum_id: curriculumId, assigned_to: assignedTo, assigned_by: assignedBy, due_date: dueDate || null })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getAssignments(teamId: string) {
+  const { data, error } = await (supabase.from('assignments') as any)
+    .select('*').eq('team_id', teamId).order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function getMyAssignments(userId: string) {
+  const { data, error } = await (supabase.from('assignments') as any)
+    .select('*, curricula(id, topic, level, dur_label, curriculum, progress)')
+    .eq('assigned_to', userId).order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function getMemberProgress(teamId: string) {
+  const { data, error } = await (supabase.from('assignments') as any)
+    .select('*, profiles(id, display_name, xp, streak), curricula(id, topic, curriculum, progress)')
+    .eq('team_id', teamId)
+  if (error) throw new Error(error.message)
+  return data || []
+}

@@ -55,6 +55,7 @@ const NAV = [
   { href:'/app/curriculum',  label:'New Learning Path', icon:'+' },
   { href:'/app/paths',       label:'All Learning Paths',icon:'◈' },
   { href:'/app/leaderboard', label:'Leaderboard',       icon:'🏆' },
+  { href:'/app/team',        label:'Team',              icon:'\ud83c\udfe2' },
   { href:'/app/flashcards',  label:'Flashcards',        icon:'⧉', badge:'__DUE__' },
   { href:'/app/study',       label:'Study Mode',        icon:'◎', pro:true },
   { href:'/app/progress',    label:'Progress',          icon:'◉' },
@@ -145,6 +146,15 @@ export default function AppShell({ children }: AppShellProps) {
   const btnSecondary: React.CSSProperties = { padding:'8px 14px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:12, cursor:'pointer' }
 
   const isLessonPage = pathname?.startsWith('/app/lesson')
+  const isTeamPage   = pathname?.startsWith('/app/team')
+
+  useEffect(() => {
+    if (isTeamPage) {
+      document.documentElement.setAttribute('data-theme', 'business')
+    } else {
+      document.documentElement.setAttribute('data-theme', theme)
+    }
+  }, [isTeamPage, theme])
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>

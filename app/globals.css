@@ -69,6 +69,39 @@
   --amber-bg2: rgba(212,133,58,0.2);
 }
 
+[data-theme='business'] {
+  /* Surface */
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #1c2333;
+  --bg4: #242d3d;
+  --bg5: #2d3748;
+  /* Borders */
+  --border: #30363d;
+  --border2: #3d4450;
+  --border3: #4a5568;
+  /* Text */
+  --text: #e6edf3;
+  --text2: #7d8590;
+  --text3: #484f58;
+  /* Brand - blue replaces amber */
+  --amber: #4a7fd4;
+  --amber2: #6a9de8;
+  --amber3: #8ab4f0;
+  --amber-bg: rgba(74,127,212,0.12);
+  --amber-bg2: rgba(74,127,212,0.2);
+  /* Semantic */
+  --green-bg: rgba(35,134,54,0.12);
+  --green-text: #3fb950;
+  --green-border: rgba(35,134,54,0.3);
+  --blue-bg: rgba(74,127,212,0.12);
+  --blue-text: #79c0ff;
+  --blue-border: rgba(74,127,212,0.3);
+  --red-bg: rgba(248,81,73,0.12);
+  --red-text: #ff7b72;
+  --red-border: rgba(248,81,73,0.3);
+}
+
 html, body { height: 100%; }
 body {
   background: var(--bg);
