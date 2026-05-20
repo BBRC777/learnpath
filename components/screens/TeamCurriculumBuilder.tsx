@@ -137,7 +137,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
           try { const p = JSON.parse(data); if(p.text){ full+=p.text; setStreamText(full.slice(-300)) } } catch {}
         }
       }
-      const match = full.match(/\\{[\\s\\S]*\\}/); if (!match) throw new Error('Could not parse curriculum')
+      const match = full.match(/\{[\s\S]*\}/); if (!match) throw new Error('Could not parse curriculum - raw: ' + full.slice(0,200))
       const parsed = JSON.parse(match[0]); setCurriculum(parsed)
       setSaving(true)
       try {
