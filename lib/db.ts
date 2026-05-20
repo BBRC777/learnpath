@@ -547,3 +547,37 @@ export async function deleteTeamCurriculum(curriculumId: string) {
     .delete().eq('id', curriculumId)
   if (error) throw new Error(error.message)
 }
+
+
+// -- ASSESSMENTS ----------------------------------------------------------
+
+export async function saveAssessment(curriculumId: string, teamId: string, questions: any[], passThreshold: number) {
+  const id = 'asmt_' + Math.random().toString(36).slice(2, 14)
+  const { data, error } = await (supabase.from('assessments') as any)
+    .insert({ id, curriculum_id: curriculumId, team_id: teamId, questions, pass_threshold: passThreshold })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getAssessment(curriculumId: string) {
+  const { data } = await (supabase.from('assessments') as any)
+    .select('*').eq('curriculum_id', curriculumId).single()
+  return data || null
+}
+
+export async function saveAssessmentResult(assessmentId: string, userId: string, teamId: string, curriculumId: string, score: number, passed: boolean, answers: any[]) {
+  const id = 'rslt_' + Math.random().toString(36).slice(2, 14)
+  const { data, error } = await (supabase.from('assessment_results') as any)
+    .insert({ id, assessment_id: assessmentId, user_id: userId, team_id: teamId, curriculum_id: curriculumId, score, passed, answers })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function getAssessmentResults(teamId: string) {
+  const { data, error } = await (supabase.from('assessment_results') as any)
+    .select('*').eq('team_id', teamId).order('completed_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}

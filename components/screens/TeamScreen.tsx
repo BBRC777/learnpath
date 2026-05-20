@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getTeam, createTeam, getTeamMembers, inviteMember, removeMember, getAssignments, createAssignment, getMemberProgress, loadCurricula, loadTeamCurricula, importToTeam, deleteTeamCurriculum } from '@/lib/db'
+import { getTeam, createTeam, getTeamMembers, inviteMember, removeMember, getAssignments, createAssignment, getMemberProgress, loadCurricula, loadTeamCurricula, importToTeam, deleteTeamCurriculum, getAssessmentResults } from '@/lib/db'
 import { useRouter } from 'next/navigation'
 import TeamCurriculumBuilder from './TeamCurriculumBuilder'
 
@@ -25,6 +25,7 @@ export default function TeamScreen() {
   const [assignDue, setAssignDue] = useState('')
   const [assigning, setAssigning] = useState(false)
   const [assignments, setAssignments] = useState<any[]>([])
+  const [assessmentResults, setAssessmentResults] = useState<any[]>([])
   const [importing, setImporting] = useState<string|null>(null)
   const [deleting, setDeleting] = useState<string|null>(null)
   const [previewId, setPreviewId] = useState<string|null>(null)
@@ -172,11 +173,12 @@ export default function TeamScreen() {
         {/* OVERVIEW TAB */}
         {tab === 'overview' && (
           <div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:24 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:24 }}>
               {[
                 { label:'Members', value: members.length },
                 { label:'Team Paths', value: teamCurricula.length },
                 { label:'Assignments', value: assignments.length },
+                { label:'Assessments taken', value: assessmentResults.length },
               ].map((s, i) => (
                 <div key={i} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:10, padding:'16px 20px' }}>
                   <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:6 }}>{s.label}</div>

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
-import { saveTeamCurriculum } from '@/lib/db'
+import { saveTeamCurriculum, saveAssessment } from '@/lib/db'
 
 const TOPICS = ['Onboarding','Compliance Training','Data Privacy','Leadership','Sales Skills','Python','Excel','Project Management','Public Speaking','Customer Service','Cybersecurity','Finance Basics']
 const LEVEL_OPTS = ['Complete Beginner','Beginner','Intermediate','Advanced']
@@ -55,6 +55,9 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
   const [savedId, setSavedId] = useState<string|null>(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [addAssessment, setAddAssessment] = useState(false)
+  const [passThreshold, setPassThreshold] = useState(70)
+  const [numQuestions, setNumQuestions] = useState(5)
   const [pdfText, setPdfText] = useState('')
   const [pdfName, setPdfName] = useState('')
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -161,7 +164,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
     finally { setGenerating(false); setStreamText('') }
   }
 
-  const stepLabels = ['Topic','Schedule','Style','Review']
+  const stepLabels = ['Topic','Schedule','Style','Review','Assessment']
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={onClose}>
@@ -253,7 +256,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                       <div key={i} style={{ flex:1, height:3, borderRadius:2, background: step>i?accent:step===i?accentBg:'var(--bg4)' }}/>
                     ))}
                   </div>
-                  <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:16 }}>Step {step+1} of 4 — {stepLabels[step]}</div>
+                  <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:16 }}>Step {step+1} of 5 — {stepLabels[step]}</div>
 
                   {step===0 && (
                     <div>
@@ -326,14 +329,14 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                 <button onClick={() => { if(mode !== 'scratch' || step === 0) onClose(); else setStep(s => s-1) }} style={btnSecondary}>
                   {mode !== 'scratch' || step === 0 ? 'Cancel' : 'Back'}
                 </button>
-                {mode === 'scratch' && step < 3 && (
+                {mode === 'scratch' && step < 4 && (
                   <button onClick={() => {
                     if(step===0 && !topic.trim()) { setError('Enter a topic'); return }
                     if(step===1 && activeDays.length===0) { setError('Pick at least one day'); return }
                     setError(''); setStep(s => s+1)
                   }} style={btnPrimary}>Next</button>
                 )}
-                {((mode === 'scratch' && step === 3) || (mode === 'file' && pdfText) || (mode === 'youtube' && youtubeTranscript)) && (
+                {((mode === 'scratch' && step === 4) || (mode === 'file' && pdfText) || (mode === 'youtube' && youtubeTranscript)) && (
                   <button onClick={generate} style={btnPrimary}>Generate with Claude</button>
                 )}
               </div>
