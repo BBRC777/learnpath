@@ -507,3 +507,43 @@ export async function getMemberProgress(teamId: string) {
   if (error) throw new Error(error.message)
   return data || []
 }
+
+// -- TEAM CURRICULA -------------------------------------------------------
+
+export async function loadTeamCurricula(teamId: string) {
+  const { data, error } = await (supabase.from('curricula') as any)
+    .select('*').eq('team_id', teamId).order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function saveTeamCurriculum(userId: string, teamId: string, params: any) {
+  const id = 'curr_' + Date.now() + '_' + Math.random().toString(36).slice(2,7)
+  const { data, error } = await (supabase.from('curricula') as any).insert({
+    id, user_id: userId, team_id: teamId, topic: params.topic, level: params.level,
+    dur_label: params.durLabel, days: params.days, time: params.time,
+    style: params.style, curriculum: params.curriculum, progress: {}, lesson_cache: {}
+  }).select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function importToTeam(curriculumId: string, teamId: string) {
+  const { data: curr, error: fetchError } = await (supabase.from('curricula') as any)
+    .select('*').eq('id', curriculumId).single()
+  if (fetchError) throw new Error(fetchError.message)
+  const id = 'curr_' + Date.now() + '_' + Math.random().toString(36).slice(2,7)
+  const { data, error } = await (supabase.from('curricula') as any).insert({
+    id, user_id: curr.user_id, team_id: teamId, topic: curr.topic, level: curr.level,
+    dur_label: curr.dur_label, days: curr.days, time: curr.time,
+    style: curr.style, curriculum: curr.curriculum, progress: {}, lesson_cache: {}
+  }).select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function deleteTeamCurriculum(curriculumId: string) {
+  const { error } = await (supabase.from('curricula') as any)
+    .delete().eq('id', curriculumId)
+  if (error) throw new Error(error.message)
+}
