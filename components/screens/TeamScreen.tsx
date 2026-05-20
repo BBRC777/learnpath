@@ -27,6 +27,7 @@ export default function TeamScreen() {
   const [assignments, setAssignments] = useState<any[]>([])
   const [importing, setImporting] = useState<string|null>(null)
   const [deleting, setDeleting] = useState<string|null>(null)
+  const [previewId, setPreviewId] = useState<string|null>(null)
   const [showImport, setShowImport] = useState(false)
   const [showBuilder, setShowBuilder] = useState(false)
   const router = useRouter()
