@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import CloneButton from './CloneButton'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,7 +57,7 @@ export default async function SharePage({ params }: { params: { id: string } }) 
             <div style={{ fontSize:14, fontWeight:500, color:'#e8a55a', marginBottom:4 }}>Start learning this path</div>
             <div style={{ fontSize:12, color:'#9a9790' }}>Sign up free to follow this curriculum with AI-generated lessons</div>
           </div>
-          <a href="/auth" style={{ padding:'10px 20px', borderRadius:8, background:'#d4853a', color:'#0a0b0f', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:500, textDecoration:'none', whiteSpace:'nowrap', flexShrink:0 }}>Get started free</a>
+          <CloneButton curr={curr} />
         </div>
 
         {/* Curriculum outline */}
