@@ -362,6 +362,7 @@ export default function PricingPage() {
           <Link href="/auth" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Sign in</Link>
           <Link href="/auth" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Sign up</Link>
           <Link href="/privacy" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Privacy Policy</Link>
+          <Link href="/terms" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Terms of Service</Link>
         </div>
       </div>
 
