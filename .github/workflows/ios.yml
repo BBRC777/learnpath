@@ -1,0 +1,81 @@
+name: iOS Build & Upload to TestFlight
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: Sync Capacitor
+        run: npx cap sync ios
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install Fastlane
+        run: gem install fastlane
+
+      - name: Write App Store Connect API Key
+        env:
+          API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$API_KEY_CONTENT" > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install --repo-update || true
+
+      - name: Build & Archive
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          cd ios/App
+          xcodebuild archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=$TEAM_ID \
+            -allowProvisioningUpdates
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/App.xcarchive \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath $RUNNER_TEMP/export \
+            -allowProvisioningUpdates
+
+      - name: Upload to TestFlight
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file $RUNNER_TEMP/export/App.ipa \
+            --apiKey $API_KEY_ID \
+            --apiIssuer $API_ISSUER_ID
