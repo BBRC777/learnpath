@@ -1,0 +1,32 @@
+name: Learnpath iOS Release
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Archive
+    environment:
+      name: Release
+    steps:
+      - name: Resolve Package Dependencies
+        script: |
+          cd $CI_WORKSPACE/ios/App
+          xcodebuild -resolvePackageDependencies -workspace App.xcworkspace -scheme App
+      - name: Build
+        script: |
+          cd $CI_WORKSPACE/ios/App
+          xcodebuild archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath $CI_ARCHIVE_PATH \
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=$CI_TEAM_ID
+      - name: TestFlight Upload
+        script: |
+          xcodebuild -exportArchive \
+            -archivePath $CI_ARCHIVE_PATH \
+            -exportPath $CI_ARCHIVE_PATH \
+            -exportOptionsPlist $CI_WORKSPACE/ios/ExportOptions.plist
