@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function PlayIcon() {
@@ -27,7 +27,9 @@ export default function LessonScreen() {
   const [activeCurrId, setActiveCurrId] = useState<string|null>(null)
   const [selectedLesson, setSelectedLesson] = useState<{wi:number,di:number}|null>(null)
   const [lessonData, setLessonData] = useState<any>(null)
-  const [fromCache, setFromCache] = useState<'local'|'remote'|null>(null)
+  const [fromCache, setFromCache] = useState<'local'|'remote'|'global'|null>(null)
+  const [lessonImage, setLessonImage] = useState<string|null>(null)
+  const [preloadedLessons, setPreloadedLessons] = useState<Record<string,any>>({})
   const [generating, setGenerating] = useState(false)
   const [streamText, setStreamText] = useState('')
   const [isComplete, setIsComplete] = useState(false)
@@ -649,7 +651,23 @@ export default function LessonScreen() {
                       </div>
                     )
                   })()}
-                  {/* Related Topics */}
+                  {/* References */}
+              {(lessonData.references||[]).length > 0 && (
+                <div style={{ marginTop:20, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+                  <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:10 }}>Further reading</div>
+                  <div style={{ display:'flex', flexDirection:'column' as const, gap:6 }}>
+                    {lessonData.references.map((ref: any, i: number) => (
+                      <a key={i} href={ref.url} target='_blank' rel='noopener noreferrer' style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:7, border:'1px solid var(--border)', background:'var(--bg2)', textDecoration:'none' }}>
+                        <span style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', padding:'2px 6px', borderRadius:4, background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.3)', flexShrink:0 }}>{ref.type||'link'}</span>
+                        <span style={{ fontSize:12, color:'var(--text)', flex:1 }}>{ref.title}</span>
+                        <span style={{ fontSize:10, color:'var(--text3)' }}>↗</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Related Topics */}
                   {isComplete && (
                     <div style={{ marginTop:20, paddingTop:16, borderTop:'1px solid var(--border)' }}>
                       <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:12 }}>What to explore next</div>

@@ -581,3 +581,36 @@ export async function getAssessmentResults(teamId: string) {
   if (error) throw new Error(error.message)
   return data || []
 }
+
+// -- GLOBAL LESSON CACHE --------------------------------------------------
+
+function makeGlobalCacheId(topic: string, level: string, weekNum: number, dayNum: number): string {
+  return [topic.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40), level.toLowerCase().replace(/[^a-z0-9]/g,'_'), weekNum, dayNum].join('__')
+}
+
+export async function getGlobalCachedLesson(topic: string, level: string, weekNum: number, dayNum: number, dayTitle: string) {
+  try {
+    const id = makeGlobalCacheId(topic, level, weekNum, dayNum)
+    const { data } = await (supabase.from('global_lesson_cache') as any)
+      .select('lesson_data, hit_count').eq('id', id).single()
+    if (!data) return null
+    const hitCount = (data as any).hit_count || 1
+    const lessonData2 = (data as any).lesson_data
+    // Increment hit count async
+    ;(supabase.from('global_lesson_cache') as any)
+      .update({ hit_count: hitCount + 1, updated_at: new Date().toISOString() })
+      .eq('id', id).then(() => {})
+    return lessonData2
+  } catch { return null }
+}
+
+export async function setGlobalCachedLesson(topic: string, level: string, weekNum: number, dayNum: number, weekTheme: string, dayTitle: string, dayType: string, lessonData: any) {
+  try {
+    const id = makeGlobalCacheId(topic, level, weekNum, dayNum)
+    await (supabase.from('global_lesson_cache') as any).upsert({
+      id, topic, level, week_num: weekNum, day_num: dayNum,
+      week_theme: weekTheme, day_title: dayTitle, day_type: dayType,
+      lesson_data: lessonData, updated_at: new Date().toISOString()
+    }, { onConflict: 'id' })
+  } catch(e) { console.error('Global cache write failed:', e) }
+}
