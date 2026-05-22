@@ -28,6 +28,9 @@ jobs:
           cd ios/App
           pod install --repo-update
 
+      - name: Install Fastlane
+        run: gem install fastlane
+
       - name: Write App Store Connect API Key
         env:
           API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
@@ -35,16 +38,24 @@ jobs:
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_CONTENT" > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
 
-      - name: Install provisioning profile
+      - name: Run Fastlane Match
         env:
-          PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
         run: |
-          PP_PATH=$RUNNER_TEMP/learnpath.mobileprovision
-          echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+          cd ios/App
+          fastlane run match \
+            type:appstore \
+            app_identifier:com.mrfstudios.learnpath \
+            git_url:https://${{ secrets.MATCH_GIT_TOKEN }}@github.com/BBRC777/learnpath-certificates.git \
+            team_id:${{ secrets.APPLE_TEAM_ID }} \
+            api_key_path:~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8 \
+            readonly:false \
+            verbose:true
 
       - name: Build & Archive
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         run: |
           cd ios/App
           xcodebuild archive \
@@ -54,12 +65,8 @@ jobs:
             -archivePath $RUNNER_TEMP/App.xcarchive \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
-            PROVISIONING_PROFILE_SPECIFIER="Learnpath App Store" \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+            PROVISIONING_PROFILE_SPECIFIER="match AppStore com.mrfstudios.learnpath" \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
 
       - name: Export IPA
         run: |
