@@ -58,7 +58,7 @@ jobs:
             team_id:${APPLE_TEAM_ID} \
             api_key_path:/tmp/api_key.json \
             readonly:false \
-            verbose:true
+            verbose:false
 
       - name: Build & Archive
         env:
@@ -76,10 +76,12 @@ jobs:
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="match AppStore com.mrfstudios.learnpath" \
             DEVELOPMENT_TEAM=${APPLE_TEAM_ID} \
+            APP_PROVISIONING_PROFILE_SPECIFIER="match AppStore com.mrfstudios.learnpath" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8 \
             -authenticationKeyID ${API_KEY_ID} \
-            -authenticationKeyIssuerID ${API_ISSUER_ID}
+            -authenticationKeyIssuerID ${API_ISSUER_ID} \
+            OTHER_CODE_SIGN_FLAGS="--keychain /Users/runner/Library/Keychains/login.keychain-db"
 
       - name: Export IPA
         env:
