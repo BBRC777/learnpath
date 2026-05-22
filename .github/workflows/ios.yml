@@ -44,6 +44,8 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
         run: |
           B64_TOKEN=$(echo -n "BBRC777:${MATCH_GIT_TOKEN}" | base64)
           cd ios/App
@@ -53,6 +55,7 @@ jobs:
             git_url:https://github.com/BBRC777/learnpath-certificates.git \
             git_basic_authorization:${B64_TOKEN} \
             team_id:${APPLE_TEAM_ID} \
+            username:${FASTLANE_USER} \
             readonly:false \
             verbose:true
 
