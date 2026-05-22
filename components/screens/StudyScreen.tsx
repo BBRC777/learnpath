@@ -171,7 +171,7 @@ export default function StudyScreen() {
             </div>
           ))}
         </div>
-        <button onClick={()=>window.open('https://pay.rev.cat/sandbox/skelxidydieztrqy/'+(userId||''),'_blank')} style={{ ...btnPrimary, width:'100%', justifyContent:'center', display:'flex', marginBottom:10 }}>Upgrade to Pro — $9.99/mo
+        <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(userId||''),'_blank')} style={{ ...btnPrimary, width:'100%', justifyContent:'center', display:'flex', marginBottom:10 }}>Upgrade to Pro — $9.99/mo
         </button>
         <button onClick={() => router.push('/app')} style={{ ...btnSecondary, width:'100%', justifyContent:'center', display:'flex' }}>
           Back to Home
