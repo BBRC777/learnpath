@@ -352,10 +352,10 @@ export default function AppShell({ children }: AppShellProps) {
                     <div style={{ fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)', marginBottom:2 }}>Monthly</div>
                     <div style={{ fontWeight:600, color:'var(--text)' }}>.99/mo</div>
                   </button>
-                  <button onClick={()=>router.push('/pricing')} style={{ padding:'8px 10px', borderRadius:7, border:'1px solid rgba(212,133,58,0.6)', background:'rgba(212,133,58,0.15)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer', flex:1, textAlign:'center' as const, position:'relative' as const }}>
+                  <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(userId||''), '_blank')} style={{ padding:'8px 10px', borderRadius:7, border:'1px solid rgba(212,133,58,0.6)', background:'rgba(212,133,58,0.15)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer', flex:1, textAlign:'center' as const, position:'relative' as const }}>
                     <div style={{ position:'absolute' as const, top:-8, right:6, background:'#6abf8a', color:'#0a0b0f', fontSize:8, fontFamily:'var(--mono)', fontWeight:700, padding:'2px 5px', borderRadius:4 }}>SAVE 33%</div>
                     <div style={{ fontSize:10, color:'rgba(212,133,58,0.7)', fontFamily:'var(--mono)', marginBottom:2 }}>Annual</div>
-                    <div style={{ fontWeight:600 }}>.67/mo</div>
+                    <div style={{ fontWeight:600 }}>$6.67/mo</div>
                   </button>
                 </div>
               </div>
