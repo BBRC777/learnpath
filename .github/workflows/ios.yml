@@ -35,17 +35,28 @@ jobs:
         env:
           API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_CONTENT" > ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8
+          cat > /tmp/api_key.json << APIKEYEOF
+          {
+            "key_id": "${API_KEY_ID}",
+            "issuer_id": "${API_ISSUER_ID}",
+            "key": "${API_KEY_CONTENT}",
+            "in_house": false,
+            "duration": 1200
+          }
+          APIKEYEOF
 
       - name: Run Fastlane Match
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
         run: |
           B64_TOKEN=$(echo -n "BBRC777:${MATCH_GIT_TOKEN}" | base64)
           cd ios/App
@@ -55,7 +66,7 @@ jobs:
             git_url:https://github.com/BBRC777/learnpath-certificates.git \
             git_basic_authorization:${B64_TOKEN} \
             team_id:${APPLE_TEAM_ID} \
-            username:${FASTLANE_USER} \
+            api_key_path:/tmp/api_key.json \
             readonly:false \
             verbose:true
 
