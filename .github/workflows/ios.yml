@@ -42,16 +42,17 @@ jobs:
       - name: Run Fastlane Match
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_TOKEN }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          B64_TOKEN=$(echo -n "BBRC777:${MATCH_GIT_TOKEN}" | base64)
           cd ios/App
           fastlane run match \
             type:appstore \
             app_identifier:com.mrfstudios.learnpath \
             git_url:https://github.com/BBRC777/learnpath-certificates.git \
-            git_basic_authorization:$MATCH_GIT_BASIC_AUTHORIZATION \
-            team_id:$APPLE_TEAM_ID \
+            git_basic_authorization:${B64_TOKEN} \
+            team_id:${APPLE_TEAM_ID} \
             readonly:false \
             verbose:true
 
@@ -70,11 +71,11 @@ jobs:
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="match AppStore com.mrfstudios.learnpath" \
-            DEVELOPMENT_TEAM=$APPLE_TEAM_ID \
+            DEVELOPMENT_TEAM=${APPLE_TEAM_ID} \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8 \
-            -authenticationKeyID $API_KEY_ID \
-            -authenticationKeyIssuerID $API_ISSUER_ID
+            -authenticationKeyID ${API_KEY_ID} \
+            -authenticationKeyIssuerID ${API_ISSUER_ID}
 
       - name: Export IPA
         env:
@@ -87,8 +88,8 @@ jobs:
             -exportPath $RUNNER_TEMP/export \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8 \
-            -authenticationKeyID $API_KEY_ID \
-            -authenticationKeyIssuerID $API_ISSUER_ID
+            -authenticationKeyID ${API_KEY_ID} \
+            -authenticationKeyIssuerID ${API_ISSUER_ID}
 
       - name: Upload to TestFlight
         env:
@@ -98,5 +99,5 @@ jobs:
           xcrun altool --upload-app \
             --type ios \
             --file $RUNNER_TEMP/export/App.ipa \
-            --apiKey $API_KEY_ID \
-            --apiIssuer $API_ISSUER_ID
+            --apiKey ${API_KEY_ID} \
+            --apiIssuer ${API_ISSUER_ID}
