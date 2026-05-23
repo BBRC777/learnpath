@@ -66,6 +66,17 @@ function renderContent(text: string) {
     if (ytMatch) return <YouTubeEmbed key={i} videoId={ytMatch[3]} />
     const imgMatch = line.match(/^\[IMG:(.+?)\]$/)
     if (imgMatch) return <InlineImage key={i} query={imgMatch[1]} />
+    const vidMatch = line.match(/^\[VID:(.+?)\]$/)
+    if (vidMatch) return (
+      <div key={i} style={{ marginBottom:16, padding:'12px 14px', background:'var(--bg3)', borderRadius:10, border:'1px solid var(--border)', display:'flex', alignItems:'center', gap:12 }}>
+        <div style={{ fontSize:20, flexShrink:0 }}>▶</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:4 }}>VIDEO DEMONSTRATION</div>
+          <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(vidMatch[1])}`} target="_blank" rel="noopener noreferrer" style={{ fontSize:13, color:'var(--amber)', textDecoration:'none', fontWeight:500 }}>{vidMatch[1]}</a>
+        </div>
+        <div style={{ fontSize:11, color:'var(--text3)', fontFamily:'var(--mono)' }}>YouTube →</div>
+      </div>
+    )
     const imgMatch2 = line.match(/^\[IMG:(.+?)\]$/)
     if (imgMatch) return <InlineImage key={i} query={imgMatch[1]} />
     return <p key={i} style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, marginBottom:12 }}>{line}</p>
