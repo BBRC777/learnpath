@@ -98,7 +98,7 @@ jobs:
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8 \
             -authenticationKeyID ${API_KEY_ID} \
             -authenticationKeyIssuerID ${API_ISSUER_ID} \
-            OTHER_CODE_SIGN_FLAGS="--keychain /Users/runner/Library/Keychains/login.keychain-db --timeout 120" \
+            OTHER_CODE_SIGN_FLAGS="--keychain /Users/runner/Library/Keychains/login.keychain-db" \
             -parallelizeTargets \
             -jobs 4 \
             ENABLE_BITCODE=NO \
