@@ -102,6 +102,8 @@ jobs:
             -parallelizeTargets \
             -jobs 4 \
             ENABLE_BITCODE=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            ENABLE_BITCODE=NO \
             COMPILER_INDEX_STORE_ENABLE=NO
 
       - name: Export IPA
