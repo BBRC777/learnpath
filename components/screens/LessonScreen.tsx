@@ -4,15 +4,40 @@ import { createClient } from '@/lib/supabase/client'
 import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-async function fetchUnsplashImage(topic: string): Promise<string|null> {
+async function fetchPexelsImage(query: string): Promise<string|null> {
+  try {
+    const key = process.env.NEXT_PUBLIC_PEXELS_API_KEY
+    if (!key) return null
+    const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5&orientation=landscape`, {
+      headers: { Authorization: key }
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    const photos = data?.photos || []
+    if (photos.length === 0) return null
+    // Pick a random photo from top 5 for variety
+    const photo = photos[Math.floor(Math.random() * Math.min(photos.length, 5))]
+    return photo?.src?.large || photo?.src?.medium || null
+  } catch { return null }
+}
+
+async function fetchUnsplashImage(query: string): Promise<string|null> {
   try {
     const key = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY
     if (!key) return null
-    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(topic)}&orientation=landscape&client_id=${key}`)
+    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape&client_id=${key}`)
     if (!res.ok) return null
     const data = await res.json()
     return data?.urls?.regular || null
   } catch { return null }
+}
+
+async function fetchBestImage(query: string): Promise<string|null> {
+  // Try Pexels first - better instructional photography
+  const pexels = await fetchPexelsImage(query)
+  if (pexels) return pexels
+  // Fall back to Unsplash
+  return fetchUnsplashImage(query)
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -44,7 +69,7 @@ function PauseIcon() {
 function InlineImage({ query }: { query: string }) {
   const [src, setSrc] = useState<string|null>(null)
   useEffect(() => {
-    fetchUnsplashImage(query).then(url => { if (url) setSrc(url) })
+    fetchBestImage(query).then(url => { if (url) setSrc(url) })
   }, [query])
   if (!src) return <div style={{ height:200, background:'var(--bg3)', borderRadius:10, marginBottom:16, display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>Loading image...</span></div>
   return (
@@ -189,7 +214,7 @@ export default function LessonScreen() {
     if (cached) {
       setLessonData(cached)
       try { localStorage.setItem(lsKey, JSON.stringify(cached)) } catch {}
-      fetchUnsplashImage(curr?.topic || '').then(url => { if (url) setHeroImage(url) })
+      fetchBestImage(curr?.topic || '').then(url => { if (url) setHeroImage(url) })
       return
     }
     const week = curr.curriculum?.weeks?.[wi]
