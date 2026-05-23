@@ -160,6 +160,7 @@ export default function LessonScreen() {
     if (cached) {
       setLessonData(cached)
       try { localStorage.setItem(lsKey, JSON.stringify(cached)) } catch {}
+      fetchUnsplashImage(curr?.topic || '').then(url => { if (url) setHeroImage(url) })
       return
     }
     const week = curr.curriculum?.weeks?.[wi]
@@ -194,6 +195,7 @@ export default function LessonScreen() {
       const parsed = JSON.parse(match[0])
       if (parsed.content) parsed.content = parsed.content.replace(/\\n/g, '\n')
       setLessonData(parsed)
+      fetchUnsplashImage(curr?.topic || '').then(url => { if (url) setHeroImage(url) })
       if (activeCurrId) await cacheLesson(activeCurrId, key, parsed)
       try { localStorage.setItem(lsKey, JSON.stringify(parsed)) } catch {}
     } catch(e: any) {
