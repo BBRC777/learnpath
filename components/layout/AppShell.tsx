@@ -71,6 +71,18 @@ export default function AppShell({ children }: AppShellProps) {
   const [savingName, setSavingName]       = useState(false)
   const [lessonToolbar, setLessonToolbar] = useState<React.ReactNode>(null)
   const [sidebarOpen, setSidebarOpen]     = useState(true)
+  const [isMobile, setIsMobile]           = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) setSidebarOpen(false)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   const [flashcardsDue, setFlashcardsDue] = useState<number>(0)
   const [buyingFreeze, setBuyingFreeze]   = useState(false)
   const [theme, setTheme]                 = useState<'dark'|'light'>('dark')
@@ -160,7 +172,7 @@ export default function AppShell({ children }: AppShellProps) {
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
 
       {/* SIDEBAR */}
-      <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:sidebarOpen?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:50, transition:'width 0.2s ease' }}>
+      <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:sidebarOpen?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:isMobile?200:50, transition:'width 0.2s ease', boxShadow:isMobile&&sidebarOpen?'4px 0 20px rgba(0,0,0,0.5)':undefined }}>
         <div style={{ width:252, display:'flex', flexDirection:'column', height:'100%' }}>
 
           {/* Logo */}
@@ -230,6 +242,10 @@ export default function AppShell({ children }: AppShellProps) {
 
         </div>
       </aside>
+      {/* Mobile overlay backdrop */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:199 }} />
+      )}
 
       {/* MAIN */}
       <main style={{ marginLeft:sidebarW, flex:1, display:'flex', flexDirection:'column', minHeight:'100vh', transition:'margin-left 0.2s ease' }}>
