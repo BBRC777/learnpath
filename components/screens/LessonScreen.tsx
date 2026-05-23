@@ -195,7 +195,7 @@ export default function LessonScreen() {
       const parsed = JSON.parse(match[0])
       if (parsed.content) parsed.content = parsed.content.replace(/\\n/g, '\n')
       setLessonData(parsed)
-      fetchUnsplashImage(curr?.topic || '').then(url => { if (url) setHeroImage(url) })
+      fetchUnsplashImage((parsed?.title || '') + ' ' + (curr?.topic || '')).then(url => { if (url) setHeroImage(url) })
       if (activeCurrId) await cacheLesson(activeCurrId, key, parsed)
       try { localStorage.setItem(lsKey, JSON.stringify(parsed)) } catch {}
     } catch(e: any) {
