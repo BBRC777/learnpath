@@ -41,6 +41,20 @@ function PauseIcon() {
   return <svg width="12" height="12" viewBox="0 0 12 12" fill="#0a0b0f"><rect x="1" y="1" width="4" height="10"/><rect x="7" y="1" width="4" height="10"/></svg>
 }
 
+function InlineImage({ query }: { query: string }) {
+  const [src, setSrc] = useState<string|null>(null)
+  useEffect(() => {
+    fetchUnsplashImage(query).then(url => { if (url) setSrc(url) })
+  }, [query])
+  if (!src) return <div style={{ height:200, background:'var(--bg3)', borderRadius:10, marginBottom:16, display:'flex', alignItems:'center', justifyContent:'center' }}><span style={{ fontSize:12, color:'var(--text3)', fontFamily:'var(--mono)' }}>Loading image...</span></div>
+  return (
+    <div style={{ marginBottom:16, borderRadius:10, overflow:'hidden', position:'relative' as const }}>
+      <img src={src} alt={query} style={{ width:'100%', height:220, objectFit:'cover' as const, display:'block' }} />
+      <div style={{ position:'absolute' as const, bottom:6, right:10, fontSize:9, color:'rgba(255,255,255,0.7)', fontFamily:'var(--mono)', background:'rgba(0,0,0,0.4)', padding:'2px 6px', borderRadius:4 }}>{query} · Unsplash</div>
+    </div>
+  )
+}
+
 function renderContent(text: string) {
   return text.split('\n').map((line, i) => {
     if (line.startsWith('## ')) return <h2 key={i} style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', margin:'24px 0 8px', lineHeight:1.3 }}>{line.slice(3)}</h2>
@@ -50,6 +64,10 @@ function renderContent(text: string) {
     if (!line.trim()) return <div key={i} style={{ height:10 }}/>
     const ytMatch = line.match(/https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
     if (ytMatch) return <YouTubeEmbed key={i} videoId={ytMatch[3]} />
+    const imgMatch = line.match(/^\[IMG:(.+?)\]$/)
+    if (imgMatch) return <InlineImage key={i} query={imgMatch[1]} />
+    const imgMatch2 = line.match(/^\[IMG:(.+?)\]$/)
+    if (imgMatch) return <InlineImage key={i} query={imgMatch[1]} />
     return <p key={i} style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, marginBottom:12 }}>{line}</p>
   })
 }
