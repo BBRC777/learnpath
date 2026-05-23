@@ -48,6 +48,8 @@ function renderContent(text: string) {
     if (line.startsWith('> ')) return <blockquote key={i} style={{ borderLeft:'2px solid var(--amber)', padding:'10px 16px', background:'var(--amber-bg)', borderRadius:'0 8px 8px 0', margin:'14px 0', color:'var(--amber3)', fontStyle:'italic', fontSize:14 }}>{line.slice(2)}</blockquote>
     if (line.startsWith('- ') || line.startsWith('* ')) return <div key={i} style={{ display:'flex', gap:8, marginBottom:6, paddingLeft:8 }}><span style={{ color:'var(--amber)', flexShrink:0 }}>-</span><span style={{ fontSize:14, color:'var(--text2)', lineHeight:1.7 }}>{line.slice(2)}</span></div>
     if (!line.trim()) return <div key={i} style={{ height:10 }}/>
+    const ytMatch = line.match(/https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+    if (ytMatch) return <YouTubeEmbed key={i} videoId={ytMatch[3]} />
     return <p key={i} style={{ fontSize:14.5, color:'var(--text2)', lineHeight:1.85, marginBottom:12 }}>{line}</p>
   })
 }
