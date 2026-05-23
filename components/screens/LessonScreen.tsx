@@ -184,7 +184,7 @@ export default function LessonScreen() {
   const loadLesson = async (curr: any, wi: number, di: number) => {
     const key = wi + '-' + di
     const lsKey = 'lp_lesson_' + curr.id + '_' + key
-    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); setFromCache('local'); return } } catch {}
+    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); setFromCache('local'); const lsParsed = JSON.parse(lsCached); fetchUnsplashImage((lsParsed?.title||'') + ' ' + (curr?.topic||'')).then(url => { if (url) setHeroImage(url) }); setTimeout(() => backgroundGenerateAll(curr, wi, di), 2000); return } } catch {}
     const cached = await getCachedLesson(curr.id, key)
     if (cached) {
       setLessonData(cached)
