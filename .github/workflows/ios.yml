@@ -23,10 +23,26 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/App/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/App/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
       - name: Install CocoaPods
         run: |
           cd ios/App
           pod install --repo-update
+
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-xcode-${{ hashFiles('ios/App/App.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
 
       - name: Install Fastlane
         run: gem install fastlane
@@ -76,12 +92,13 @@ jobs:
             CODE_SIGN_IDENTITY="iPhone Distribution" \
             PROVISIONING_PROFILE_SPECIFIER="match AppStore com.mrfstudios.learnpath" \
             DEVELOPMENT_TEAM=${APPLE_TEAM_ID} \
-            APP_PROVISIONING_PROFILE_SPECIFIER="match AppStore com.mrfstudios.learnpath" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8 \
             -authenticationKeyID ${API_KEY_ID} \
             -authenticationKeyIssuerID ${API_ISSUER_ID} \
-            OTHER_CODE_SIGN_FLAGS="--keychain /Users/runner/Library/Keychains/login.keychain-db"
+            OTHER_CODE_SIGN_FLAGS="--keychain /Users/runner/Library/Keychains/login.keychain-db" \
+            -parallelizeTargets \
+            -jobs 4
 
       - name: Export IPA
         env:
