@@ -4,6 +4,36 @@ import { createClient } from '@/lib/supabase/client'
 import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+async function fetchUnsplashImage(topic: string): Promise<string|null> {
+  try {
+    const key = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY
+    if (!key) return null
+    const res = await fetch(`https://api.unsplash.com/photos/random?query=${encodeURIComponent(topic)}&orientation=landscape&client_id=${key}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    return data?.urls?.regular || null
+  } catch { return null }
+}
+
+function extractYouTubeId(url: string): string | null {
+  const patterns = [/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/, /youtu\.be\/([a-zA-Z0-9_-]{11})/]
+  for (const p of patterns) { const m = url.match(p); if (m) return m[1] }
+  return null
+}
+
+function YouTubeEmbed({ videoId }: { videoId: string }) {
+  return (
+    <div style={{ position:'relative' as const, paddingBottom:'56.25%', height:0, overflow:'hidden', borderRadius:10, marginBottom:16, border:'1px solid var(--border)' }}>
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}`}
+        style={{ position:'absolute' as const, top:0, left:0, width:'100%', height:'100%', border:'none' }}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    </div>
+  )
+}
+
 function PlayIcon() {
   return <svg width="12" height="12" viewBox="0 0 12 12" fill="#0a0b0f"><polygon points="2,1 11,6 2,11"/></svg>
 }
@@ -28,6 +58,7 @@ export default function LessonScreen() {
   const [selectedLesson, setSelectedLesson] = useState<{wi:number,di:number}|null>(null)
   const [lessonData, setLessonData] = useState<any>(null)
   const [fromCache, setFromCache] = useState<'local'|'remote'|'global'|null>(null)
+  const [heroImage, setHeroImage] = useState<string|null>(null)
   const [lessonImage, setLessonImage] = useState<string|null>(null)
   const [preloadedLessons, setPreloadedLessons] = useState<Record<string,any>>({})
   const [generating, setGenerating] = useState(false)
@@ -553,6 +584,13 @@ export default function LessonScreen() {
                 </div>
               </div>
 
+              {/* Hero image */}
+              {heroImage && (
+                <div style={{ width:'100%', height:200, borderRadius:12, overflow:'hidden', marginBottom:20, position:'relative' as const }}>
+                  <img src={heroImage} alt={lessonData?.title||''} style={{ width:'100%', height:'100%', objectFit:'cover' as const }} />
+                  <div style={{ position:'absolute' as const, bottom:6, right:10, fontSize:9, color:'rgba(255,255,255,0.7)', fontFamily:'var(--mono)' }}>Photo via Unsplash</div>
+                </div>
+              )}
               {/* Lesson content */}
               <div style={{ lineHeight:1.85 }}>
                 {renderContent(lessonData.content || '')}
