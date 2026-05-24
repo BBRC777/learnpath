@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
       - name: Sync Capacitor
         run: npx cap sync ios
 
@@ -34,14 +37,17 @@ jobs:
           mkdir -p ios/App/App.xcworkspace/xcshareddata/xcschemes
           cp ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme ios/App/App.xcworkspace/xcshareddata/xcschemes/App.xcscheme
 
-      - name: Build and submit iOS
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Verify scheme
+        run: |
+          cd ios/App
+          xcodebuild -list -workspace App.xcworkspace 2>&1 | grep -A 5 "Schemes:"
 
-      - name: Trigger EAS Build
-        run: eas build --platform ios --profile production --non-interactive --no-wait
+      - name: Build iOS with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          cd ios/App
+          cp ../../app.json ./app.json
+          cp ../../eas.json ./eas.json
+          export EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}
+          eas build --platform ios --profile production --non-interactive --no-wait
