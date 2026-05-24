@@ -36,5 +36,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
+          cp app.json ios/App/app.json
+          cp eas.json ios/App/eas.json
+          cd ios/App
           eas build --platform ios --profile production --non-interactive --no-wait
-        working-directory: ios/App
