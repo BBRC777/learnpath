@@ -32,11 +32,16 @@ jobs:
           cd ios/App
           pod install --repo-update
 
-      - name: Build iOS with EAS
+      - name: Debug EAS detection
+        run: |
+          cd ios/App
+          echo "=== Schemes via xcodebuild ==="
+          xcodebuild -list -workspace App.xcworkspace 2>&1 | head -20
+          echo "=== EAS version ==="
+          eas --version
+          echo "=== node_modules eas location ==="
+          which eas
+          echo "=== Try EAS with verbose ==="
+          EXPO_TOKEN=${{ secrets.EXPO_TOKEN }} eas build --platform ios --profile production --non-interactive --no-wait --json 2>&1 || true
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          cp app.json ios/App/app.json
-          cp eas.json ios/App/eas.json
-          cd ios/App
-          eas build --platform ios --profile production --non-interactive --no-wait
