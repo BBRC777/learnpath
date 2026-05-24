@@ -32,6 +32,14 @@ jobs:
           cd ios/App
           pod install --repo-update
 
+      - name: Debug scheme
+        run: |
+          echo "=== xcodebuild -list ==="
+          cd ios/App
+          xcodebuild -list -workspace App.xcworkspace
+          echo "=== Scheme files ==="
+          find . -name "*.xcscheme" -type f
+
       - name: Build iOS with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
