@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Learnpath",
+    "slug": "learnpath",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "ios": {
+      "bundleIdentifier": "com.mrfstudios.learnpath",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.mrfstudios.learnpath",
+      "versionCode": 1
+    }
+  }
+}
