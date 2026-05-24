@@ -36,11 +36,10 @@ jobs:
         run: |
           mkdir -p ios/App/App.xcworkspace/xcshareddata/xcschemes
           cp ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme ios/App/App.xcworkspace/xcshareddata/xcschemes/App.xcscheme
-
-      - name: Verify scheme
-        run: |
-          cd ios/App
-          xcodebuild -list -workspace App.xcworkspace 2>&1 | grep -A 5 "Schemes:"
+          echo "Scheme files after restore:"
+          find ios/App -name "*.xcscheme" -not -path "*/Pods/*"
+          echo "xcodebuild sees:"
+          cd ios/App && xcodebuild -list -workspace App.xcworkspace 2>&1 | grep -A 3 "Schemes:"
 
       - name: Build iOS with EAS
         env:
@@ -49,5 +48,6 @@ jobs:
           cd ios/App
           cp ../../app.json ./app.json
           cp ../../eas.json ./eas.json
-          export EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}
+          echo "Scheme files at build time:"
+          find . -name "*.xcscheme" -not -path "*/Pods/*"
           eas build --platform ios --profile production --non-interactive --no-wait
