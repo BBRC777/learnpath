@@ -71,17 +71,19 @@ jobs:
             verbose:false
 
 
-      - name: Pre-sign Capacitor frameworks to prevent hang
+      - name: Remove existing signatures from Capacitor frameworks
         run: |
-          DERIVED_DATA=~/Library/Developer/Xcode/DerivedData
-          KEYCHAIN=/Users/runner/Library/Keychains/login.keychain-db
-          CERT="Apple Distribution: Chad Bergman"
-          # Find and pre-sign any Capacitor/Cordova frameworks in SourcePackages
-          find ~/Library/Developer/Xcode/DerivedData -name "*.framework" -path "*capacitor*" 2>/dev/null | while read fw; do
-            echo "Pre-signing: $fw"
-            codesign --force --sign "$CERT" --keychain "$KEYCHAIN" --preserve-metadata=identifier,entitlements,flags "$fw" 2>/dev/null || true
+          # Remove existing code signatures to prevent codesign hang on re-signing
+          find /Users/runner/work/learnpath/learnpath/node_modules/@capacitor -name "*.framework" 2>/dev/null | while read fw; do
+            echo "Removing signature from: $fw"
+            codesign --remove-signature "$fw" 2>/dev/null || true
           done
-          echo "Pre-signing complete"
+          # Also remove from xcframework artifacts if they exist
+          find ~/Library/Developer/Xcode -name "Cordova.framework" -o -name "Capacitor.framework" 2>/dev/null | while read fw; do
+            echo "Removing signature from: $fw"
+            codesign --remove-signature "$fw" 2>/dev/null || true
+          done
+          echo "Done removing signatures"
 
       - name: Build with Fastlane Gym
         env:
