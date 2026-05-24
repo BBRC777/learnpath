@@ -1,4 +1,4 @@
-name: iOS Build via EAS
+name: iOS Build & TestFlight
 
 on:
   workflow_dispatch:
@@ -7,8 +7,9 @@ on:
       - ios-*
 
 jobs:
-  build:
+  build-ios:
     runs-on: macos-latest
+    timeout-minutes: 180
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -21,27 +22,76 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@10.3.2
-
       - name: Sync Capacitor
         run: npx cap sync ios
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/App/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/App/Podfile.lock') }}
+          restore-keys: ${{ runner.os }}-pods-
 
       - name: Install CocoaPods
         run: |
           cd ios/App
           pod install --repo-update
 
-      - name: Restore shared schemes
-        run: |
-          mkdir -p ios/App/App.xcworkspace/xcshareddata/xcschemes
-          cp ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme ios/App/App.xcworkspace/xcshareddata/xcschemes/App.xcscheme
+      - name: Install Fastlane
+        run: gem install fastlane
 
-      - name: Build iOS with EAS
+      - name: Write App Store Connect API Key
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$API_KEY_CONTENT" > ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8
+
+      - name: Run Fastlane Match
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          B64_TOKEN=$(echo -n "BBRC777:${MATCH_GIT_TOKEN}" | base64)
+          KEY_SINGLE_LINE=$(cat ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8 | awk '{printf "%s\\n", $0}')
+          echo "{\"key_id\":\"${API_KEY_ID}\",\"issuer_id\":\"${API_ISSUER_ID}\",\"key\":\"${KEY_SINGLE_LINE}\",\"in_house\":false}" > /tmp/api_key.json
+          cd ios/App
+          fastlane run match \
+            type:appstore \
+            app_identifier:com.mrfstudios.learnpath \
+            git_url:https://github.com/BBRC777/learnpath-certificates.git \
+            git_basic_authorization:${B64_TOKEN} \
+            team_id:${APPLE_TEAM_ID} \
+            api_key_path:/tmp/api_key.json \
+            readonly:false
+
+      - name: Build with Fastlane Gym
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd ios/App
-          cp ../../app.json ./app.json
-          cp ../../eas.json ./eas.json
-          eas build --platform ios --profile production --non-interactive --no-wait
+          fastlane run gym \
+            workspace:App.xcworkspace \
+            scheme:App \
+            configuration:Release \
+            export_method:app-store \
+            output_directory:$RUNNER_TEMP \
+            output_name:App.ipa \
+            include_bitcode:false \
+            xcargs:"CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=\"Apple Distribution\" PROVISIONING_PROFILE_SPECIFIER=\"match AppStore com.mrfstudios.learnpath\" DEVELOPMENT_TEAM=${APPLE_TEAM_ID}"
+
+      - name: Upload to TestFlight
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file $RUNNER_TEMP/App.ipa \
+            --apiKey ${API_KEY_ID} \
+            --apiIssuer ${API_ISSUER_ID}
