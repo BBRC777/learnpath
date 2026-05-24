@@ -11,6 +11,11 @@
     "android": {
       "package": "com.mrfstudios.learnpath",
       "versionCode": 1
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7478d890-d591-4a8d-a0e2-6af9d8c6eb6f"
+      }
     }
   }
 }

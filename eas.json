@@ -15,11 +15,7 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "ios": {
-        "scheme": "App",
-        "buildConfiguration": "Release"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {

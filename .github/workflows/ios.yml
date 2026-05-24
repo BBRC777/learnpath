@@ -1,4 +1,4 @@
-name: iOS Build & Upload to TestFlight
+name: iOS Build via EAS
 
 on:
   workflow_dispatch:
@@ -7,9 +7,8 @@ on:
       - ios-*
 
 jobs:
-  build-ios:
-    runs-on: macos-latest
-    timeout-minutes: 180
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -22,94 +21,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Sync Capacitor
-        run: npx cap sync ios
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/App/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/App/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
-      - name: Install CocoaPods
-        run: |
-          cd ios/App
-          pod install --repo-update
-
-      - name: Install Fastlane
-        run: gem install fastlane
-
-      - name: Write App Store Connect API Key
+      - name: Build iOS with EAS
         env:
-          API_KEY_CONTENT: ${{ secrets.APP_STORE_CONNECT_API_KEY_CONTENT }}
-          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "$API_KEY_CONTENT" > ~/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8
-          KEY_SINGLE_LINE=$(echo "$API_KEY_CONTENT" | awk '{printf "%s\\n", $0}')
-          echo "{\"key_id\":\"${API_KEY_ID}\",\"issuer_id\":\"${API_ISSUER_ID}\",\"key\":\"${KEY_SINGLE_LINE}\",\"in_house\":false}" > /tmp/api_key.json
-
-      - name: Run Fastlane Match
-        env:
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          MATCH_GIT_TOKEN: ${{ secrets.MATCH_GIT_TOKEN }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          B64_TOKEN=$(echo -n "BBRC777:${MATCH_GIT_TOKEN}" | base64)
-          cd ios/App
-          fastlane run match \
-            type:appstore \
-            app_identifier:com.mrfstudios.learnpath \
-            git_url:https://github.com/BBRC777/learnpath-certificates.git \
-            git_basic_authorization:${B64_TOKEN} \
-            team_id:${APPLE_TEAM_ID} \
-            api_key_path:/tmp/api_key.json \
-            readonly:false \
-            verbose:false
-
-
-      - name: Remove existing signatures from Capacitor frameworks
-        run: |
-          # Remove existing code signatures to prevent codesign hang on re-signing
-          find /Users/runner/work/learnpath/learnpath/node_modules/@capacitor -name "*.framework" 2>/dev/null | while read fw; do
-            echo "Removing signature from: $fw"
-            codesign --remove-signature "$fw" 2>/dev/null || true
-          done
-          # Also remove from xcframework artifacts if they exist
-          find ~/Library/Developer/Xcode -name "Cordova.framework" -o -name "Capacitor.framework" 2>/dev/null | while read fw; do
-            echo "Removing signature from: $fw"
-            codesign --remove-signature "$fw" 2>/dev/null || true
-          done
-          echo "Done removing signatures"
-
-      - name: Build with Fastlane Gym
-        env:
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-        run: |
-          cd ios/App
-          fastlane run gym \
-            workspace:App.xcworkspace \
-            scheme:App \
-            configuration:Release \
-            export_method:app-store \
-            output_directory:$RUNNER_TEMP \
-            output_name:App.ipa \
-            include_symbols:true \
-            include_bitcode:false \
-            xcargs:"CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=iPhone\ Distribution PROVISIONING_PROFILE_SPECIFIER='match AppStore com.mrfstudios.learnpath' DEVELOPMENT_TEAM=${APPLE_TEAM_ID}"
-
-      - name: Upload to TestFlight
-        env:
-          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-        run: |
-          xcrun altool --upload-app \
-            --type ios \
-            --file $RUNNER_TEMP/App.ipa \
-            --apiKey ${API_KEY_ID} \
-            --apiIssuer ${API_ISSUER_ID}
+          npx cap sync ios
+          eas build --platform ios --profile production --non-interactive --no-wait
