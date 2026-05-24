@@ -70,6 +70,19 @@ jobs:
             readonly:false \
             verbose:false
 
+
+      - name: Pre-sign Capacitor frameworks to prevent hang
+        run: |
+          DERIVED_DATA=~/Library/Developer/Xcode/DerivedData
+          KEYCHAIN=/Users/runner/Library/Keychains/login.keychain-db
+          CERT="Apple Distribution: Chad Bergman"
+          # Find and pre-sign any Capacitor/Cordova frameworks in SourcePackages
+          find ~/Library/Developer/Xcode/DerivedData -name "*.framework" -path "*capacitor*" 2>/dev/null | while read fw; do
+            echo "Pre-signing: $fw"
+            codesign --force --sign "$CERT" --keychain "$KEYCHAIN" --preserve-metadata=identifier,entitlements,flags "$fw" 2>/dev/null || true
+          done
+          echo "Pre-signing complete"
+
       - name: Build with Fastlane Gym
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
