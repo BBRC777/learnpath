@@ -9,9 +9,6 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ios/App
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -22,29 +19,27 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        working-directory: .
         run: npm ci
 
       - name: Install EAS CLI
-        working-directory: .
         run: npm install -g eas-cli
 
       - name: Sync Capacitor
-        working-directory: .
         run: npx cap sync ios
 
       - name: Install CocoaPods
-        run: pod install --repo-update
+        run: |
+          cd ios/App
+          pod install --repo-update
 
       - name: Restore shared schemes
-        working-directory: .
         run: |
           mkdir -p ios/App/App.xcworkspace/xcshareddata/xcschemes
           cp ios/App/App.xcodeproj/xcshareddata/xcschemes/App.xcscheme ios/App/App.xcworkspace/xcshareddata/xcschemes/App.xcscheme
-          cp app.json ios/App/app.json
-          cp eas.json ios/App/eas.json
 
       - name: Build iOS with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas build --platform ios --profile production --non-interactive --no-wait
+        run: |
+          eas build --platform ios --profile production --non-interactive --no-wait \
+            --local 2>&1 | head -50 || true
