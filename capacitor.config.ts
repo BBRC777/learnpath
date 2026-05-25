@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+
 const config: CapacitorConfig = {
   appId: 'com.mrfstudios.learnpath',
   appName: 'Learnpath',
@@ -8,4 +9,5 @@ const config: CapacitorConfig = {
     cleartext: false
   }
 };
+
 export default config;
