@@ -621,7 +621,7 @@ export default function LessonScreen() {
       </div>
 
       {/* RIGHT PANEL - lesson content */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', width: isMobile ? '100%' : undefined }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', minWidth:0, width:'100%' }}>
 
         {/* ELI5 / Go Deeper / Tutor content panels - shown below topbar */}
         {lessonData && (eliLoading || eliContent || tutorOpen) && (
@@ -653,7 +653,7 @@ export default function LessonScreen() {
         )}
 
         {/* SCROLLABLE LESSON CONTENT */}
-        <div style={{ flex:1, overflowY:'auto' }}>
+        <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', width:'100%' }}>
           {generating ? (
                 <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', paddingTop:60, padding:32, textAlign:'center' }}>
               <div style={{ width:36, height:36, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 20px' }}/>
@@ -680,7 +680,7 @@ export default function LessonScreen() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 28px 40px' }}>
+            <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px 40px', boxSizing:'border-box' as const, width:'100%' }}>
 
               {/* Header */}
               <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
