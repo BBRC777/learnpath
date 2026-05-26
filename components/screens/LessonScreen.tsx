@@ -680,7 +680,7 @@ export default function LessonScreen() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth:680, margin:'0 auto', padding:'24px 16px 40px', boxSizing:'border-box' as const, width:'100%' }}>
+            <div style={{ maxWidth: isMobile ? '100%' : 680, margin:'0 auto', padding: isMobile ? '16px 16px 40px' : '24px 28px 40px', boxSizing:'border-box' as const, width:'100%' }}>
 
               {/* Header */}
               <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
