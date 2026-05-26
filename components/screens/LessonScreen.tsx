@@ -653,7 +653,7 @@ export default function LessonScreen() {
         )}
 
         {/* SCROLLABLE LESSON CONTENT */}
-        <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', width:'100%' }}>
+        <div style={{ flex:1, overflowY:'auto', overflowX:'hidden', width:'100%', maxWidth:'100vw' }}>
           {generating ? (
                 <div style={{ display:'flex', flexDirection:'column' as const, alignItems:'center', paddingTop:60, padding:32, textAlign:'center' }}>
               <div style={{ width:36, height:36, border:'2px solid var(--border2)', borderTopColor:'var(--amber)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 20px' }}/>
@@ -680,7 +680,7 @@ export default function LessonScreen() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: isMobile ? '100%' : 680, margin:'0 auto', padding: isMobile ? '16px 16px 40px' : '24px 28px 40px', boxSizing:'border-box' as const, width:'100%' }}>
+            <div style={{ maxWidth: isMobile ? 'none' : 680, margin:'0 auto', padding: isMobile ? '16px 14px 80px' : '24px 28px 40px', boxSizing:'border-box' as const, width:'100%', overflowX:'hidden' }}>
 
               {/* Header */}
               <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
