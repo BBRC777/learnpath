@@ -552,7 +552,7 @@ export default function LessonScreen() {
   const lessonKey = selectedLesson ? (selectedLesson.wi + '-' + selectedLesson.di) : null
 
   return (
-    <div style={{ display:'flex', height:'100%', overflow:'hidden' }}>
+    <div style={{ display:'flex', height:'100%', overflow:'hidden', position:'relative' as const }}>
 
       {/* Mobile sidebar toggle button */}
       {isMobile && (
@@ -565,7 +565,7 @@ export default function LessonScreen() {
         <div onClick={() => setMobileSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200 }} />
       )}
       {/* LEFT PANEL - lesson picker */}
-      <div style={{ width:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)', ...(isMobile ? { position:'fixed' as const, left:mobileSidebarOpen?0:-260, top:0, height:'100%', zIndex:250, transition:'left 0.25s ease' } : {}) }}>
+      <div style={{ width:isMobile?0:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)', ...(isMobile ? { position:'fixed' as const, left:mobileSidebarOpen?0:-260, top:0, height:'100%', zIndex:250, transition:'left 0.25s ease', width:260 } : {}), ...(isMobile ? { flexShrink:0 } : {}) }}>
 
         {/* Home button */}
         <div onClick={() => router.push('/app')} style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, cursor:'pointer', background:'var(--bg3)' }}>
