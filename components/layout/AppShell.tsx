@@ -171,8 +171,8 @@ export default function AppShell({ children }: AppShellProps) {
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)', flexDirection:'column' as const }}>
       {/* iOS safe area spacer */}
-      <div style={{ height:'env(safe-area-inset-top)', background:'var(--bg2)', flexShrink:0, position:'fixed', top:0, left:0, right:0, zIndex:100 }} />
-      <div style={{ marginTop:'env(safe-area-inset-top)', display:'flex', flex:1 }}>
+      <div style={{ height:50, background:'var(--bg2)', flexShrink:0, position:'fixed', top:0, left:0, right:0, zIndex:100 }} />
+      <div style={{ marginTop:50, display:'flex', flex:1 }}>
 
       {/* SIDEBAR */}
       <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:sidebarOpen?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:isMobile?200:50, transition:'width 0.2s ease', boxShadow:isMobile&&sidebarOpen?'4px 0 20px rgba(0,0,0,0.5)':undefined }}>
