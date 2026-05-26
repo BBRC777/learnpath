@@ -6,7 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     url: 'https://learnpathnow.com/app',
-    cleartext: false
+    cleartext: false,
+    allowNavigation: ['learnpathnow.com', '*.learnpathnow.com']
   }
 };
 
