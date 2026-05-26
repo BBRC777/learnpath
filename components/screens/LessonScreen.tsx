@@ -149,8 +149,17 @@ export default function LessonScreen() {
   const [adaptiveLoading, setAdaptiveLoading] = useState(false)
   const [relatedTopics, setRelatedTopics] = useState<string[]>([])
   const [relatedLoading, setRelatedLoading] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const urlCurrId = searchParams.get('id')
 
   useEffect(() => {
@@ -545,9 +554,24 @@ export default function LessonScreen() {
   return (
     <div style={{ display:'flex', height:'100%', overflow:'hidden' }}>
 
+      {/* Mobile sidebar toggle button */}
+      {isMobile && (
+        <button onClick={() => setMobileSidebarOpen(o => !o)} style={{ position:'fixed', bottom:20, right:20, zIndex:300, width:48, height:48, borderRadius:'50%', background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:20, cursor:'pointer', boxShadow:'0 4px 12px rgba(0,0,0,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          {mobileSidebarOpen ? '✕' : '☰'}
+        </button>
+      )}
+      {/* Mobile overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div onClick={() => setMobileSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200 }} />
+      )}
       {/* LEFT PANEL - lesson picker */}
-      <div style={{ width:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)' }}>
+      <div style={{ width:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)', ...(isMobile ? { position:'fixed' as const, left:mobileSidebarOpen?0:-260, top:0, height:'100%', zIndex:250, transition:'left 0.25s ease' } : {}) }}>
 
+        {/* Home button */}
+        <div onClick={() => router.push('/app')} style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, cursor:'pointer', background:'var(--bg3)' }}>
+          <span style={{ fontSize:13 }}>⊞</span>
+          <span style={{ fontSize:12, color:'var(--text2)', fontFamily:'var(--sans)' }}>Home</span>
+        </div>
         {curricula.length > 1 && (
           <div style={{ padding:'12px 14px', borderBottom:'1px solid var(--border)' }}>
             <select value={activeCurrId||''} onChange={e => { setActiveCurrId(e.target.value); setSelectedLesson(null); setLessonData(null) }}
@@ -597,7 +621,7 @@ export default function LessonScreen() {
       </div>
 
       {/* RIGHT PANEL - lesson content */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden' }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', width: isMobile ? '100%' : undefined }}>
 
         {/* ELI5 / Go Deeper / Tutor content panels - shown below topbar */}
         {lessonData && (eliLoading || eliContent || tutorOpen) && (
