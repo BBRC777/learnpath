@@ -169,7 +169,10 @@ export default function AppShell({ children }: AppShellProps) {
   }, [isTeamPage, theme])
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
+    <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)', flexDirection:'column' as const }}>
+      {/* iOS safe area spacer */}
+      <div style={{ height:'env(safe-area-inset-top)', background:'var(--bg2)', flexShrink:0, position:'fixed', top:0, left:0, right:0, zIndex:100 }} />
+      <div style={{ marginTop:'env(safe-area-inset-top)', display:'flex', flex:1 }}>
 
       {/* SIDEBAR */}
       <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:sidebarOpen?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:isMobile?200:50, transition:'width 0.2s ease', boxShadow:isMobile&&sidebarOpen?'4px 0 20px rgba(0,0,0,0.5)':undefined }}>
@@ -251,7 +254,7 @@ export default function AppShell({ children }: AppShellProps) {
       <main style={{ marginLeft:sidebarW, flex:1, display:'flex', flexDirection:'column', minHeight:'100vh', transition:'margin-left 0.2s ease' }}>
 
         {/* Topbar */}
-        <div style={{ paddingTop:'max(env(safe-area-inset-top), 16px)', paddingBottom:0, paddingLeft:12, paddingRight:16, borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap' as const, background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40, minHeight:52 }}>
+        <div style={{ padding:'0 12px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40, minHeight:52, gap:8 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
             <button
               onClick={() => setSidebarOpen(o => !o)}
@@ -323,6 +326,7 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       </main>
 
+      </div>
       {/* SETTINGS OVERLAY */}
       {showSettings && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center' }} onClick={() => setShowSettings(false)}>
