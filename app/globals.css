@@ -1,5 +1,5 @@
 /* app/globals.css */
-* { margin: 0; padding: 0; box-sizing: border-box; max-width: 100%; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
   --status-bar-height: 0px;
   /* Brand */
