@@ -252,8 +252,7 @@ export default function AppShell({ children }: AppShellProps) {
       <main style={{ marginLeft:sidebarW, flex:1, display:'flex', flexDirection:'column', minHeight:'100vh', transition:'margin-left 0.2s ease' }}>
 
         {/* Topbar */}
-        <div style={{ borderBottom:'1px solid var(--border)', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40, paddingTop:'var(--status-bar-height, env(safe-area-inset-top, 44px))' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 12px', minHeight:48, gap:8 }}>
+        <div style={{ paddingTop:'env(safe-area-inset-top)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px 0 12px', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
             <button
               onClick={() => setSidebarOpen(o => !o)}
@@ -267,9 +266,6 @@ export default function AppShell({ children }: AppShellProps) {
               {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
             </div>
           </div>
-            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{theme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}</button>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', padding:'0 12px 6px', gap:6, flexWrap:'wrap' as const }}>
           <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
             {isLessonPage && lessonToolbar ? lessonToolbar : (
               <>
@@ -279,6 +275,7 @@ export default function AppShell({ children }: AppShellProps) {
               </>
             )}
           </div>
+          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}</button>
           {/* Search */}
           <div style={{ position:'relative', width:220, margin:'0 8px' }}>
             <input
@@ -320,7 +317,6 @@ export default function AppShell({ children }: AppShellProps) {
             })()} 
           </div>
         </div>
-          </div>
 
         {/* Page content */}
         <div style={{ flex:1, overflow:'hidden' }}>
