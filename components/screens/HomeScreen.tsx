@@ -69,7 +69,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
 
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
-      <div style={{ maxWidth:740, margin:'0 auto', padding:'22px 16px 60px', boxSizing:'border-box' as const }}>
+      <div style={{ maxWidth:740, margin:'0 auto', padding:'22px 16px 60px', boxSizing:'border-box' as const, overflowX:'hidden' as const, width:'100%' }}>
 
         {/* Pro banner */}
         {!isPro && (
@@ -173,7 +173,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
         </div>
 
         {/* 5. ACTIVITY + FLASHCARDS */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:14 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:14 }}>
           <div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text2)', textTransform:'uppercase' as const, letterSpacing:'0.09em' }}>This week</div>
