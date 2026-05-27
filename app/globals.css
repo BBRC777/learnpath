@@ -140,7 +140,7 @@ body {
 .fade-up-3 { animation: fadeUp  0.3s 0.14s ease both; }
 .scale-in  { animation: scaleIn 0.28s ease both; }
 
-.app-topbar {
-  padding-top: env(safe-area-inset-top);
-  min-height: calc(52px + env(safe-area-inset-top));
+[data-platform='ios'] .app-topbar {
+  padding-top: var(--status-bar-height, 44px);
+}
 }
