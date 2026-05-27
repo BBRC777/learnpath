@@ -266,7 +266,7 @@ export default function AppShell({ children }: AppShellProps) {
               {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
             </div>
           </div>
-          <div style={{ display:'flex', gap:8, alignItems:'center', flex:'1 1 auto', flexWrap:'wrap', minWidth:0 }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', flexBasis:'100%', order:4 }}>
             {isLessonPage && lessonToolbar ? lessonToolbar : (
               <>
                 {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
@@ -275,9 +275,9 @@ export default function AppShell({ children }: AppShellProps) {
               </>
             )}
           </div>
-          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? '☀' : '🌙'}</button>
+          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, order:2 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? '☀' : '🌙'}</button>
           {/* Search */}
-          <div style={{ position:'relative', flex:'1 1 180px', minWidth:160, maxWidth:260, margin:'0 4px' }}>
+          <div style={{ position:'relative', flex:'1 1 140px', minWidth:120, maxWidth:260, margin:'0 4px', order:3 }}>
             <input
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true) }}
