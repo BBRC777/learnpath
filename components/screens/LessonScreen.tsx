@@ -156,7 +156,7 @@ export default function LessonScreen() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
+    const check = () => setIsMobile(window.innerWidth < 1024)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
@@ -331,7 +331,7 @@ export default function LessonScreen() {
         <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
         <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
         <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
-        <button onClick={() => setReadingMode(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Read</button>
+        <button onClick={() => setReadingMode(true)} style={{ padding:'5px 14px', borderRadius:7, border:'1px solid var(--amber)', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>📖 Read</button>
         {!isComplete && (showSkipConfirm ? (
           <div style={{ display:'flex', gap:4 }}>
             <button onClick={skipLesson} disabled={skipping} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--amber-bg2)', background:'var(--amber-bg)', color:'var(--amber2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>{skipping ? 'Saving...' : 'Yes, skip it'}</button>
