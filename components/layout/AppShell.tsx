@@ -251,7 +251,7 @@ export default function AppShell({ children }: AppShellProps) {
       <main style={{ marginLeft:sidebarW, flex:1, display:'flex', flexDirection:'column', minHeight:'100vh', transition:'margin-left 0.2s ease' }}>
 
         {/* Topbar */}
-        <div style={{ borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', paddingTop:'env(safe-area-inset-top)', paddingLeft:'12px', paddingRight:'16px', paddingBottom:0, background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40 }}>
+        <div style={{ borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', paddingTop:'var(--status-bar-height, env(safe-area-inset-top, 0px))', paddingLeft:'12px', paddingRight:'16px', paddingBottom:0, background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
             <button
               onClick={() => setSidebarOpen(o => !o)}

@@ -1,6 +1,7 @@
 /* app/globals.css */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; max-width: 100%; }
 :root {
+  --status-bar-height: 0px;
   /* Brand */
   --amber: #d4853a;
   --amber2: #e8a55a;
