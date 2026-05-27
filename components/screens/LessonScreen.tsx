@@ -151,6 +151,7 @@ export default function LessonScreen() {
   const [relatedLoading, setRelatedLoading] = useState(false)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [readingMode, setReadingMode] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -160,6 +161,12 @@ export default function LessonScreen() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape' && readingMode) setReadingMode(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [readingMode])
   const urlCurrId = searchParams.get('id')
 
   useEffect(() => {
@@ -318,12 +325,13 @@ export default function LessonScreen() {
   useEffect(() => {
     const setToolbar = (window as any).__learnpath_setToolbar
     if (!setToolbar) return
-    if (!lessonData) { setToolbar(null); return }
+    if (!lessonData || readingMode) { setToolbar(null); return }
     setToolbar(
       <div style={{ display:'flex', gap:6, alignItems:'center', flex:1 }}>
         <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
         <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
         <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
+        <button onClick={() => setReadingMode(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Read</button>
         {!isComplete && (showSkipConfirm ? (
           <div style={{ display:'flex', gap:4 }}>
             <button onClick={skipLesson} disabled={skipping} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--amber-bg2)', background:'var(--amber-bg)', color:'var(--amber2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>{skipping ? 'Saving...' : 'Yes, skip it'}</button>
@@ -338,7 +346,7 @@ export default function LessonScreen() {
         <button onClick={markComplete} disabled={marking||isComplete} style={{ padding:'5px 16px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
       </div>
     )
-  }, [lessonData, isComplete, marking, skipping, showSkipConfirm, eliMode, eliContent, tutorOpen, tutorMessages, regenerating, generating])
+  }, [lessonData, isComplete, marking, skipping, showSkipConfirm, eliMode, eliContent, tutorOpen, tutorMessages, regenerating, generating, readingMode])
 
   // Clear toolbar when leaving lesson screen
   useEffect(() => {
@@ -555,9 +563,17 @@ export default function LessonScreen() {
     <div style={{ display:'flex', height:'100%', overflow:'hidden', position:'relative' as const }}>
 
       {/* Mobile sidebar toggle button */}
-      {isMobile && (
+      {isMobile && !readingMode && (
         <button onClick={() => setMobileSidebarOpen(o => !o)} style={{ position:'fixed', bottom:20, right:20, zIndex:300, width:48, height:48, borderRadius:'50%', background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:20, cursor:'pointer', boxShadow:'0 4px 12px rgba(0,0,0,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
           {mobileSidebarOpen ? '✕' : '☰'}
+        </button>
+      )}
+
+      {/* Reading mode exit button */}
+      {readingMode && (
+        <button onClick={() => setReadingMode(false)} style={{ position:'fixed', top:14, right:14, zIndex:400, padding:'7px 14px', borderRadius:20, background:'var(--bg3)', border:'1px solid var(--border2)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:12, fontWeight:500, cursor:'pointer', display:'flex', alignItems:'center', gap:6, boxShadow:'0 2px 8px rgba(0,0,0,0.2)' }}>
+          <span>✕</span>
+          <span>Exit reading</span>
         </button>
       )}
       {/* Mobile overlay */}
@@ -565,6 +581,7 @@ export default function LessonScreen() {
         <div onClick={() => setMobileSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200 }} />
       )}
       {/* LEFT PANEL - lesson picker */}
+      {!readingMode && (
       <div style={{ width:isMobile?0:260, flexShrink:0, borderRight:'1px solid var(--border)', overflowY:'auto', background:'var(--bg2)', ...(isMobile ? { position:'fixed' as const, left:mobileSidebarOpen?0:-260, top:0, height:'100%', zIndex:250, transition:'left 0.25s ease', width:260 } : {}), ...(isMobile ? { flexShrink:0 } : {}) }}>
 
         {/* Home button */}
@@ -619,6 +636,7 @@ export default function LessonScreen() {
           </div>
         ))}
       </div>
+      )}
 
       {/* RIGHT PANEL - lesson content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', minWidth:0, width:'100%' }}>
@@ -680,7 +698,7 @@ export default function LessonScreen() {
               </div>
             </div>
           ) : (
-            <div style={{ maxWidth: isMobile ? 'none' : 680, margin:'0 auto', padding: isMobile ? '16px 14px 80px' : '24px 28px 40px', boxSizing:'border-box' as const, width:'100%', overflowX:'hidden' }}>
+            <div style={{ maxWidth: readingMode ? 760 : (isMobile ? 'none' : 680), margin:'0 auto', padding: readingMode ? '40px 24px 60px' : (isMobile ? '16px 14px 80px' : '24px 28px 40px'), boxSizing:'border-box' as const, width:'100%', overflowX:'hidden' }}>
 
               {/* Header */}
               <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
