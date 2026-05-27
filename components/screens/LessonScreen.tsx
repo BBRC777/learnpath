@@ -342,7 +342,6 @@ export default function LessonScreen() {
             <button onClick={() => setShowSkipConfirm(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
           </>
         ))}
-        <button onClick={markComplete} disabled={marking||isComplete} style={{ padding:'5px 16px', borderRadius:7, border:'none', background:isComplete?'var(--green-bg)':marking?'var(--bg4)':'var(--amber)', color:isComplete?'var(--green-text)':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:marking||isComplete?'not-allowed':'pointer' }}>{isComplete?'Complete!':marking?'Saving...':'Mark Complete'}</button>
       </div>
     )
   }, [lessonData, isComplete, marking, skipping, showSkipConfirm, eliMode, eliContent, tutorOpen, tutorMessages, regenerating, generating, readingMode])
@@ -563,7 +562,7 @@ export default function LessonScreen() {
 
       {/* Mobile sidebar toggle button */}
       {isMobile && !readingMode && (
-        <button onClick={() => setMobileSidebarOpen(o => !o)} style={{ position:'fixed', bottom:20, right:20, zIndex:300, width:48, height:48, borderRadius:'50%', background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:20, cursor:'pointer', boxShadow:'0 4px 12px rgba(0,0,0,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <button onClick={() => setMobileSidebarOpen(o => !o)} style={{ position:'fixed', bottom:20, left:20, zIndex:300, width:48, height:48, borderRadius:'50%', background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:20, cursor:'pointer', boxShadow:'0 4px 12px rgba(0,0,0,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
           {mobileSidebarOpen ? '✕' : '☰'}
         </button>
       )}
@@ -578,6 +577,12 @@ export default function LessonScreen() {
       {/* Mobile overlay */}
       {isMobile && mobileSidebarOpen && (
         <div onClick={() => setMobileSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200 }} />
+      )}
+      {/* Floating Mark Complete button */}
+      {lessonData && !readingMode && (
+        <button onClick={markComplete} disabled={marking||isComplete} style={{ position:'fixed', bottom:20, right:20, zIndex:300, padding:'12px 22px', borderRadius:28, border:'none', background:isComplete?'#6abf8a':marking?'var(--bg4)':'var(--amber)', color:isComplete?'#0a0b0f':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:600, cursor:marking||isComplete?'default':'pointer', boxShadow:'0 4px 14px rgba(0,0,0,0.35)', whiteSpace:'nowrap' }}>
+          {isComplete?'✓ Complete':marking?'Saving...':'Mark Complete'}
+        </button>
       )}
       {/* LEFT PANEL - lesson picker */}
       {!readingMode && (
