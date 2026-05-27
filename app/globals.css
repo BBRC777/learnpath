@@ -143,4 +143,3 @@ body {
 [data-platform='ios'] .app-topbar {
   padding-top: var(--status-bar-height, 44px);
 }
-}
