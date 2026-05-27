@@ -17,7 +17,7 @@ function LevelBadge({ xp }: { xp: number }) {
   const c = colors[info.level]
   return (
     <span style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:12, border:`1px solid ${c.border}`, background:c.bg, fontFamily:'var(--mono)', fontSize:10, color:c.color, textTransform:'uppercase', letterSpacing:'0.08em' }}>
-      {info.level === 4 ? 'â˜…' : `L${info.level}`} {info.title}
+      {info.level === 4 ? '★' : `L${info.level}`} {info.title}
     </span>
   )
 }
@@ -41,7 +41,7 @@ function XPWidget({ profile }: { profile: Profile }) {
         <div style={{ height:'100%', borderRadius:2, width:`${Math.round(progress*100)}%`, background:isMaster?'linear-gradient(90deg,#d97706,#fbbf24)':'var(--amber)', transition:'width 0.7s' }}/>
       </div>
       <div style={{ fontFamily:'var(--mono)', fontSize:10, color:'var(--text3)' }}>
-        {isMaster ? 'âœ¦ Maximum level reached' : `${remaining} XP to ${NEXT_LEVEL[info.level]}`}
+        {isMaster ? '✦ Maximum level reached' : `${remaining} XP to ${NEXT_LEVEL[info.level]}`}
       </div>
     </div>
   )
@@ -50,15 +50,15 @@ function XPWidget({ profile }: { profile: Profile }) {
 interface AppShellProps { children: React.ReactNode }
 
 const NAV = [
-  { href:'/app',             label:'Home',              icon:'âŠž' },
-  { href:'/app/lesson',      label:'Current Lesson',    icon:'â–¶' },
+  { href:'/app',             label:'Home',              icon:'⊞' },
+  { href:'/app/lesson',      label:'Current Lesson',    icon:'▶' },
   { href:'/app/curriculum',  label:'New Learning Path', icon:'+' },
-  { href:'/app/paths',       label:'All Learning Paths',icon:'â—ˆ' },
+  { href:'/app/paths',       label:'All Learning Paths',icon:'◈' },
   { href:'/app/leaderboard', label:'Leaderboard',       icon:'ðŸ†' },
-  { href:'/app/team',        label:'Team',              icon:'\ud83c\udfe2' },
-  { href:'/app/flashcards',  label:'Flashcards',        icon:'â§‰', badge:'__DUE__' },
-  { href:'/app/study',       label:'Study Mode',        icon:'â—Ž', pro:true },
-  { href:'/app/progress',    label:'Progress',          icon:'â—‰' },
+  { href:'/app/team',        label:'Team',              icon:'🏢' },
+  { href:'/app/flashcards',  label:'Flashcards',        icon:'⧉', badge:'__DUE__' },
+  { href:'/app/study',       label:'Study Mode',        icon:'◎', pro:true },
+  { href:'/app/progress',    label:'Progress',          icon:'◉' },
 ]
 
 export default function AppShell({ children }: AppShellProps) {
@@ -178,8 +178,8 @@ export default function AppShell({ children }: AppShellProps) {
 
           {/* Logo */}
           <div style={{ padding:'20px 18px 15px', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
-            <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--amber)', letterSpacing:'-0.01em', whiteSpace:'nowrap' }}>â—† Learnpath</div>
-            <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.12em', marginTop:2, whiteSpace:'nowrap' }}>Learn Anything Â· All Inside</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--amber)', letterSpacing:'-0.01em', whiteSpace:'nowrap' }}>◆ Learnpath</div>
+            <div style={{ fontFamily:'var(--mono)', fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.12em', marginTop:2, whiteSpace:'nowrap' }}>Learn Anything · All Inside</div>
           </div>
 
           {/* Nav */}
@@ -206,9 +206,9 @@ export default function AppShell({ children }: AppShellProps) {
           <div style={{ margin:'8px 8px 0', padding:'10px 12px', background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.25)', borderRadius:10, flexShrink:0 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:2 }}>
               <div style={{ fontFamily:'var(--mono)', fontSize:22, fontWeight:500, color:'var(--amber)', lineHeight:1 }}>{profile?.streak ?? 0}</div>
-              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--blue-text)' }}>ðŸ§Š {freezes}/3</div>
+              <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--blue-text)' }}>❄ {freezes}/3</div>
             </div>
-            <div style={{ fontSize:11, color:'var(--text2)', marginTop:2, whiteSpace:'nowrap' }}>Day streak ðŸ”¥</div>
+            <div style={{ fontSize:11, color:'var(--text2)', marginTop:2, whiteSpace:'nowrap' }}>Day streak 🔥</div>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:4 }}>
               <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', whiteSpace:'nowrap' }}>Keep the chain alive!</div>
               <button
@@ -216,7 +216,7 @@ export default function AppShell({ children }: AppShellProps) {
                 onClick={handleBuyFreeze}
                 title={freezes >= 3 ? 'Max freezes reached' : (profile?.xp ?? 0) < 50 ? 'Need 50 XP' : 'Buy freeze for 50 XP'}
                 style={{ fontSize:9, fontFamily:'var(--mono)', padding:'2px 6px', borderRadius:4, border:'1px solid var(--blue-border)', background:'var(--blue-bg)', color:canBuy?'var(--blue-text)':'var(--text3)', cursor:canBuy?'pointer':'default', whiteSpace:'nowrap' as const }}>
-                {buyingFreeze ? '...' : '+ðŸ§Š 50 XP'}
+                {buyingFreeze ? '...' : '+❄ 50 XP'}
               </button>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function AppShell({ children }: AppShellProps) {
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.display_name||'...'}</div>
-                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>{profile?.is_pro?'Pro':'Free'} Â· {profile?.streak??0}/1 paths</div>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>{profile?.is_pro?'Pro':'Free'} · {profile?.streak??0}/1 paths</div>
               </div>
               <span style={{ fontSize:11, color:'var(--text3)', whiteSpace:'nowrap' }}>Settings</span>
             </div>
@@ -252,7 +252,7 @@ export default function AppShell({ children }: AppShellProps) {
       <main style={{ marginLeft:sidebarW, flex:1, display:'flex', flexDirection:'column', minHeight:'100vh', transition:'margin-left 0.2s ease' }}>
 
         {/* Topbar */}
-        <div style={{ paddingTop:'env(safe-area-inset-top)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px 0 12px', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40 }}>
+        <div style={{ borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', padding:'10px 12px', background:'var(--bg2)', flexShrink:0, position:'sticky', top:0, zIndex:40, flexWrap:'wrap', rowGap:8, columnGap:10 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
             <button
               onClick={() => setSidebarOpen(o => !o)}
@@ -266,7 +266,7 @@ export default function AppShell({ children }: AppShellProps) {
               {NAV.find(n => n.href === pathname || (n.href !== '/app' && pathname?.startsWith(n.href)))?.label || 'Learnpath'}
             </div>
           </div>
-          <div style={{ display:'flex', gap:8, alignItems:'center', flex:1 }}>
+          <div style={{ display:'flex', gap:8, alignItems:'center', flex:'1 1 auto', flexWrap:'wrap', minWidth:0 }}>
             {isLessonPage && lessonToolbar ? lessonToolbar : (
               <>
                 {pathname === '/app' && <button onClick={() => router.push('/app/curriculum')} style={btnPrimary}>+ New Path</button>}
@@ -275,9 +275,9 @@ export default function AppShell({ children }: AppShellProps) {
               </>
             )}
           </div>
-          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}</button>
+          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} style={{ width:30, height:30, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>{theme === 'dark' ? '☀' : '🌙'}</button>
           {/* Search */}
-          <div style={{ position:'relative', width:220, margin:'0 8px' }}>
+          <div style={{ position:'relative', flex:'1 1 180px', minWidth:160, maxWidth:260, margin:'0 4px' }}>
             <input
               value={searchQuery}
               onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true) }}
@@ -286,7 +286,7 @@ export default function AppShell({ children }: AppShellProps) {
               placeholder='Search paths...'
               style={{ width:'100%', padding:'6px 12px 6px 30px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:7, color:'var(--text)', fontFamily:'var(--sans)', fontSize:12, outline:'none', boxSizing:'border-box' as const, colorScheme:'light dark' }}
             />
-            <span style={{ position:'absolute' as const, left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none' as const }}>âŒ•</span>
+            <span style={{ position:'absolute' as const, left:10, top:'50%', transform:'translateY(-50%)', color:'var(--text3)', fontSize:12, pointerEvents:'none' as const }}>⌕</span>
             {searchOpen && searchQuery.trim().length > 0 && (() => {
               const results = curricula.filter((cr: any) => (cr.curriculum?.title || cr.topic || '').toLowerCase().includes(searchQuery.toLowerCase()) || (cr.topic||'').toLowerCase().includes(searchQuery.toLowerCase()))
               if (results.length === 0) return (
@@ -306,7 +306,7 @@ export default function AppShell({ children }: AppShellProps) {
                         onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
                         <div>
                           <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', marginBottom:1 }}>{r.curriculum?.title || r.topic}</div>
-                          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{r.topic} Â· {r.level}</div>
+                          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{r.topic} · {r.level}</div>
                         </div>
                         <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', flexShrink:0 }}>{pct}%</div>
                       </div>
@@ -339,7 +339,7 @@ export default function AppShell({ children }: AppShellProps) {
                 {label:'XP',       v: profile?.xp ?? 0},
                 {label:'Level',    v: getLevelInfo(profile?.xp ?? 0).title},
                 {label:'Plan',     v: profile?.is_pro ? 'Pro' : 'Free'},
-                {label:'Freezes',  v: `ðŸ§Š ${freezes}/3`},
+                {label:'Freezes',  v: `❄ ${freezes}/3`},
               ].map((s,i) => (
                 <div key={i} style={{ background:'var(--bg3)', borderRadius:8, padding:'10px 12px' }}>
                   <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.08em' }}>{s.label}</div>
@@ -350,7 +350,7 @@ export default function AppShell({ children }: AppShellProps) {
             {/* Freeze buy in settings */}
             <div style={{ background:'rgba(58,106,191,0.08)', border:'1px solid var(--blue-border)', borderRadius:8, padding:'10px 14px', marginBottom:14, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <div>
-                <div style={{ fontSize:12, fontWeight:500, color:'var(--blue-text)' }}>ðŸ§Š Streak Freeze</div>
+                <div style={{ fontSize:12, fontWeight:500, color:'var(--blue-text)' }}>❄ Streak Freeze</div>
                 <div style={{ fontSize:11, color:'var(--text2)' }}>{freezes >= 3 ? 'Maximum freezes held' : 'Protects your streak if you miss a day'}</div>
               </div>
               <button
@@ -363,7 +363,7 @@ export default function AppShell({ children }: AppShellProps) {
             {!profile?.is_pro && (
               <div style={{ background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.3)', borderRadius:8, padding:'12px 14px', marginBottom:14 }}>
                 <div style={{ fontSize:12, fontWeight:500, color:'var(--amber)', marginBottom:2 }}>Upgrade to Pro</div>
-                <div style={{ fontSize:11, color:'var(--text2)', marginBottom:10 }}>Unlimited paths Â· Study Mode Â· AI Tutor</div>
+                <div style={{ fontSize:11, color:'var(--text2)', marginBottom:10 }}>Unlimited paths · Study Mode · AI Tutor</div>
                 <div style={{ display:'flex', gap:8 }}>
                   <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(user?.id||''), '_blank')} style={{ padding:'8px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer', flex:1, textAlign:'center' as const }}>
                     <div style={{ fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)', marginBottom:2 }}>Monthly</div>

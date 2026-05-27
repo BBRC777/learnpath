@@ -64,8 +64,8 @@ export default function HomeScreen({ profile }: { profile: any }) {
   const doneSessions = Object.values(currProgress).filter(Boolean).length
   const pct = totalSessions ? Math.round((doneSessions/totalSessions)*100) : 0
 
-  const GRID3: React.CSSProperties = { display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }
-  const CARD: React.CSSProperties = { background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' }
+  const GRID3: React.CSSProperties = { display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))', gap:8 }
+  const CARD: React.CSSProperties = { background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:9, padding:'12px 14px' , minWidth: 0 }
 
   return (
     <div style={{ overflowY:'auto', height:'100%' }}>
@@ -99,7 +99,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
             <div style={{ width:120, flexShrink:0, background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
               <div style={{ fontFamily:'var(--serif)', fontSize:28, color:'var(--amber)', opacity:0.35 }}>LP</div>
             </div>
-            <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column' as const, justifyContent:'space-between' }}>
+            <div style={{ flex:1, padding:'16px 18px', display:'flex', flexDirection:'column' as const, justifyContent:'space-between', minWidth:0 }}>
               <div>
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:4 }}>Continue · {activeCurr.topic}</div>
                 <div style={{ fontFamily:'var(--serif)', fontSize:17, color:'var(--text)', marginBottom:4 }}>{activeCurr.curriculum?.title || activeCurr.topic}</div>
@@ -140,7 +140,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
                   <div key={c.id} onClick={() => router.push('/app/lesson?id=' + c.id)} style={{ ...CARD, cursor:'pointer' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
                       <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }}/>
-                      <div style={{ fontSize:11, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, display:'block', maxWidth:'100%' }}>{c.curriculum?.title || c.topic}</div>
+                      <div style={{ fontSize:11, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const, minWidth:0, flex:1 }}>{c.curriculum?.title || c.topic}</div>
                     </div>
                     <div style={{ height:3, background:'var(--bg5)', borderRadius:2, marginBottom:5 }}>
                       <div style={{ height:'100%', borderRadius:2, background:color, width:p+'%' }}/>
