@@ -103,7 +103,7 @@
 }
 
 html, body { height: 100%; }
-body { padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -139,10 +139,7 @@ body {
 .fade-up-3 { animation: fadeUp  0.3s 0.14s ease both; }
 .scale-in  { animation: scaleIn 0.28s ease both; }
 
-@media (max-width: 768px) {
-  .app-topbar {
-    padding-top: env(safe-area-inset-top) !important;
-    flex-wrap: wrap;
-    height: auto;
-  }
+.app-topbar {
+  padding-top: env(safe-area-inset-top);
+  min-height: calc(52px + env(safe-area-inset-top));
 }
