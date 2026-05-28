@@ -107,7 +107,7 @@ export default function CurriculumScreen() {
           (supabase.from('profiles') as any).select('is_pro').eq('id', data.user.id).single(),
           (supabase.from('curricula') as any).select('id').eq('user_id', data.user.id)
         ])
-        setIsPro(true) // BETA: all users get Pro
+        setIsPro(profileRes.data?.is_pro || false)
         setPathCount(currRes.data?.length || 0)
       }
     })
@@ -177,7 +177,7 @@ export default function CurriculumScreen() {
 
   const generate = async () => {
     if (!topic.trim()) { setError('Enter a topic first'); return }
-    // BETA: path limit disabled
+    if (!isPro && pathCount >= FREE_MAX_PATHS) { setShowPaywall(true); return }
     setError(''); setGenerating(true); setStreamText(''); setCurriculum(null); setSavedId(null)
 
     let prompt = ''
