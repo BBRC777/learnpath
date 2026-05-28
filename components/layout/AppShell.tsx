@@ -235,7 +235,7 @@ export default function AppShell({ children }: AppShellProps) {
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.display_name||'...'}</div>
-                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>{profile?.is_pro?'Pro':'Free'} · {profile?.streak??0}/1 paths</div>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>{profile?.is_pro?'Pro':'Free'} · {curricula.length}{profile?.is_pro?'':'/2'} paths</div>
               </div>
               <span style={{ fontSize:11, color:'var(--text3)', whiteSpace:'nowrap' }}>Settings</span>
             </div>
