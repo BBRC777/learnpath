@@ -54,7 +54,7 @@ const NAV = [
   { href:'/app/lesson',      label:'Current Lesson',    icon:'▶' },
   { href:'/app/curriculum',  label:'New Learning Path', icon:'+' },
   { href:'/app/paths',       label:'All Learning Paths',icon:'◈' },
-  { href:'/app/leaderboard', label:'Leaderboard',       icon:'ðŸ†' },
+  { href:'/app/leaderboard', label:'Leaderboard',       icon:'🏆' },
   { href:'/app/team',        label:'Team',              icon:'🏢' },
   { href:'/app/flashcards',  label:'Flashcards',        icon:'⧉', badge:'__DUE__' },
   { href:'/app/study',       label:'Study Mode',        icon:'◎', pro:true },
