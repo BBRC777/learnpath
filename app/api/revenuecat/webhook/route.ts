@@ -1,4 +1,4 @@
-﻿import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@supabase/supabase-js'
 
 const PRO_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION']
 const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION', 'BILLING_ISSUE']
@@ -13,19 +13,31 @@ export async function POST(request: Request) {
     console.log('Webhook event:', type, 'user:', app_user_id)
     if (!app_user_id) return Response.json({ error: 'No app_user_id' }, { status: 400 })
 
-    const supabase = createClient()
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    )
 
     if (PRO_EVENTS.includes(type)) {
-      await (supabase.from('profiles') as any)
+      const { error } = await (supabase.from('profiles') as any)
         .update({ is_pro: true, rc_customer_id: app_user_id, updated_at: new Date().toISOString() })
         .eq('id', app_user_id)
+      if (error) {
+        console.error('Pro grant failed:', error.message)
+        return Response.json({ error: 'Database update failed' }, { status: 500 })
+      }
       console.log('Pro granted:', app_user_id)
     }
 
     if (REVOKE_EVENTS.includes(type)) {
-      await (supabase.from('profiles') as any)
+      const { error } = await (supabase.from('profiles') as any)
         .update({ is_pro: false, updated_at: new Date().toISOString() })
         .eq('id', app_user_id)
+      if (error) {
+        console.error('Pro revoke failed:', error.message)
+        return Response.json({ error: 'Database update failed' }, { status: 500 })
+      }
       console.log('Pro revoked:', app_user_id)
     }
 
