@@ -4,6 +4,16 @@ const PRO_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLA
 const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION', 'BILLING_ISSUE']
 
 export async function POST(request: Request) {
+  // Verify Authorization header matches the secret configured in RevenueCat.
+  // RevenueCat sends this header on every webhook based on what's set in the
+  // integration's "Authorization header value" field.
+  const authHeader = request.headers.get('authorization')
+  const expected = process.env.REVENUECAT_WEBHOOK_AUTH
+  if (!expected || authHeader !== expected) {
+    console.warn('Webhook rejected: invalid or missing auth header')
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { event } = body
