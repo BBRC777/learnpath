@@ -145,7 +145,7 @@ export default function LandingPage() {
         <div style={{ textAlign: 'center', marginBottom: 100, padding: '60px 40px', background: 'linear-gradient(135deg, rgba(212,133,58,0.08), rgba(212,133,58,0.03))', border: '1px solid rgba(212,133,58,0.2)', borderRadius: 20 }}>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, color: 'var(--text)', marginBottom: 12 }}>Start free today</div>
           <div style={{ fontSize: 15, color: 'var(--text2)', marginBottom: 8 }}>2 learning paths free forever. Upgrade for unlimited.</div>
-          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 36, fontFamily: "'JetBrains Mono', monospace" }}>Pro from $9.99/mo · $79.99/yr (save 33%)</div>
+          <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 36, fontFamily: "'JetBrains Mono', monospace" }}>$6.67/mo billed annually (save 33%) · or $9.99/mo</div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/auth" style={{ padding: '14px 28px', borderRadius: 10, background: '#d4853a', color: '#0a0b0f', fontSize: 15, fontWeight: 600, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
               Get started free →
