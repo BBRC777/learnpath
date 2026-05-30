@@ -5,7 +5,7 @@ import DemoBox from '@/components/DemoBox'
 const FEATURES = [
   {
     icon: '◆',
-    title: 'AI-Generated Curriculums',
+    title: 'for any subject or exam',
     desc: 'Tell us what you want to learn. Claude builds you a complete multi-week curriculum with structured lessons, key concepts, and exercises — in seconds.',
   },
   {
@@ -69,11 +69,11 @@ export default function LandingPage() {
             Powered by Claude AI
           </div>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(40px, 7vw, 72px)', lineHeight: 1.1, color: 'var(--text)', marginBottom: 24, maxWidth: 800, margin: '0 auto 24px' }}>
-            Learn anything with<br/>
+            Your AI study partner<br/>
             <span style={{ color: '#d4853a', fontStyle: 'italic' }}>AI-generated curriculums</span>
           </h1>
           <p style={{ fontSize: 18, color: 'var(--text2)', lineHeight: 1.7, maxWidth: 540, margin: '0 auto 40px' }}>
-            Tell Learnpath what you want to learn. Get a complete structured curriculum with lessons, flashcards, quizzes, and an AI tutor — in seconds.
+            Paste your syllabus, type a topic, or name an exam. Learnpath builds a complete study plan with lessons, flashcards, and a personal AI tutor — in seconds.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/auth" style={{ padding: '14px 28px', borderRadius: 10, background: '#d4853a', color: '#0a0b0f', fontSize: 15, fontWeight: 600, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>
