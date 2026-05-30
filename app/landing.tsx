@@ -1,5 +1,6 @@
 // app/page.tsx
 import Link from 'next/link'
+import DemoBox from '@/components/DemoBox'
 
 const FEATURES = [
   {
@@ -86,40 +87,9 @@ export default function LandingPage() {
         </div>
 
         {/* APP PREVIEW */}
-        <div style={{ background: 'var(--bg2)', border: '1px solid #2a2d38', borderRadius: 16, padding: '28px', marginBottom: 100, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            {['#ef7a7a','#e8a55a','#6abf8a'].map((c,i) => <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }}/>)}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 16, minHeight: 320 }}>
-            {/* Fake sidebar */}
-            <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '16px 12px' }}>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: '#d4853a', marginBottom: 20 }}>◆ Learnpath</div>
-              {['Home','Current Lesson','Flashcards','Progress'].map((item, i) => (
-                <div key={i} style={{ padding: '8px 10px', borderRadius: 6, marginBottom: 4, background: i === 1 ? 'rgba(212,133,58,0.1)' : 'transparent', color: i === 1 ? '#d4853a' : '#5a5856', fontSize: 12 }}>{item}</div>
-              ))}
-              <div style={{ marginTop: 20, padding: '10px 12px', background: 'rgba(212,133,58,0.08)', borderRadius: 8, border: '1px solid rgba(212,133,58,0.2)' }}>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, color: '#d4853a' }}>7</div>
-                <div style={{ fontSize: 10, color: 'var(--text2)', marginTop: 2 }}>Day streak 🔥</div>
-              </div>
-            </div>
-            {/* Fake lesson */}
-            <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '20px 24px' }}>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                {['ELI5','Go Deeper','AI Tutor','Skip'].map((btn, i) => (
-                  <div key={i} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid #2a2d38', background: 'var(--bg2)', color: 'var(--text2)', fontSize: 11 }}>{btn}</div>
-                ))}
-                <div style={{ padding: '5px 16px', borderRadius: 6, background: '#d4853a', color: '#0a0b0f', fontSize: 11, fontWeight: 500 }}>Mark Complete</div>
-              </div>
-              <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Week 2 — Day 3 · Japanese</div>
-              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: 'var(--text)', marginBottom: 12 }}>Numbers & Counting in Japanese</div>
-              <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.7, marginBottom: 16 }}>Japanese numbers follow a logical pattern once you learn the base words. Unlike English, Japanese counting is highly regular — master the numbers 1–10 and you can count to 99 with simple combinations.</div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {['ichi · 1','ni · 2','san · 3','yon · 4'].map((v,i) => (
-                  <div key={i} style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--bg2)', border: '1px solid #2a2d38', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: '#e8a55a' }}>{v}</div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {/* LIVE DEMO */}
+        <div style={{ marginBottom: 100 }}>
+          <DemoBox />
         </div>
 
         {/* HOW IT WORKS */}
