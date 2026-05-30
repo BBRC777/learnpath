@@ -164,6 +164,7 @@ export default function LandingPage() {
         <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>Learn Anything · All Inside · Built by MRF Studios</div>
         <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
           <Link href="/pricing" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Pricing</Link>
+          <Link href="/pricing" style={{ padding: '7px 14px', borderRadius: 7, color: 'var(--text2)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>For teams →</Link>
           <Link href="/auth" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Sign in</Link>
           <Link href="/auth" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Sign up</Link>
         </div>
