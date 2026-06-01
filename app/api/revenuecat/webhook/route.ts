@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@supabase/supabase-js'
+import { PostHog } from 'posthog-node'
 
 const PRO_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION']
 const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION', 'BILLING_ISSUE']
@@ -36,6 +37,15 @@ export async function POST(request: Request) {
         return Response.json({ error: 'Database update failed' }, { status: 500 })
       }
       console.log('Pro granted:', app_user_id)
+      if (type === 'INITIAL_PURCHASE') {
+        try {
+          const ph = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, { host: process.env.NEXT_PUBLIC_POSTHOG_HOST })
+          ph.capture({ distinctId: app_user_id, event: 'subscription-started', properties: { product_id: event.product_id, store: event.store, period_type: event.period_type, price: event.price, currency: event.currency } })
+          await ph.shutdown()
+        } catch (e) {
+          console.error('PostHog subscription-started failed:', e)
+        }
+      }
     }
 
     if (REVOKE_EVENTS.includes(type)) {
