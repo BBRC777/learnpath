@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import posthog from 'posthog-js'
 
 // Where the "Sign up" buttons send visitors. Confirmed: your auth page is at /auth.
 const SIGNUP_URL = '/auth'
@@ -69,6 +70,7 @@ export default function DemoBox() {
       const match = full.match(/\{[\s\S]*\}/)
       if (!match) throw new Error('Could not read the plan — give it another try.')
       setCurriculum(JSON.parse(match[0]))
+      posthog.capture('curriculum-generated', { source: 'demo', topic: t })
       setOpenWeeks({ 0: true })
     } catch (e: any) {
       setError(e?.message || 'Something went wrong — try again.')

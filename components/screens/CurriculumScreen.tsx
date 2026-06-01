@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { saveCurriculum } from '@/lib/db'
+import posthog from 'posthog-js'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const TOPICS = ['Spanish','Japanese','Python','Guitar','Drawing','Calculus','Photography','Chess','Public Speaking','Investing Basics','Creative Writing','Music Theory']
@@ -112,7 +113,9 @@ export default function CurriculumScreen() {
       }
     })
   }, [])
-
+    useEffect(() => {
+       if (showPaywall) posthog.capture('paywall-hit')
+     }, [showPaywall])
   const toggleDay = (i: number) => setActiveDays(d => d.includes(i)?d.filter(x=>x!==i):[...d,i].sort())
   const toggleStyle = (v: string) => setStyles(s => s.includes(v)?(s.length>1?s.filter(x=>x!==v):s):[...s,v])
   const daysLabel = activeDays.map(i => DAY_LABELS[i]).join(', ')
@@ -207,6 +210,7 @@ export default function CurriculumScreen() {
       if (userId) {
         setSaving(true)
         const topicLabel = mode === 'file' ? (pdfName || topic) : mode === 'youtube' ? (youtubeTitle || topic) : topic
+        posthog.capture('curriculum-generated', { source: 'builder', topic: topicLabel, level, weeks: duration.weeks })
         try { const saved = await saveCurriculum(userId,{topic:topicLabel,level,durLabel:duration.label,days:activeDays.length,time:sessionTime,style:styles.join(', '),curriculum:parsed}); setSavedId(saved.id); setPathCount(c=>c+1) }
         catch(e: any) { console.error('Save failed:',e.message) } finally { setSaving(false) }
       }
