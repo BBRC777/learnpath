@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import posthog from 'posthog-js'
 import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, loadCurricula, buyStreakFreeze, type Profile } from '@/lib/db'
 
 const NEXT_LEVEL: Record<number,string> = { 1:'Scholar', 2:'Expert', 3:'Master' }
@@ -112,6 +113,7 @@ export default function AppShell({ children }: AppShellProps) {
     createClient().auth.getUser().then(({ data }) => {
       if (data.user) {
         setUser(data.user)
+        posthog.identify(data.user.id, { email: data.user.email })
         loadFlashcardsDueCount(data.user.id).then(setFlashcardsDue).catch(() => {})
         loadCurricula(data.user.id).then(setCurricula).catch(() => {})
       }
@@ -130,6 +132,7 @@ export default function AppShell({ children }: AppShellProps) {
 
   const signOut = async () => {
     await createClient().auth.signOut()
+    posthog.reset()
     router.push('/auth')
   }
 

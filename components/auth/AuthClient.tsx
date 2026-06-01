@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import posthog from 'posthog-js'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 
@@ -112,6 +113,8 @@ export default function AuthClient() {
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' })
     setObSaving(false)
+    posthog.identify(obUser.id, { email: obUser.email })
+    posthog.capture('signup', { method: obUser.app_metadata?.provider ?? 'email' })
     router.push('/app')
     router.refresh()
   }
