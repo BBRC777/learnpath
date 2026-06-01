@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import posthog from 'posthog-js'
 import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -365,6 +366,7 @@ export default function LessonScreen() {
       progress[key] = true
       await updateCurriculumProgress(activeCurrId, progress)
       await logActivity(userId, 'lesson', 20)
+      posthog.capture('lesson-completed')
       await updateStreak(userId)
       const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
       if (xpResult && xpResult.leveledUp) { setShowLevelUp(xpResult.levelInfo as Record<string,any>) }
@@ -392,6 +394,7 @@ export default function LessonScreen() {
       progress[key] = true
       await updateCurriculumProgress(activeCurrId, progress)
       await logActivity(userId, 'lesson_skip', 5)
+      posthog.capture('lesson-skipped')
       await updateStreak(userId)
       const xpResult = await completeLessonAndAwardXP(activeCurrId, key, streak)
       if (xpResult && xpResult.leveledUp) { setShowLevelUp(xpResult.levelInfo as Record<string,any>) }
