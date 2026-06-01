@@ -1,6 +1,8 @@
 // app/layout.tsx
 import type { Metadata } from 'next'
 import './globals.css'
+import { PostHogProvider } from './providers'
+
 export const metadata: Metadata = {
   title: 'Learnpath — Learn Anything, All Inside',
   description: 'AI-powered personalised learning paths for any subject. Built by MRF Studios.',
@@ -23,7 +25,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel='stylesheet'
         />
       </head>
-      <body>{children}</body>
+      <body>
+    <PostHogProvider>
+        {children}
+    </PostHogProvider>
+  </body>
     </html>
   )
 }
