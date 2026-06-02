@@ -71,6 +71,7 @@ export default function DemoBox() {
       if (!match) throw new Error('Could not read the plan — give it another try.')
       setCurriculum(JSON.parse(match[0]))
       posthog.capture('curriculum-generated', { source: 'demo', topic: t })
+      try { localStorage.setItem('lp-demo-claim', JSON.stringify({ topic: t, plan: JSON.parse(match[0]) })) } catch {}
       setOpenWeeks({ 0: true })
     } catch (e: any) {
       setError(e?.message || 'Something went wrong — try again.')

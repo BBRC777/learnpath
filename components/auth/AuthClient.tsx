@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { saveCurriculum } from '@/lib/db'
 import posthog from 'posthog-js'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
@@ -115,8 +116,27 @@ export default function AuthClient() {
     setObSaving(false)
     posthog.identify(obUser.id, { email: obUser.email })
     posthog.capture('signup', { method: obUser.app_metadata?.provider ?? 'email' })
-    router.push('/app')
-    router.refresh()
+       let dest = '/app'
+       try {
+         const stashed = localStorage.getItem('lp-demo-claim')
+         if (stashed) {
+           const { topic, plan } = JSON.parse(stashed)
+           const saved = await saveCurriculum(obUser.id, {
+             topic: topic || plan?.title || 'My plan',
+             level: plan?.level || 'Beginner',
+             durLabel: `${plan?.totalWeeks || 2} Weeks`,
+             days: plan?.daysPerWeek || 5,
+             time: plan?.sessionTime || '20 min',
+             style: 'Balanced',
+             curriculum: plan,
+           })
+           localStorage.removeItem('lp-demo-claim')
+           posthog.capture('demo-plan-claimed', { topic })
+           if (saved?.id) dest = '/app/lesson?id=' + saved.id
+         }
+       } catch (e) { console.error('Demo claim failed:', e) }
+       router.push(dest)
+       router.refresh()
   }
 
   const score = pwScore(pw)
