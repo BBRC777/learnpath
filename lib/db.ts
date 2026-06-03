@@ -584,13 +584,13 @@ export async function getAssessmentResults(teamId: string) {
 
 // -- GLOBAL LESSON CACHE --------------------------------------------------
 
-function makeGlobalCacheId(topic: string, level: string, weekNum: number, dayNum: number): string {
-  return [topic.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40), level.toLowerCase().replace(/[^a-z0-9]/g,'_'), weekNum, dayNum].join('__')
+function makeGlobalCacheId(topic: string, level: string, weekNum: number, dayNum: number, dayTitle: string = ''): string {
+  return [topic.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40), level.toLowerCase().replace(/[^a-z0-9]/g,'_'), weekNum, dayNum, dayTitle.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40)].join('__')
 }
 
 export async function getGlobalCachedLesson(topic: string, level: string, weekNum: number, dayNum: number, dayTitle: string) {
   try {
-    const id = makeGlobalCacheId(topic, level, weekNum, dayNum)
+    const id = makeGlobalCacheId(topic, level, weekNum, dayNum, dayTitle)
     const { data } = await (supabase.from('global_lesson_cache') as any)
       .select('lesson_data, hit_count').eq('id', id).single()
     if (!data) return null
@@ -606,7 +606,7 @@ export async function getGlobalCachedLesson(topic: string, level: string, weekNu
 
 export async function setGlobalCachedLesson(topic: string, level: string, weekNum: number, dayNum: number, weekTheme: string, dayTitle: string, dayType: string, lessonData: any) {
   try {
-    const id = makeGlobalCacheId(topic, level, weekNum, dayNum)
+    const id = makeGlobalCacheId(topic, level, weekNum, dayNum, dayTitle)
     await (supabase.from('global_lesson_cache') as any).upsert({
       id, topic, level, week_num: weekNum, day_num: dayNum,
       week_theme: weekTheme, day_title: dayTitle, day_type: dayType,
