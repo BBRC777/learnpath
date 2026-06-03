@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
@@ -71,7 +71,8 @@ export default function AppShell({ children }: AppShellProps) {
   const [editName, setEditName]           = useState('')
   const [savingName, setSavingName]       = useState(false)
   const [lessonToolbar, setLessonToolbar] = useState<React.ReactNode>(null)
-  const [sidebarOpen, setSidebarOpen]     = useState(true)
+  const [sidebarOpen, setSidebarOpen]     = useState(false)
+  const isInitialRender                   = useRef(true)
   const [isMobile, setIsMobile]           = useState(false)
 
   useEffect(() => {
@@ -130,6 +131,11 @@ export default function AppShell({ children }: AppShellProps) {
     return () => { delete (window as any).__learnpath_setToolbar }
   }, [])
 
+  useEffect(() => {
+    if (isInitialRender.current) { isInitialRender.current = false; return }
+    setSidebarOpen(false)
+  }, [pathname])
+
   const signOut = async () => {
     await createClient().auth.signOut()
     posthog.reset()
@@ -153,7 +159,7 @@ export default function AppShell({ children }: AppShellProps) {
     setBuyingFreeze(false)
   }
 
-  const sidebarW = sidebarOpen ? 252 : 0
+  const sidebarW = isMobile ? (sidebarOpen ? 252 : 0) : (sidebarOpen ? 252 : 48)
   const locked   = (item: typeof NAV[0]) => item.pro && !profile?.is_pro
   const freezes  = (profile as any)?.streak_freezes ?? 0
   const canBuy   = freezes < 3 && (profile?.xp ?? 0) >= 50
@@ -176,8 +182,25 @@ export default function AppShell({ children }: AppShellProps) {
     <div style={{ display:'flex', minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
 
       {/* SIDEBAR */}
-      <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:sidebarOpen?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:isMobile?200:50, transition:'width 0.2s ease', boxShadow:isMobile&&sidebarOpen?'4px 0 20px rgba(0,0,0,0.5)':undefined }}>
-        <div style={{ width:252, display:'flex', flexDirection:'column', height:'100%' }}>
+      <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:(!isMobile||sidebarOpen)?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:isMobile?200:50, transition:'width 0.2s ease', boxShadow:isMobile&&sidebarOpen?'4px 0 20px rgba(0,0,0,0.5)':undefined }}>
+        {!sidebarOpen && !isMobile && (
+          <div style={{ width:48, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:10, gap:2 }}>
+            <button onClick={() => setSidebarOpen(true)} title='Open menu' style={{ width:36, height:36, borderRadius:8, display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', gap:5, background:'none', border:'none', cursor:'pointer', marginBottom:6, padding:4 }}>
+              <div style={{ width:16, height:2, background:'var(--text3)', borderRadius:1 }}/><div style={{ width:16, height:2, background:'var(--text3)', borderRadius:1 }}/><div style={{ width:16, height:2, background:'var(--text3)', borderRadius:1 }}/>
+            </button>
+            {NAV.map(item => {
+              const active = pathname === item.href || (item.href !== '/app' && pathname?.startsWith(item.href))
+              return (
+                <div key={item.href} onClick={() => !locked(item) && router.push(item.href)} title={item.label}
+                  style={{ width:36, height:36, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', cursor:locked(item)?'default':'pointer', background:active?'var(--amber-bg)':'transparent', color:active?'var(--amber)':'var(--text3)', fontSize:15, position:'relative' as const, transition:'all 0.12s', flexShrink:0 }}>
+                  {item.icon}
+                  {item.badge==='__DUE__' && flashcardsDue>0 && <span style={{ position:'absolute' as const, top:4, right:4, width:7, height:7, borderRadius:'50%', background:'var(--amber)', border:'1px solid var(--bg2)' }}/>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {sidebarOpen && <div style={{ width:252, display:'flex', flexDirection:'column', height:'100%' }}>
 
           {/* Logo */}
           <div style={{ padding:'20px 18px 15px', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
@@ -244,7 +267,7 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
           </div>
 
-        </div>
+        </div>}
       </aside>
       {/* Mobile overlay backdrop */}
       {isMobile && sidebarOpen && (
