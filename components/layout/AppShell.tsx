@@ -391,14 +391,14 @@ export default function AppShell({ children }: AppShellProps) {
                 <div style={{ fontSize:12, fontWeight:500, color:'var(--amber)', marginBottom:2 }}>Upgrade to Pro</div>
                 <div style={{ fontSize:11, color:'var(--text2)', marginBottom:10 }}>Unlimited paths · Study Mode · AI Tutor</div>
                 <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(user?.id||''), '_blank')} style={{ padding:'8px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer', flex:1, textAlign:'center' as const }}>
-                    <div style={{ fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)', marginBottom:2 }}>Monthly</div>
-                    <div style={{ fontWeight:600, color:'var(--text)' }}>$9.99/mo</div>
-                  </button>
                   <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(user?.id||''), '_blank')} style={{ padding:'8px 10px', borderRadius:7, border:'1px solid rgba(212,133,58,0.6)', background:'rgba(212,133,58,0.15)', color:'var(--amber)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer', flex:1, textAlign:'center' as const, position:'relative' as const }}>
                     <div style={{ position:'absolute' as const, top:-8, right:6, background:'#6abf8a', color:'#0a0b0f', fontSize:8, fontFamily:'var(--mono)', fontWeight:700, padding:'2px 5px', borderRadius:4 }}>SAVE 33%</div>
                     <div style={{ fontSize:10, color:'rgba(212,133,58,0.7)', fontFamily:'var(--mono)', marginBottom:2 }}>Annual</div>
                     <div style={{ fontWeight:600 }}>$6.67/mo</div>
+                  </button>
+                  <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(user?.id||''), '_blank')} style={{ padding:'8px 10px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:11, cursor:'pointer', flex:1, textAlign:'center' as const }}>
+                    <div style={{ fontSize:10, color:'var(--text3)', fontFamily:'var(--mono)', marginBottom:2 }}>Monthly</div>
+                    <div style={{ fontWeight:600, color:'var(--text)' }}>$9.99/mo</div>
                   </button>
                 </div>
               </div>
