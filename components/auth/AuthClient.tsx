@@ -122,7 +122,7 @@ export default function AuthClient() {
          if (stashed) {
            const { topic, plan } = JSON.parse(stashed)
            const saved = await saveCurriculum(obUser.id, {
-             topic: topic || plan?.title || 'My plan',
+             topic: plan?.topicKey || topic || plan?.title || 'My plan',
              level: plan?.level || 'Beginner',
              durLabel: `${plan?.totalWeeks || 2} Weeks`,
              days: plan?.daysPerWeek || 5,

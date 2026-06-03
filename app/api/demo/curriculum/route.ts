@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       if (cached?.curriculum) {
         const hit = new ReadableStream({
           start(controller) {
-            controller.enqueue(sse({ text: JSON.stringify(cached.curriculum) }))
+            controller.enqueue(sse({ text: JSON.stringify({ ...cached.curriculum, topicKey }) }))
             controller.enqueue(DONE)
             controller.close()
           },
@@ -128,6 +128,7 @@ export async function POST(request: Request) {
           if (match) {
             try {
               const parsed = JSON.parse(match[0])
+              parsed.topicKey = topicKey
               await (supabase.from("demo_cache") as any).upsert({ topic_key: topicKey, curriculum: parsed }, { onConflict: "topic_key" })
             } catch { /* don't cache malformed output */ }
           }
