@@ -41,12 +41,6 @@ const STEPS = [
   { n: '03', title: 'Learn every day', desc: 'Work through lessons, review flashcards, quiz yourself, and chat with your AI tutor — all in one place.' },
 ]
 
-const TESTIMONIALS = [
-  { text: 'I built a 4-week Python curriculum in 30 seconds. The lessons are genuinely good — better than most YouTube tutorials.', name: 'Marcus T.', role: 'Self-taught developer' },
-  { text: 'The AI tutor is a game changer. I can ask questions mid-lesson without breaking my flow. It feels like having a private teacher.', name: 'Priya S.', role: 'Medical student' },
-  { text: 'I have tried Duolingo, Anki, and a dozen courses. Learnpath is the first thing that actually kept me consistent.', name: 'Jordan K.', role: 'Language learner' },
-]
-
 export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', fontFamily: "'DM Sans', system-ui, sans-serif", overflowX: 'hidden' }}>
@@ -56,6 +50,7 @@ export default function LandingPage() {
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: '#d4853a', letterSpacing: '-0.01em' }}>◆ Learnpath</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Link href="/pricing" style={{ padding: '7px 14px', borderRadius: 7, color: 'var(--text2)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>Pricing</Link>
+          <Link href="/business" style={{ padding: '7px 14px', borderRadius: 7, color: 'var(--text2)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>For teams</Link>
           <Link href="/auth" style={{ padding: '7px 14px', borderRadius: 7, color: 'var(--text2)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>Sign in</Link>
           <Link href="/auth" style={{ padding: '8px 16px', borderRadius: 7, background: '#d4853a', color: '#0a0b0f', fontSize: 13, fontWeight: 500, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>Get started free</Link>
         </div>
@@ -84,6 +79,17 @@ export default function LandingPage() {
             </Link>
           </div>
           <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 16, fontFamily: "'JetBrains Mono', monospace" }}>Free forever · No credit card required</p>
+        </div>
+
+        {/* DEMO VIDEO */}
+        <div style={{ marginBottom: 72, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 14 }}>
+          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase' as const, letterSpacing: '0.14em' }}>See it in action</div>
+          <video
+            src="https://htl5p4dmq1ptkoi4.public.blob.vercel-storage.com/Demo%20Video%2060sec.mp4"
+            controls
+            playsInline
+            style={{ width: '100%', maxWidth: 320, borderRadius: 20, border: '1px solid #2a2d38', boxShadow: '0 12px 48px rgba(0,0,0,0.5)', display: 'block' }}
+          />
         </div>
 
         {/* APP PREVIEW */}
@@ -124,22 +130,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* TESTIMONIALS */}
-        <div style={{ marginBottom: 100 }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 16 }}>What learners say</div>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, color: 'var(--text)' }}>Real results, real learners</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} style={{ padding: '24px', background: 'var(--bg2)', border: '1px solid #2a2d38', borderRadius: 14 }}>
-                <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.7, marginBottom: 20, fontStyle: 'italic' }}>"{t.text}"</div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: '#d4853a' }}>{t.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>{t.role}</div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* PRICING TEASER */}
         <div style={{ textAlign: 'center', marginBottom: 100, padding: '60px 40px', background: 'linear-gradient(135deg, rgba(212,133,58,0.08), rgba(212,133,58,0.03))', border: '1px solid rgba(212,133,58,0.2)', borderRadius: 20 }}>
@@ -164,7 +154,7 @@ export default function LandingPage() {
         <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>Learn Anything · All Inside · Built by MRF Studios</div>
         <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
           <Link href="/pricing" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Pricing</Link>
-          <Link href="/pricing" style={{ padding: '7px 14px', borderRadius: 7, color: 'var(--text2)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>For teams →</Link>
+          <Link href="/business" style={{ padding: '7px 14px', borderRadius: 7, color: 'var(--text2)', fontSize: 13, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}>For teams →</Link>
           <Link href="/auth" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Sign in</Link>
           <Link href="/auth" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>Sign up</Link>
         </div>
