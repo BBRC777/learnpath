@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 async function fetchPexelsImage(query: string): Promise<string|null> {
@@ -153,6 +153,8 @@ export default function LessonScreen() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [readingMode, setReadingMode] = useState(false)
+  const [isPro, setIsPro] = useState(false)
+  const [showUpsell, setShowUpsell] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -175,6 +177,7 @@ export default function LessonScreen() {
       const { data: { user } } = await createClient().auth.getUser()
       if (!user) return
       setUserId(user.id)
+      getProfile().then(p => setIsPro(p?.is_pro || false)).catch(() => {})
       loadStreak(user.id).then(s => setStreak(s?.current_streak || 0)).catch(() => {})
       const currs = await loadCurricula(user.id)
       setCurricula(currs)
@@ -393,6 +396,11 @@ export default function LessonScreen() {
       }
       ;(window as any).__learnpath_refreshProfile?.()
       setIsComplete(true)
+      const totalDoneBeforeThis = currs.reduce((n: number, c: any) => n + Object.values(c.progress || {}).filter(Boolean).length, 0)
+      if (totalDoneBeforeThis === 0 && !isPro && !localStorage.getItem('lp-upsell-shown')) {
+        localStorage.setItem('lp-upsell-shown', '1')
+        setShowUpsell(true)
+      }
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
       fetchRelatedTopics()
     } catch(e) { console.error(e) }
@@ -933,6 +941,30 @@ export default function LessonScreen() {
             <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber2)', fontWeight:700, marginBottom:20 }}>{showLevelUp?.title}</div>
             <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>Keep learning to reach the next level.</div>
             <button onClick={() => setShowLevelUp(null)} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
+          </div>
+        </div>
+      )}
+      {showUpsell && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowUpsell(false)}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 32px', textAlign:'center' as const, maxWidth:400, width:'90%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width:52, height:52, borderRadius:14, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', fontFamily:'var(--mono)', fontSize:18, color:'var(--amber)' }}>✦</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>First lesson done.</div>
+            <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>You've started something. Upgrade to Pro to keep going — unlimited paths, the AI Tutor, and spaced review that makes it stick.</div>
+            <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+              <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'rgba(212,133,58,0.15)', border:'2px solid var(--amber)', textAlign:'center' as const, position:'relative' as const }}>
+                <div style={{ position:'absolute' as const, top:-10, left:'50%', transform:'translateX(-50%)', background:'var(--amber)', color:'#0a0b0f', fontSize:8, fontFamily:'var(--mono)', fontWeight:700, padding:'2px 10px', borderRadius:10, textTransform:'uppercase' as const, letterSpacing:'0.08em', whiteSpace:'nowrap' as const }}>Best value</div>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', marginBottom:4 }}>Annual</div>
+                <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$6.67<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>$79.99/yr · save 33%</div>
+              </div>
+              <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', textAlign:'center' as const }}>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:4 }}>Monthly</div>
+                <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$9.99<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
+              </div>
+            </div>
+            <button onClick={() => { setShowUpsell(false); window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`, '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
+            <button onClick={() => setShowUpsell(false)} style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:'transparent', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Continue for free</button>
           </div>
         </div>
       )}
