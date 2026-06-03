@@ -155,6 +155,7 @@ export default function LessonScreen() {
   const [readingMode, setReadingMode] = useState(false)
   const [isPro, setIsPro] = useState(false)
   const [showUpsell, setShowUpsell] = useState(false)
+  const [showProGate, setShowProGate] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -351,7 +352,7 @@ export default function LessonScreen() {
       <div style={{ display:'flex', gap:6, alignItems:'center', flex:'1 1 auto', flexWrap:'wrap' }}>
         <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
         <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
-        <button onClick={() => { setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
+        <button onClick={() => { if (!isPro) { setShowProGate(true); return }; setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
                 {!isComplete && (showSkipConfirm ? (
           <div style={{ display:'flex', gap:4 }}>
             <button onClick={skipLesson} disabled={skipping} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--amber-bg2)', background:'var(--amber-bg)', color:'var(--amber2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>{skipping ? 'Saving...' : 'Yes, skip it'}</button>
@@ -359,7 +360,7 @@ export default function LessonScreen() {
           </div>
         ) : (
           <>
-            <button onClick={regenLesson} disabled={regenerating||generating} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>{regenerating ? 'Regenerating...' : '\u21ba Regenerate'}</button>
+            <button onClick={() => { if (!isPro) { setShowProGate(true); return }; regenLesson() }} disabled={regenerating||generating} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>{regenerating ? 'Regenerating...' : '\u21ba Regenerate'}</button>
             <button onClick={() => setShowSkipConfirm(true)} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:10, fontStyle:'italic', cursor:'pointer' }}>Skip</button>
           </>
         ))}
@@ -965,6 +966,30 @@ export default function LessonScreen() {
             </div>
             <button onClick={() => { setShowUpsell(false); window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`, '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
             <button onClick={() => setShowUpsell(false)} style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:'transparent', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Continue for free</button>
+          </div>
+        </div>
+      )}
+      {showProGate && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowProGate(false)}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 32px', textAlign:'center' as const, maxWidth:400, width:'90%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width:52, height:52, borderRadius:14, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', fontFamily:'var(--mono)', fontSize:11, fontWeight:700, color:'var(--amber)' }}>PRO</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Unlock the AI Tutor</div>
+            <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>The AI Tutor and lesson regeneration are Pro features. Upgrade to ask unlimited questions and keep your lessons fresh.</div>
+            <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+              <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'rgba(212,133,58,0.15)', border:'2px solid var(--amber)', textAlign:'center' as const, position:'relative' as const }}>
+                <div style={{ position:'absolute' as const, top:-10, left:'50%', transform:'translateX(-50%)', background:'var(--amber)', color:'#0a0b0f', fontSize:8, fontFamily:'var(--mono)', fontWeight:700, padding:'2px 10px', borderRadius:10, textTransform:'uppercase' as const, letterSpacing:'0.08em', whiteSpace:'nowrap' as const }}>Best value</div>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', marginBottom:4 }}>Annual</div>
+                <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$6.67<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>$79.99/yr · save 33%</div>
+              </div>
+              <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', textAlign:'center' as const }}>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:4 }}>Monthly</div>
+                <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$9.99<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
+              </div>
+            </div>
+            <button onClick={() => { setShowProGate(false); window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`, '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
+            <button onClick={() => setShowProGate(false)} style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:'transparent', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Maybe later</button>
           </div>
         </div>
       )}
