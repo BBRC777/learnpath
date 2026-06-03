@@ -741,7 +741,7 @@ export default function LessonScreen() {
                 <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.6, marginBottom:12 }}>{lessonData.intro}</div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' as const }}>
                   {(lessonData.keyPoints||[]).map((p: string, i: number) => (
-                    <span key={i} style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)' }}>{p}</span>
+                    <span key={i} style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text)' }}>{p}</span>
                   ))}
                 </div>
               </div>
