@@ -734,7 +734,7 @@ export default function LessonScreen() {
               {/* Header */}
               <div style={{ marginBottom:20, paddingBottom:16, borderBottom:'1px solid var(--border)' }}>
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.14em', marginBottom:6 }}>
-                  {lessonData.eyebrow} - {lessonData.subject}
+                  {(lessonData.eyebrow||'').replace(/#\S+/g,'').trim()} · {lessonData.subject}
                   {isComplete && <span style={{ marginLeft:8, color:'var(--green-text)' }}>- Complete</span>}
                 </div>
                 <h1 style={{ fontFamily:'var(--serif)', fontSize:26, color:'var(--text)', lineHeight:1.2, marginBottom:10 }}>{lessonData.title}</h1>
