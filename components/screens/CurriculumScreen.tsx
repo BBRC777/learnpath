@@ -77,6 +77,7 @@ export default function CurriculumScreen() {
   const [pathCount, setPathCount] = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
   const [showProTab, setShowProTab] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<'annual'|'monthly'>('annual')
   const [selectedWeek, setSelectedWeek] = useState<number|null>(null)
   const [selectedDay, setSelectedDay] = useState<number|null>(null)
 
@@ -232,19 +233,19 @@ export default function CurriculumScreen() {
           ))}
         </div>
 <div style={{ display:'flex', gap:8, marginBottom:16 }}>
-          <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'rgba(212,133,58,0.12)', border:'2px solid rgba(212,133,58,0.4)', textAlign:'center' as const, position:'relative' as const }}>
+          <div onClick={() => setSelectedPlan('annual')} style={{ flex:1, padding:'12px 10px', borderRadius:10, background: selectedPlan==='annual' ? 'rgba(212,133,58,0.15)' : 'var(--bg3)', border: selectedPlan==='annual' ? '2px solid var(--amber)' : '1px solid var(--border)', textAlign:'center' as const, position:'relative' as const, cursor:'pointer' }}>
             <div style={{ position:'absolute' as const, top:-10, left:'50%', transform:'translateX(-50%)', background:'var(--amber)', color:'#0a0b0f', fontSize:8, fontFamily:'var(--mono)', fontWeight:700, padding:'2px 10px', borderRadius:10, textTransform:'uppercase' as const, letterSpacing:'0.08em', whiteSpace:'nowrap' as const }}>Best value</div>
             <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', marginBottom:4 }}>Annual</div>
             <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$6.67<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>$79.99/yr · save 33%</div>
           </div>
-          <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', textAlign:'center' as const }}>
+          <div onClick={() => setSelectedPlan('monthly')} style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'var(--bg3)', border: selectedPlan==='monthly' ? '2px solid var(--text2)' : '1px solid var(--border)', textAlign:'center' as const, cursor:'pointer' }}>
             <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:4 }}>Monthly</div>
             <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$9.99<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
           </div>
         </div>
-        <button onClick={()=>window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`,`_blank`)} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Upgrade to Pro →</button>        <button onClick={() => setShowPaywall(false)} style={{ width:'100%', padding:'11px', borderRadius:10, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back</button>
+        <button onClick={()=>window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`,`_blank`)} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>{selectedPlan === 'annual' ? 'Start Annual Pro — $6.67/mo →' : 'Start Monthly Pro — $9.99/mo →'}</button>        <button onClick={() => setShowPaywall(false)} style={{ width:'100%', padding:'11px', borderRadius:10, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back</button>
       </div>
     </div>
   )
