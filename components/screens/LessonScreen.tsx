@@ -388,6 +388,23 @@ export default function LessonScreen() {
     }
   }, [])
 
+  // Background pre-generation: as soon as the current lesson finishes loading, silently
+  // kick off generation of the next one. loadLesson checks all caches first, so this is
+  // a no-op if it's already warm — only triggers an AI call if the next lesson isn't
+  // cached yet. Fire-and-forget: no await, no state updates, no UI impact.
+  useEffect(() => {
+    if (!lessonData || !activeCurr || !selectedLesson) return
+    const weeks = activeCurr.curriculum?.weeks || []
+    const { wi, di } = selectedLesson
+    const next = di + 1 < (weeks[wi]?.days?.length || 0)
+      ? { wi, di: di + 1 }
+      : wi + 1 < weeks.length && (weeks[wi + 1]?.days?.length || 0) > 0
+      ? { wi: wi + 1, di: 0 }
+      : null
+    if (!next) return
+    loadLesson(activeCurr, next.wi, next.di).catch(() => {})
+  }, [lessonData]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const markComplete = async () => {
     if (!activeCurrId || !userId || isComplete) return
     setMarking(true)
