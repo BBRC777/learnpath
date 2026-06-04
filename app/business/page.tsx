@@ -77,7 +77,7 @@ export default function BusinessPage() {
           <a href={MAILTO} style={{ padding: '14px 28px', borderRadius: 10, background: A, color: '#fff', fontSize: 15, fontWeight: 600, textDecoration: 'none', fontFamily: SANS }}>Contact us to get started</a>
           <Link href='/pricing' style={{ padding: '14px 28px', borderRadius: 10, border: `1px solid ${BDR}`, color: TEXT2, fontSize: 15, textDecoration: 'none', fontFamily: SANS }}>See team pricing</Link>
         </div>
-        <p style={{ fontSize: 12, color: TEXT3, marginTop: 16, fontFamily: MONO }}>From $99/month for your whole team</p>
+        <p style={{ fontSize: 12, color: TEXT3, marginTop: 16, fontFamily: MONO }}>From $99/month</p>
       </div>
 
       {/* HOW IT WORKS */}
@@ -118,8 +118,8 @@ export default function BusinessPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 100px' }}>
         <div style={{ textAlign: 'center', padding: '56px 40px', background: 'linear-gradient(135deg, rgba(74,127,212,0.1), rgba(74,127,212,0.03))', border: `1px solid ${A_BDR}`, borderRadius: 20 }}>
           <div style={{ fontFamily: SERIF, fontSize: 32, color: TEXT, marginBottom: 12 }}>Simple team pricing</div>
-          <div style={{ fontSize: 15, color: TEXT2, marginBottom: 6, maxWidth: 520, margin: '0 auto 6px' }}>$99/month for your whole team — unlimited members, no per-seat fees up to 10.</div>
-          <div style={{ fontSize: 13, color: TEXT3, marginBottom: 32, fontFamily: MONO }}>Building something bigger? Contact us about per-seat pricing.</div>
+          <div style={{ fontSize: 15, color: TEXT2, marginBottom: 6, maxWidth: 520, margin: '0 auto 6px' }}>$99/month for teams up to 10.</div>
+          <div style={{ fontSize: 13, color: TEXT3, marginBottom: 32, fontFamily: MONO }}>Need a larger team? Contact us for pricing.</div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href={MAILTO} style={{ padding: '14px 28px', borderRadius: 10, background: A, color: '#fff', fontSize: 15, fontWeight: 600, textDecoration: 'none', fontFamily: SANS }}>Contact us to get started</a>
             <Link href='/pricing' style={{ padding: '14px 28px', borderRadius: 10, border: `1px solid ${BDR}`, color: TEXT2, fontSize: 15, textDecoration: 'none', fontFamily: SANS }}>See full pricing →</Link>
