@@ -51,15 +51,15 @@ function XPWidget({ profile }: { profile: Profile }) {
 interface AppShellProps { children: React.ReactNode }
 
 const NAV = [
-  { href:'/app',             label:'Home',              icon:'⊞' },
+  { href:'/app',             label:'Home',              icon:'🏠' },
   { href:'/app/lesson',      label:'Current Lesson',    icon:'▶' },
   { href:'/app/curriculum',  label:'New Learning Path', icon:'+' },
-  { href:'/app/paths',       label:'All Learning Paths',icon:'◈' },
+  { href:'/app/paths',       label:'All Learning Paths',icon:'📚' },
   { href:'/app/leaderboard', label:'Leaderboard',       icon:'🏆' },
   { href:'/app/team',        label:'Team',              icon:'🏢' },
-  { href:'/app/flashcards',  label:'Flashcards',        icon:'⧉', badge:'__DUE__' },
-  { href:'/app/study',       label:'Study Mode',        icon:'◎', pro:true },
-  { href:'/app/progress',    label:'Progress',          icon:'◉' },
+  { href:'/app/flashcards',  label:'Flashcards',        icon:'📇', badge:'__DUE__' },
+  { href:'/app/study',       label:'Study Mode',        icon:'🎯', pro:true },
+  { href:'/app/progress',    label:'Progress',          icon:'📊' },
 ]
 
 export default function AppShell({ children }: AppShellProps) {
@@ -185,9 +185,7 @@ export default function AppShell({ children }: AppShellProps) {
       <aside style={{ position:'fixed', left:0, top:0, width:sidebarW, height:'100vh', background:'var(--bg2)', borderRight:(!isMobile||sidebarOpen)?'1px solid var(--border)':'none', display:'flex', flexDirection:'column', overflowY:sidebarOpen?'auto':'hidden', overflowX:'hidden', zIndex:isMobile?200:50, transition:'width 0.2s ease', boxShadow:isMobile&&sidebarOpen?'4px 0 20px rgba(0,0,0,0.5)':undefined }}>
         {!sidebarOpen && !isMobile && (
           <div style={{ width:48, display:'flex', flexDirection:'column', alignItems:'center', paddingTop:10, gap:2 }}>
-            <button onClick={() => setSidebarOpen(true)} title='Open menu' style={{ width:36, height:36, borderRadius:8, display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', gap:5, background:'none', border:'none', cursor:'pointer', marginBottom:6, padding:4 }}>
-              <div style={{ width:16, height:2, background:'var(--text3)', borderRadius:1 }}/><div style={{ width:16, height:2, background:'var(--text3)', borderRadius:1 }}/><div style={{ width:16, height:2, background:'var(--text3)', borderRadius:1 }}/>
-            </button>
+
             {NAV.map(item => {
               const active = pathname === item.href || (item.href !== '/app' && pathname?.startsWith(item.href))
               return (
