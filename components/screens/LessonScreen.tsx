@@ -436,6 +436,15 @@ export default function LessonScreen() {
     finally { setSkipping(false) }
   }
 
+  const getNextLesson = (): { wi: number; di: number } | null => {
+    if (!selectedLesson || !activeCurr) return null
+    const weeks = activeCurr.curriculum?.weeks || []
+    const { wi, di } = selectedLesson
+    if (di + 1 < (weeks[wi]?.days?.length || 0)) return { wi, di: di + 1 }
+    if (wi + 1 < weeks.length && (weeks[wi + 1]?.days?.length || 0) > 0) return { wi: wi + 1, di: 0 }
+    return null
+  }
+
   const regenLesson = async () => {
     if (!activeCurrId || !selectedLesson) return
     setRegenerating(true)
@@ -608,9 +617,16 @@ export default function LessonScreen() {
       )}
       {/* Floating Mark Complete button */}
       {lessonData && !readingMode && (
-        <button onClick={markComplete} disabled={marking||isComplete} style={{ position:'fixed', bottom:20, right:20, zIndex:300, padding:'12px 22px', borderRadius:28, border:'none', background:isComplete?'#6abf8a':marking?'var(--bg4)':'var(--amber)', color:isComplete?'#0a0b0f':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:600, cursor:marking||isComplete?'default':'pointer', boxShadow:'0 4px 14px rgba(0,0,0,0.35)', whiteSpace:'nowrap' }}>
-          {isComplete?'✓ Complete':marking?'Saving...':'Mark Complete'}
-        </button>
+        <div style={{ position:'fixed', bottom:20, right:20, zIndex:300, display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end' }}>
+          {isComplete && (() => { const next = getNextLesson(); return next ? (
+            <button onClick={() => setSelectedLesson(next)} style={{ padding:'12px 22px', borderRadius:28, border:'none', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(0,0,0,0.35)', whiteSpace:'nowrap' }}>
+              Next Lesson →
+            </button>
+          ) : null; })()}
+          <button onClick={markComplete} disabled={marking||isComplete} style={{ padding:'12px 22px', borderRadius:28, border:'none', background:isComplete?'#6abf8a':marking?'var(--bg4)':'var(--amber)', color:isComplete?'#0a0b0f':marking?'var(--text2)':'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:600, cursor:marking||isComplete?'default':'pointer', boxShadow:'0 4px 14px rgba(0,0,0,0.35)', whiteSpace:'nowrap' }}>
+            {isComplete?'✓ Complete':marking?'Saving...':'Mark Complete'}
+          </button>
+        </div>
       )}
       {/* LEFT PANEL - lesson picker */}
       {!readingMode && (
