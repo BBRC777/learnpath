@@ -135,7 +135,7 @@ export default function LessonScreen() {
   const [view, setView] = useState<'picker'|'lesson'>('picker')
   const [streak, setStreak] = useState(0)
   const [showLevelUp, setShowLevelUp] = useState<Record<string,any>|null>(null)
-  const [eliMode, setEliMode] = useState<'eli5'|'deeper'|null>(null)
+  const [eliMode, setEliMode] = useState<'eli5'|null>(null)
   const [eliContent, setEliContent] = useState('')
   const [eliLoading, setEliLoading] = useState(false)
   const [tutorOpen, setTutorOpen] = useState(false)
@@ -350,8 +350,8 @@ export default function LessonScreen() {
     if (!lessonData || readingMode) { setToolbar(null); return }
     setToolbar(
       <div style={{ display:'flex', gap:6, alignItems:'center', flex:'1 1 auto', flexWrap:'wrap' }}>
-        <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('eli5')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
-        <button onClick={() => { if(eliMode==='deeper'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli('deeper')} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='deeper'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='deeper'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>Go Deeper</button>
+        <button onClick={() => { if(eliMode==='eli5'&&eliContent){setEliMode(null);setEliContent('')}else{fetchEli()} }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:eliMode==='eli5'?'var(--amber-bg)':'var(--bg3)', color:eliMode==='eli5'?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>ELI5</button>
+
         <button onClick={() => { if (!isPro) { setShowProGate(true); return }; setTutorOpen(o => !o); if(!tutorOpen && tutorMessages.length===0) setTutorMessages([{role:'assistant',content:'Hi! Ask me anything about this lesson.'}]) }} style={{ padding:'5px 12px', borderRadius:7, border:'1px solid var(--border2)', background:tutorOpen?'var(--amber-bg)':'var(--bg3)', color:tutorOpen?'var(--amber)':'var(--text2)', fontFamily:'var(--sans)', fontSize:11, fontWeight:500, cursor:'pointer' }}>AI Tutor</button>
                 {!isComplete && (showSkipConfirm ? (
           <div style={{ display:'flex', gap:4 }}>
@@ -503,11 +503,10 @@ export default function LessonScreen() {
     finally { setRelatedLoading(false) }
   }
 
-  const fetchEli = async (mode: 'eli5'|'deeper') => {
+  const fetchEli = async () => {
     if (!lessonData) return
-    setEliMode(mode); setEliLoading(true); setEliContent('')
-    const modeText = mode === 'eli5' ? 'Explain this lesson like I am 5 years old. Use simple words, analogies, and short sentences. No jargon.' : 'Go deeper on this lesson. Add advanced concepts, nuance, expert-level insights, and real-world applications beyond what was covered.'
-    const prompt = modeText + '\n\nLesson title: ' + (lessonData.title||'') + '\n\nLesson content:\n' + (lessonData.content||'')
+    setEliMode('eli5'); setEliLoading(true); setEliContent('')
+    const prompt = 'Explain this lesson like I am 5 years old. Use simple words, analogies, and short sentences. No jargon.' + '\n\nLesson title: ' + (lessonData.title||'') + '\n\nLesson content:\n' + (lessonData.content||'')
     try {
       const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
@@ -674,12 +673,12 @@ export default function LessonScreen() {
       {/* RIGHT PANEL - lesson content */}
       <div style={{ flex:1, display:'flex', flexDirection:'column' as const, overflow:'hidden', minWidth:0, width:'100%' }}>
 
-        {/* ELI5 / Go Deeper — fixed sticky strip, always visible below topbar */}
+        {/* ELI5 — fixed sticky strip, always visible below topbar */}
       {lessonData && (eliLoading || eliContent) && (
         <div style={{ position:'fixed' as const, top:56, left:isMobile?0:260, right:0, zIndex:150, background:'var(--bg2)', borderBottom:'1px solid rgba(212,133,58,0.25)', padding:'10px 18px', boxShadow:'0 4px 16px rgba(0,0,0,0.3)' }}>
           <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, maxWidth:860, margin:'0 auto' }}>
             <div style={{ flex:1 }}>
-              <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.08em', marginBottom:5 }}>{eliMode==='eli5'?'Simplified':'Deeper Dive'}</div>
+              <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--amber)', textTransform:'uppercase' as const, letterSpacing:'0.08em', marginBottom:5 }}>Simplified</div>
               {eliLoading && !eliContent && <div style={{ fontSize:12, color:'var(--text3)' }}>Claude is thinking...</div>}
               {eliContent && <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.7, maxHeight:130, overflowY:'auto' as const, whiteSpace:'pre-wrap' as const }}>{eliContent}</div>}
             </div>
