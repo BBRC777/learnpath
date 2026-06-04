@@ -190,7 +190,7 @@ const FAQ = [
   },
   {
     "q": "How does Business pricing work?",
-    "a": "Business is $99/month for your whole team — unlimited members, no per-seat fees up to 10 members. Building a larger team? Contact us about per-seat pricing at $15/seat/month."
+    "a": "Business is $99/month for teams up to 10. Need something bigger? Contact us and we'll sort out pricing for your team."
   }
 ]
 
@@ -287,7 +287,7 @@ export default function PricingPage() {
               <span style={{ fontSize: 13, color: 'var(--text3)' }}>/month per team</span>
             </div>
             <div style={{ fontSize: 12, color: '#4a7fd4', marginBottom: 20, fontFamily: "'JetBrains Mono', monospace" }}>
-              Unlimited members · scales with you
+              Up to 10 members · contact us for larger teams
             </div>
             <div style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 28, lineHeight: 1.5 }}>
               Deploy structured training to your whole team. Track progress, enforce deadlines, prove compliance.
