@@ -5,7 +5,7 @@ import { getTeam, createTeam, getTeamMembers, inviteMember, removeMember, getAss
 import { useRouter } from 'next/navigation'
 import TeamCurriculumBuilder from './TeamCurriculumBuilder'
 
-type Tab = 'overview' | 'members' | 'library' | 'assign'
+type Tab = 'overview' | 'members' | 'library' | 'assign' | 'admin'
 
 export default function TeamScreen() {
   const [team, setTeam] = useState<any>(null)
@@ -168,6 +168,7 @@ export default function TeamScreen() {
             <button onClick={() => setTab('members')} style={tabStyle('members')}>Members {members.length > 0 && '(' + members.length + ')'}</button>
             <button onClick={() => setTab('library')} style={tabStyle('library')}>Library {teamCurricula.length > 0 && '(' + teamCurricula.length + ')'}</button>
             <button onClick={() => setTab('assign')} style={tabStyle('assign')}>Assign</button>
+            <button onClick={() => setTab('admin')} style={tabStyle('admin')}>Admin</button>
           </div>
         </div>
 
@@ -382,6 +383,78 @@ export default function TeamScreen() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ADMIN TAB */}
+        {tab === 'admin' && (
+          <div>
+            <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.1em', marginBottom:16 }}>
+              {members.filter((m:any) => m.user_id).length} members · {progress.length} assignments
+            </div>
+            {members.filter((m:any) => m.user_id).length === 0 ? (
+              <div style={{ padding:'40px', textAlign:'center' as const, fontSize:13, color:'var(--text3)', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12 }}>
+                No active members yet. Invite members and assign paths to see their progress here.
+              </div>
+            ) : members.filter((m:any) => m.user_id).map((m:any) => {
+              const memberAssignments = progress.filter((p:any) => p.assigned_to === m.user_id)
+              const memberResults     = assessmentResults.filter((r:any) => r.user_id === m.user_id)
+              return (
+                <div key={m.id} style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:14, padding:'20px', marginBottom:12 }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                    <div>
+                      <div style={{ fontSize:14, fontWeight:500, color:'var(--text)' }}>{m.email}</div>
+                      <div style={{ fontSize:10, fontFamily:'var(--mono)', color:m.status==='active'?'#6abf8a':'#e8a55a', marginTop:2 }}>{m.status}</div>
+                    </div>
+                    <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>
+                      {memberAssignments.length} path{memberAssignments.length !== 1 ? 's' : ''} assigned
+                    </div>
+                  </div>
+                  {memberAssignments.length === 0 ? (
+                    <div style={{ fontSize:12, color:'var(--text3)', padding:'10px 14px', background:'var(--bg3)', borderRadius:8 }}>No paths assigned yet.</div>
+                  ) : memberAssignments.map((p:any, pi:number) => {
+                    const weeks      = p.curricula?.curriculum?.weeks || []
+                    const total      = weeks.reduce((a:number, w:any) => a + (w.days?.length||0), 0)
+                    const done       = Object.values(p.curricula?.progress||{}).filter(Boolean).length
+                    const pct        = total ? Math.round((done/total)*100) : 0
+                    const isComplete = pct === 100
+                    const isOverdue  = p.due_date && !isComplete && new Date(p.due_date) < new Date()
+                    const status     = isComplete ? 'Complete' : isOverdue ? 'Overdue' : done > 0 ? 'In Progress' : 'Not Started'
+                    const sColor     = isComplete ? '#6abf8a' : isOverdue ? '#ef7a7a' : done > 0 ? accent : 'var(--text3)'
+                    const sBg        = isComplete ? 'rgba(106,191,138,0.12)' : isOverdue ? 'rgba(239,122,122,0.12)' : done > 0 ? accentBg : 'var(--bg4)'
+                    const result     = memberResults.find((r:any) => r.curriculum_id === p.curriculum_id)
+                    return (
+                      <div key={pi} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px', marginBottom:8 }}>
+                        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:10 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>{p.curricula?.curriculum?.title || p.curricula?.topic}</div>
+                            {p.due_date && <div style={{ fontSize:10, fontFamily:'var(--mono)', color:isOverdue?'#ef7a7a':'var(--text3)', marginTop:2 }}>Due {new Date(p.due_date).toLocaleDateString()}</div>}
+                          </div>
+                          <div style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 10px', borderRadius:12, background:sBg, color:sColor, border:'1px solid '+sColor+'55', flexShrink:0 }}>{status}</div>
+                        </div>
+                        <div style={{ marginBottom: result ? 10 : 0 }}>
+                          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
+                            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{done}/{total} sessions</div>
+                            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:sColor, fontWeight:600 }}>{pct}%</div>
+                          </div>
+                          <div style={{ height:5, background:'var(--bg4)', borderRadius:3 }}>
+                            <div style={{ height:'100%', width:pct+'%', borderRadius:3, background:sColor, transition:'width 0.3s' }}/>
+                          </div>
+                        </div>
+                        {result && (
+                          <div style={{ display:'flex', alignItems:'center', gap:8, paddingTop:10, borderTop:'1px solid var(--border)', marginTop:10 }}>
+                            <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.08em' }}>Assessment</div>
+                            <div style={{ fontSize:12, fontFamily:'var(--mono)', fontWeight:600, color:'var(--text)' }}>{result.score}%</div>
+                            <div style={{ fontSize:10, fontFamily:'var(--mono)', padding:'2px 8px', borderRadius:4, background:result.passed?'rgba(106,191,138,0.12)':'rgba(239,122,122,0.12)', color:result.passed?'#6abf8a':'#ef7a7a', border:'1px solid '+(result.passed?'rgba(106,191,138,0.3)':'rgba(239,122,122,0.3)') }}>{result.passed?'Passed':'Failed'}</div>
+                            <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginLeft:'auto' }}>{result.completed_at ? new Date(result.completed_at).toLocaleDateString() : ''}</div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
