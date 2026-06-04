@@ -13,6 +13,18 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { stream, ...params } = body
 
+    // Server-side safety net: enforce free-tier path limit for curriculum generation.
+    // The client already blocks at FREE_MAX_PATHS=2; this prevents API-level bypasses.
+    if (body.type === 'curriculum') {
+      const { data: profile } = await (supabase as any).from('profiles').select('is_pro').eq('id', user.id).single()
+      if (!profile?.is_pro) {
+        const { data: paths } = await (supabase as any).from('curricula').select('id').eq('user_id', user.id)
+        if ((paths?.length ?? 0) >= 2) {
+          return Response.json({ error: 'free_limit_reached' }, { status: 403 })
+        }
+      }
+    }
+
     if (stream) {
       const encoder = new TextEncoder()
       const readable = new ReadableStream({
