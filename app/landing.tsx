@@ -1,6 +1,7 @@
 // app/page.tsx
 import Link from 'next/link'
 import DemoBox from '@/components/DemoBox'
+import AutoPlayVideo from '@/components/AutoPlayVideo'
 
 const FEATURES = [
   {
@@ -84,10 +85,8 @@ export default function LandingPage() {
         {/* DEMO VIDEO */}
         <div style={{ marginBottom: 72, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 14 }}>
           <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: '#d4853a', textTransform: 'uppercase' as const, letterSpacing: '0.14em' }}>See it in action</div>
-          <video
+          <AutoPlayVideo
             src="https://htl5p4dmq1ptkoi4.public.blob.vercel-storage.com/Demo%20Video%2060sec.mp4"
-            controls
-            playsInline
             style={{ width: '100%', maxWidth: 320, borderRadius: 20, border: '1px solid #2a2d38', boxShadow: '0 12px 48px rgba(0,0,0,0.5)', display: 'block' }}
           />
         </div>
