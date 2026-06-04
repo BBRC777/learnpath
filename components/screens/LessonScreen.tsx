@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WeekQuizOverlay from '@/components/screens/WeekQuizOverlay'
 
@@ -167,6 +167,7 @@ export default function LessonScreen() {
   const [showUpsell, setShowUpsell] = useState(false)
   const [showProGate, setShowProGate] = useState(false)
   const [weekQuiz, setWeekQuiz] = useState<{ wi: number; isFinal: boolean; questions: any[] } | null>(null)
+  const [formalAssessment, setFormalAssessment] = useState<any>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -491,6 +492,16 @@ export default function LessonScreen() {
       questions = shuffle(questions).slice(0, 10)
     }
     if (questions.length === 0) return // No cached questions yet — skip
+    // For the final week, check if there's a formal team assessment first
+    if (isFinal) {
+      try {
+        const assessment = await getAssessment(activeCurrId)
+        if (assessment?.questions?.length > 0) {
+          setFormalAssessment(assessment)
+          return  // Formal assessment takes precedence over auto-generated final
+        }
+      } catch { /* no formal assessment — fall through */ }
+    }
     setWeekQuiz({ wi, isFinal, questions })
   }
 
@@ -681,6 +692,22 @@ export default function LessonScreen() {
             if (weekQuiz.isFinal) { router.push('/app/paths') }
             else { const next = getNextLesson(); if (next) setSelectedLesson(next) }
           }}
+        />
+      )}
+      {formalAssessment && activeCurr && (
+        <WeekQuizOverlay
+          title="Final Assessment"
+          topic={activeCurr.topic}
+          questions={formalAssessment.questions}
+          isFinal={true}
+          passThreshold={formalAssessment.pass_threshold}
+          onSaveResult={async (scorePct, passed) => {
+            if (userId) {
+              await saveAssessmentResult(formalAssessment.id, userId, formalAssessment.team_id, activeCurrId!, scorePct, passed, [])
+            }
+          }}
+          onContinue={() => { setFormalAssessment(null); router.push('/app/paths') }}
+          onSkip={() => { setFormalAssessment(null); router.push('/app/paths') }}
         />
       )}
       {lessonData && !readingMode && (

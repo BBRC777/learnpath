@@ -10,24 +10,35 @@ export interface QuizQ {
 }
 
 interface Props {
-  title: string        // e.g. "Week 2 Pop Quiz" or "Final Exam"
-  topic: string        // curriculum topic for context
+  title: string
+  topic: string
   questions: QuizQ[]
   isFinal: boolean
+  passThreshold?: number          // e.g. 70 means 70% to pass; omit for auto-pass
+  onSaveResult?: (scorePct: number, passed: boolean) => Promise<void>
   onContinue: () => void
   onSkip: () => void
 }
 
-export default function WeekQuizOverlay({ title, topic, questions, isFinal, onContinue, onSkip }: Props) {
-  const [answers, setAnswers]     = useState<Record<number, number>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [error, setError]         = useState('')
+export default function WeekQuizOverlay({ title, topic, questions, isFinal, passThreshold, onSaveResult, onContinue, onSkip }: Props) {
+  const [answers, setAnswers]       = useState<Record<number, number>>({})
+  const [submitted, setSubmitted]   = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError]           = useState('')
 
   const answeredCount = Object.keys(answers).length
   const allAnswered   = answeredCount === questions.length
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!allAnswered) { setError(`Answer all ${questions.length} questions before submitting.`); return }
+    const rawScore = questions.filter((q, i) => answers[i] === q.correct).length
+    const scorePct = Math.round((rawScore / questions.length) * 100)
+    const passed   = passThreshold ? scorePct >= passThreshold : true
+    if (onSaveResult) {
+      setSubmitting(true)
+      try { await onSaveResult(scorePct, passed) } catch { /* show results even if save fails */ }
+      setSubmitting(false)
+    }
     setSubmitted(true); setError('')
   }
 
@@ -72,6 +83,11 @@ export default function WeekQuizOverlay({ title, topic, questions, isFinal, onCo
                 <span style={{ fontSize: 20, color: 'var(--text2, #9a9790)' }}>/ {questions.length}</span>
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, color: grade.color, marginBottom: 4 }}>{grade.label}</div>
+              {passThreshold !== undefined && (
+                <div style={{ fontSize: 13, fontWeight: 600, color: pct >= passThreshold ? '#6abf8a' : '#ef7a7a', marginBottom: 4 }}>
+                  {pct >= passThreshold ? '✓ Passed' : '✗ Did not pass'} · {passThreshold}% required
+                </div>
+              )}
               <div style={{ height: 6, background: 'var(--bg4, #22252f)', borderRadius: 3, margin: '12px auto', maxWidth: 200 }}>
                 <div style={{ height: '100%', width: `${pct}%`, background: grade.color, borderRadius: 3, transition: 'width 0.6s ease' }} />
               </div>
@@ -152,9 +168,9 @@ export default function WeekQuizOverlay({ title, topic, questions, isFinal, onCo
 
             {error && <div style={{ marginBottom: 12, fontSize: 12, color: '#ef7a7a', fontFamily: "'JetBrains Mono', monospace" }}>{error}</div>}
 
-            <button onClick={handleSubmit} disabled={!allAnswered}
-              style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: allAnswered ? 'var(--amber, #d4853a)' : 'var(--bg4, #22252f)', color: allAnswered ? '#0a0b0f' : 'var(--text3, #5a5856)', fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, cursor: allAnswered ? 'pointer' : 'default', transition: 'all 0.2s' }}>
-              Submit quiz ({answeredCount}/{questions.length} answered)
+            <button onClick={handleSubmit} disabled={!allAnswered || submitting}
+              style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: allAnswered ? 'var(--amber, #d4853a)' : 'var(--bg4, #22252f)', color: allAnswered ? '#0a0b0f' : 'var(--text3, #5a5856)', fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, cursor: allAnswered && !submitting ? 'pointer' : 'default', transition: 'all 0.2s' }}>
+              {submitting ? 'Saving…' : `Submit quiz (${answeredCount}/${questions.length} answered)`}
             </button>
           </div>
         )}

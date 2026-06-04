@@ -42,11 +42,12 @@ export default function TeamScreen() {
       setPersonalCurricula(personal.filter((c: any) => !c.team_id))
       if (t) {
         setTeam(t)
-        const [m, p, a, tc] = await Promise.all([getTeamMembers(t.id), getMemberProgress(t.id), getAssignments(t.id), loadTeamCurricula(t.id)])
+        const [m, p, a, tc, ar] = await Promise.all([getTeamMembers(t.id), getMemberProgress(t.id), getAssignments(t.id), loadTeamCurricula(t.id), getAssessmentResults(t.id)])
         setMembers(m)
         setProgress(p)
         setAssignments(a)
         setTeamCurricula(tc)
+        setAssessmentResults(ar)
       }
       setLoading(false)
     }
@@ -214,6 +215,31 @@ export default function TeamScreen() {
                 )
               })}
             </div>
+            {assessmentResults.length > 0 && (
+              <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:12, overflow:'hidden', marginTop:20 }}>
+                <div style={{ padding:'12px 20px', borderBottom:'1px solid var(--border)' }}>
+                  <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.08em' }}>Assessment Results</div>
+                </div>
+                <div style={{ padding:'10px 20px', borderBottom:'1px solid var(--border)', display:'grid', gridTemplateColumns:'1fr 1fr 70px 80px 110px', gap:12 }}>
+                  {['Member','Path','Score','Status','Date'].map(h => (
+                    <div key={h} style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase' as const, letterSpacing:'0.08em' }}>{h}</div>
+                  ))}
+                </div>
+                {assessmentResults.map((r: any, i: number) => {
+                  const mem = members.find((x: any) => x.user_id === r.user_id)
+                  const cur = teamCurricula.find((x: any) => x.id === r.curriculum_id)
+                  return (
+                    <div key={i} style={{ padding:'11px 20px', borderBottom:'1px solid var(--border)', display:'grid', gridTemplateColumns:'1fr 1fr 70px 80px 110px', gap:12, alignItems:'center' }}>
+                      <div style={{ fontSize:13, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{mem?.email || 'Member'}</div>
+                      <div style={{ fontSize:12, color:'var(--text2)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' as const }}>{cur?.curriculum?.title || cur?.topic || '—'}</div>
+                      <div style={{ fontSize:12, fontFamily:'var(--mono)', color:'var(--text)', fontWeight:500 }}>{r.score}%</div>
+                      <div style={{ fontSize:10, fontFamily:'var(--mono)', padding:'2px 8px', borderRadius:4, background:r.passed?'rgba(106,191,138,0.12)':'rgba(239,122,122,0.12)', color:r.passed?'#6abf8a':'#ef7a7a', border:'1px solid '+(r.passed?'rgba(106,191,138,0.3)':'rgba(239,122,122,0.3)'), display:'inline-block' as const }}>{r.passed?'Passed':'Failed'}</div>
+                      <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{r.completed_at ? new Date(r.completed_at).toLocaleDateString() : '—'}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 

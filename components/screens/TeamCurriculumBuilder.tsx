@@ -165,6 +165,20 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
       const topicLabel = mode === 'file' ? (pdfName || topic) : topic
       const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel: trainingMode === 'quick' ? quickDuration : trainingMode === 'multiday' ? multiDayCount.label : duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum })
       setSavedId(saved.id)
+      // Generate and save assessment questions if requested
+      if (addAssessment) {
+        try {
+          const themes = (curriculum.weeks || []).map((w: any) => w.theme).join(', ')
+          const prompt = `Generate exactly ${numQuestions} assessment questions for this training. Return ONLY a JSON array, no other text.\nFormat: [{"q":"...","opts":["A","B","C","D"],"correct":0,"explanation":"..."}]\n\nTitle: ${curriculum.title}\nTopics covered: ${themes}`
+          const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ messages:[{ role:'user', content:prompt }] }) })
+          if (res.ok) {
+            const data = await res.json()
+            const text = data.content?.[0]?.text || ''
+            const match = text.match(/\[[\s\S]*\]/)
+            if (match) await saveAssessment(saved.id, teamId, JSON.parse(match[0]), passThreshold)
+          }
+        } catch(e) { console.error('Assessment generation failed:', e) }
+      }
       onSaved(saved)
     } catch(e: any) { setError('Save failed — please try again.'); console.error(e) }
     finally { setSaving(false) }
@@ -353,6 +367,39 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {step===4 && (
+                    <div>
+                      <label style={lbl}>Include a final test for members?</label>
+                      <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+                        <div onClick={() => setAddAssessment(true)} style={{ flex:1, padding:'14px', borderRadius:9, border:'1px solid '+(addAssessment?accentBorder:'var(--border2)'), background:addAssessment?accentBg:'var(--bg3)', color:addAssessment?accent:'var(--text2)', cursor:'pointer', textAlign:'center' as const, fontSize:13, fontWeight:addAssessment?600:400 }}>
+                          ✓ Yes — include a test
+                        </div>
+                        <div onClick={() => setAddAssessment(false)} style={{ flex:1, padding:'14px', borderRadius:9, border:'1px solid '+(!addAssessment?accentBorder:'var(--border2)'), background:!addAssessment?accentBg:'var(--bg3)', color:!addAssessment?accent:'var(--text2)', cursor:'pointer', textAlign:'center' as const, fontSize:13, fontWeight:!addAssessment?600:400 }}>
+                          Skip — no test
+                        </div>
+                      </div>
+                      {addAssessment && (
+                        <>
+                          <label style={lbl}>Number of questions</label>
+                          <div style={{ display:'flex', gap:6, marginBottom:16 }}>
+                            {[5,10,15,20].map(n => (
+                              <div key={n} onClick={() => setNumQuestions(n)} style={{ padding:'6px 16px', borderRadius:16, border:'1px solid '+(numQuestions===n?accentBorder:'var(--border2)'), background:numQuestions===n?accentBg:'var(--bg3)', color:numQuestions===n?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{n}</div>
+                            ))}
+                          </div>
+                          <label style={lbl}>Pass threshold</label>
+                          <div style={{ display:'flex', gap:6 }}>
+                            {[60,70,80,90].map(p => (
+                              <div key={p} onClick={() => setPassThreshold(p)} style={{ padding:'6px 16px', borderRadius:16, border:'1px solid '+(passThreshold===p?accentBorder:'var(--border2)'), background:passThreshold===p?accentBg:'var(--bg3)', color:passThreshold===p?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{p}%</div>
+                            ))}
+                          </div>
+                          <div style={{ marginTop:12, fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)' }}>
+                            Members must score {passThreshold}% or above to pass. Results are posted to your admin dashboard.
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </>
