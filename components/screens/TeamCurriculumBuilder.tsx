@@ -5,21 +5,22 @@ import { saveTeamCurriculum, saveAssessment } from '@/lib/db'
 const TOPICS = ['Onboarding','Compliance Training','Data Privacy','Leadership','Sales Skills','Python','Excel','Project Management','Public Speaking','Customer Service','Cybersecurity','Finance Basics']
 const LEVEL_OPTS = ['Complete Beginner','Beginner','Intermediate','Advanced']
 const TRAINING_MODES = [
-  { v:'quick',     label:'Quick',      desc:'15 min – 8 hrs total',    icon:'⚡' },
-  { v:'multiday',  label:'Multi-day',  desc:'2 – 5 days',              icon:'📅' },
-  { v:'multiweek', label:'Multi-week', desc:'2 – 12 weeks',            icon:'📚' },
+  { v:'auto',      label:'Auto',   desc:'Claude decides',          icon:'✨' },
+  { v:'quick',     label:'Hours',  desc:'30 min – 8 hrs',          icon:'⚡' },
+  { v:'multiday',  label:'Days',   desc:'1 – 5 days',              icon:'📅' },
+  { v:'multiweek', label:'Weeks',  desc:'2 – 12 weeks',            icon:'📚' },
 ]
-const QUICK_OPTS  = ['15 min','30 min','1 hr','2 hrs','4 hrs','8 hrs']
-const MDAY_OPTS   = [{ label:'2 Days', days:2 },{ label:'3 Days', days:3 },{ label:'4 Days', days:4 },{ label:'5 Days', days:5 }]
+const QUICK_OPTS  = ['30 min','1 hr','2 hrs','4 hrs','8 hrs']
+const MDAY_OPTS   = [{ label:'1 Day', days:1 },{ label:'2 Days', days:2 },{ label:'3 Days', days:3 },{ label:'4 Days', days:4 },{ label:'5 Days', days:5 }]
 const DUR_OPTS    = [{ label:'2 Weeks', weeks:2 },{ label:'4 Weeks', weeks:4 },{ label:'6 Weeks', weeks:6 },{ label:'8 Weeks', weeks:8 },{ label:'12 Weeks', weeks:12 }]
-const TIME_OPTS = ['15 min','20 min','30 min','45 min','60 min']
-const DAY_LABELS = ['M','T','W','T','F','S','S']
-const STYLE_OPTS = [
-  { v:'structured', label:'Structured', desc:'Lists, frameworks, steps' },
-  { v:'practical',  label:'Hands-on',   desc:'Exercises and doing' },
-  { v:'visual',     label:'Visual',     desc:'Images, diagrams, examples' },
-  { v:'storytelling',label:'Story-driven',desc:'Narrative and context' },
-  { v:'mixed',      label:'Mixed',      desc:'Variety each session' },
+const TIME_OPTS   = ['15 min','20 min','30 min','45 min','60 min']
+const DAY_LABELS  = ['M','T','W','T','F','S','S']
+const STYLE_OPTS  = [
+  { v:'structured',  label:'Structured',   desc:'Lists, frameworks, steps' },
+  { v:'practical',   label:'Hands-on',     desc:'Exercises and doing' },
+  { v:'visual',      label:'Visual',       desc:'Images, diagrams, examples' },
+  { v:'storytelling',label:'Story-driven', desc:'Narrative and context' },
+  { v:'mixed',       label:'Mixed',        desc:'Variety each session' },
 ]
 
 function extractYouTubeId(url: string): string | null {
@@ -28,57 +29,98 @@ function extractYouTubeId(url: string): string | null {
   return null
 }
 
-interface Props {
-  userId: string
-  teamId: string
-  onClose: () => void
-  onSaved: (curr: any) => void
-}
+interface Props { userId: string; teamId: string; onClose: () => void; onSaved: (curr: any) => void }
 
 export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved }: Props) {
-  const [mode, setMode] = useState<'scratch'|'file'|'youtube'>('scratch')
-  const [step, setStep] = useState(0)
-  const [topic, setTopic] = useState('')
-  const [goal, setGoal] = useState('')
-  const [level, setLevel] = useState('Beginner')
-  const [duration, setDuration] = useState(DUR_OPTS[1])
-  const [trainingMode, setTrainingMode] = useState<'quick'|'multiday'|'multiweek'>('multiweek')
-  const [quickDuration, setQuickDuration] = useState('1 hr')
+  const [mode, setMode]                   = useState<'scratch'|'file'|'youtube'>('scratch')
+  const [step, setStep]                   = useState(0)
+  const [topic, setTopic]                 = useState('')
+  const [goal, setGoal]                   = useState('')
+  const [level, setLevel]                 = useState('Beginner')
+  const [duration, setDuration]           = useState(DUR_OPTS[1])
+  const [trainingMode, setTrainingMode]   = useState<'auto'|'quick'|'multiday'|'multiweek'>('auto')
+  const [quickDuration, setQuickDuration] = useState('2 hrs')
   const [multiDayCount, setMultiDayCount] = useState(MDAY_OPTS[0])
-  const [sessionTime, setSessionTime] = useState('30 min')
-  const [activeDays, setActiveDays] = useState([0,1,2,3,4])
-  const [styles, setStyles] = useState(['structured'])
-  const [extra, setExtra] = useState('')
-  const [generating, setGenerating] = useState(false)
-  const [streamText, setStreamText] = useState('')
-  const [curriculum, setCurriculum] = useState<any>(null)
-  const [savedId, setSavedId] = useState<string|null>(null)
-  const [error, setError] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [sessionTime, setSessionTime]     = useState('30 min')
+  const [activeDays, setActiveDays]       = useState([0,1,2,3,4])
+  const [styles, setStyles]               = useState(['structured'])
+  const [extra, setExtra]                 = useState('')
+  const [generating, setGenerating]       = useState(false)
+  const [streamText, setStreamText]       = useState('')
+  const [curriculum, setCurriculum]       = useState<any>(null)
+  const [savedId, setSavedId]             = useState<string|null>(null)
+  const [error, setError]                 = useState('')
+  const [saving, setSaving]               = useState(false)
   const [addAssessment, setAddAssessment] = useState(false)
   const [passThreshold, setPassThreshold] = useState(70)
-  const [numQuestions, setNumQuestions] = useState(5)
-  const [pdfText, setPdfText] = useState('')
-  const [pdfName, setPdfName] = useState('')
-  const [pdfLoading, setPdfLoading] = useState(false)
-  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [numQuestions, setNumQuestions]   = useState(5)
+  const [pdfText, setPdfText]             = useState('')
+  const [pdfName, setPdfName]             = useState('')
+  const [pdfLoading, setPdfLoading]       = useState(false)
+  const [youtubeUrl, setYoutubeUrl]       = useState('')
   const [youtubeLoading, setYoutubeLoading] = useState(false)
   const [youtubeTranscript, setYoutubeTranscript] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const accent = '#4a7fd4'
-  const accentBg = 'rgba(74,127,212,0.12)'
+  const accent       = '#4a7fd4'
+  const accentBg     = 'rgba(74,127,212,0.12)'
   const accentBorder = 'rgba(74,127,212,0.3)'
 
-  const toggleDay = (i: number) => setActiveDays(d => d.includes(i)?d.filter(x=>x!==i):[...d,i].sort())
-  const toggleStyle = (v: string) => setStyles(s => s.includes(v)?(s.length>1?s.filter(x=>x!==v):s):[...s,v])
-  const daysLabel = activeDays.map(i => DAY_LABELS[i]).join(', ')
+  const toggleDay   = (i: number) => setActiveDays(d => d.includes(i) ? d.filter(x => x !== i) : [...d, i].sort())
+  const toggleStyle = (v: string) => setStyles(s => s.includes(v) ? (s.length > 1 ? s.filter(x => x !== v) : s) : [...s, v])
+  const daysLabel   = activeDays.map(i => DAY_LABELS[i]).join(', ')
   const totalLessons = trainingMode === 'quick' ? 1 : trainingMode === 'multiday' ? multiDayCount.days : duration.weeks * activeDays.length
+
+  const durLabel = () => {
+    if (trainingMode === 'auto') return 'Auto'
+    if (trainingMode === 'quick') return quickDuration + ' total'
+    if (trainingMode === 'multiday') return multiDayCount.label
+    return duration.label
+  }
+
+  const durPrompt = () => {
+    if (trainingMode === 'auto') return 'Auto — determine appropriate length based on the material depth and typical corporate training norms (compliance: 1-4 hrs; onboarding: 1-2 days; skills: 2-4 weeks).'
+    if (trainingMode === 'quick') return quickDuration + ' total (single session training).'
+    if (trainingMode === 'multiday') return multiDayCount.label + ' of training, multiple sessions per day, ' + sessionTime + ' per session.'
+    return duration.weeks + ' weeks, ' + activeDays.length + ' days/week, ' + sessionTime + '/session.'
+  }
 
   const inp: React.CSSProperties = { width:'100%', padding:'9px 12px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:8, color:'var(--text)', fontFamily:'var(--sans)', fontSize:13, outline:'none', boxSizing:'border-box' as const }
   const lbl: React.CSSProperties = { display:'block', fontSize:9, fontFamily:'var(--mono)', textTransform:'uppercase' as const, letterSpacing:'0.1em', color:'var(--text3)', marginBottom:6 }
-  const btnPrimary: React.CSSProperties = { padding:'9px 20px', borderRadius:8, border:'none', background:accent, color:'#fff', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }
-  const btnSecondary: React.CSSProperties = { padding:'9px 16px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }
+  const btnPrimary: React.CSSProperties    = { padding:'9px 20px', borderRadius:8, border:'none', background:accent, color:'#fff', fontFamily:'var(--sans)', fontSize:13, fontWeight:500, cursor:'pointer' }
+  const btnSecondary: React.CSSProperties  = { padding:'9px 16px', borderRadius:8, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }
+
+  // ── Duration picker (reused in file + youtube mode) ────────────────────────
+  const DurationPicker = () => (
+    <div style={{ marginTop:16 }}>
+      <label style={lbl}>Training Duration</label>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:10 }}>
+        {TRAINING_MODES.map(m => (
+          <div key={m.v} onClick={() => setTrainingMode(m.v as any)} style={{ padding:'8px 4px', borderRadius:8, border:'1px solid '+(trainingMode===m.v?accentBorder:'var(--border2)'), background:trainingMode===m.v?accentBg:'var(--bg3)', cursor:'pointer', textAlign:'center' as const }}>
+            <div style={{ fontSize:16 }}>{m.icon}</div>
+            <div style={{ fontSize:11, fontWeight:600, color:trainingMode===m.v?accent:'var(--text)', marginTop:2 }}>{m.label}</div>
+            <div style={{ fontSize:9, color:'var(--text3)', fontFamily:'var(--mono)', marginTop:1 }}>{m.desc}</div>
+          </div>
+        ))}
+      </div>
+      {trainingMode === 'auto' && <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', padding:'7px 10px', background:'var(--bg3)', borderRadius:7 }}>Claude will determine the appropriate length based on the content.</div>}
+      {trainingMode === 'quick' && (
+        <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+          {QUICK_OPTS.map(q => <div key={q} onClick={()=>setQuickDuration(q)} style={{ padding:'5px 12px', borderRadius:12, border:'1px solid '+(quickDuration===q?accentBorder:'var(--border2)'), background:quickDuration===q?accentBg:'var(--bg3)', color:quickDuration===q?accent:'var(--text2)', fontSize:11, cursor:'pointer' }}>{q}</div>)}
+        </div>
+      )}
+      {trainingMode === 'multiday' && (
+        <div style={{ display:'flex', gap:6 }}>
+          {MDAY_OPTS.map(d => <div key={d.label} onClick={()=>setMultiDayCount(d)} style={{ padding:'5px 12px', borderRadius:12, border:'1px solid '+(multiDayCount.label===d.label?accentBorder:'var(--border2)'), background:multiDayCount.label===d.label?accentBg:'var(--bg3)', color:multiDayCount.label===d.label?accent:'var(--text2)', fontSize:11, cursor:'pointer' }}>{d.label}</div>)}
+        </div>
+      )}
+      {trainingMode === 'multiweek' && (
+        <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+          {DUR_OPTS.map(d => <div key={d.weeks} onClick={()=>setDuration(d)} style={{ padding:'5px 12px', borderRadius:12, border:'1px solid '+(duration.weeks===d.weeks?accentBorder:'var(--border2)'), background:duration.weeks===d.weeks?accentBg:'var(--bg3)', color:duration.weeks===d.weeks?accent:'var(--text2)', fontSize:11, cursor:'pointer' }}>{d.label}</div>)}
+        </div>
+      )}
+    </div>
+  )
 
   const handleFileUpload = async (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase()
@@ -128,15 +170,27 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
   const generate = async () => {
     if (!topic.trim()) { setError('Enter a topic first'); return }
     setError(''); setGenerating(true); setStreamText(''); setCurriculum(null)
-
+    const dur = durPrompt()
     let prompt = ''
     if (mode === 'file' && pdfText) {
-      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from the document below. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Document: ' + pdfText.slice(0,5000) + ' Duration:' + (trainingMode==='quick' ? quickDuration+' total (single session)' : trainingMode==='multiday' ? multiDayCount.label : duration.weeks+' weeks') + ' Level:' + level + '. Now return the JSON.';
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from the document below. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' +
+        ' Document: ' + pdfText.slice(0, 5000) +
+        ' Duration: ' + dur +
+        ' Level: ' + level + '. Now return the JSON.'
     } else if (mode === 'youtube' && youtubeTranscript) {
-      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from this video transcript. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Transcript: ' + youtubeTranscript.slice(0,5000) + ' Duration:' + (trainingMode==='quick' ? quickDuration+' total (single session)' : trainingMode==='multiday' ? multiDayCount.label : duration.weeks+' weeks') + '. Now return the JSON.';
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum from this video transcript. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' +
+        ' Transcript: ' + youtubeTranscript.slice(0, 5000) +
+        ' Duration: ' + dur +
+        ' Level: ' + level + '. Now return the JSON.'
     } else {
-      const goalText = goal || 'Build team proficiency';
-      prompt = 'You are an expert corporate trainer. Build a team learning curriculum. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' + ' Topic:' + topic + ' Goal:' + goalText + ' Level:' + level + ' Duration:' + (trainingMode==='quick' ? quickDuration+' total (single session)' : trainingMode==='multiday' ? multiDayCount.label : duration.weeks+' weeks, '+activeDays.length+' days/week') + ' Style:' + styles.join(',') + '. Now return the JSON.';
+      const goalText = goal || 'Build team proficiency'
+      prompt = 'You are an expert corporate trainer. Build a team learning curriculum. Return ONLY a valid JSON object: {title,subtitle,overview,totalWeeks,daysPerWeek,sessionTime,level,weeks:[{week,theme,milestone,days:[{day,title,description,type,duration}],quizCount}]}.' +
+        ' Topic: ' + topic +
+        ' Goal: ' + goalText +
+        ' Level: ' + level +
+        ' Duration: ' + dur +
+        ' Style: ' + styles.join(', ') +
+        (extra ? ' Notes: ' + extra : '') + '. Now return the JSON.'
     }
     try {
       const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
@@ -146,11 +200,11 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
         const { done, value } = await reader.read(); if (done) break
         for (const line of decoder.decode(value).split('\n')) {
           if (!line.startsWith('data: ')) continue
-          const data = line.slice(6).trim(); if (data==='[DONE]') break
-          try { const p = JSON.parse(data); if(p.text){ full+=p.text; setStreamText(full.slice(-300)) } } catch {}
+          const data = line.slice(6).trim(); if (data === '[DONE]') break
+          try { const p = JSON.parse(data); if (p.text) { full += p.text; setStreamText(full.slice(-300)) } } catch {}
         }
       }
-      const match = full.match(/\{[\s\S]*\}/); if (!match) throw new Error('Could not parse curriculum - raw: ' + full.slice(0,200))
+      const match = full.match(/\{[\s\S]*\}/); if (!match) throw new Error('Could not parse curriculum')
       const parsed = JSON.parse(match[0]); setCurriculum(parsed)
     } catch(e: any) { setError(e.message) }
     finally { setGenerating(false); setStreamText('') }
@@ -163,14 +217,13 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
     setSaving(true); setError('')
     try {
       const topicLabel = mode === 'file' ? (pdfName || topic) : topic
-      const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel: trainingMode === 'quick' ? quickDuration : trainingMode === 'multiday' ? multiDayCount.label : duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum })
+      const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel:durLabel(), days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum })
       setSavedId(saved.id)
-      // Generate and save assessment questions if requested
       if (addAssessment) {
         try {
           const themes = (curriculum.weeks || []).map((w: any) => w.theme).join(', ')
-          const prompt = `Generate exactly ${numQuestions} assessment questions for this training. Return ONLY a JSON array, no other text.\nFormat: [{"q":"...","opts":["A","B","C","D"],"correct":0,"explanation":"..."}]\n\nTitle: ${curriculum.title}\nTopics covered: ${themes}`
-          const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ messages:[{ role:'user', content:prompt }] }) })
+          const p = `Generate exactly ${numQuestions} assessment questions for this training. Return ONLY a JSON array, no other text.\nFormat: [{"q":"...","opts":["A","B","C","D"],"correct":0,"explanation":"..."}]\n\nTitle: ${curriculum.title}\nTopics covered: ${themes}`
+          const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ messages:[{ role:'user', content:p }] }) })
           if (res.ok) {
             const data = await res.json()
             const text = data.content?.[0]?.text || ''
@@ -192,7 +245,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
         <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky' as const, top:0, background:'var(--bg2)', zIndex:10 }}>
           <div>
             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:accent, textTransform:'uppercase', letterSpacing:'0.14em', marginBottom:2 }}>Team Library</div>
-            <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text)' }}>Build a Team Path</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:18, color:'var(--text)' }}>Generate Training</div>
           </div>
           <button onClick={onClose} style={{ width:28, height:28, borderRadius:6, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', cursor:'pointer', fontSize:14, display:'flex', alignItems:'center', justifyContent:'center' }}>x</button>
         </div>
@@ -218,7 +271,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
             </div>
           )}
 
-          {/* Review state — full curriculum tree shown before finalizing */}
+          {/* Review state */}
           {!generating && curriculum && !savedId && (
             <div>
               <div style={{ marginBottom:20 }}>
@@ -256,7 +309,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                   </div>
                 ))}
               </div>
-              {error && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, marginBottom:12, background:'var(--red-bg)', border:'1px solid var(--red-border)', color:'var(--red-text)' }}>{error}</div>}
+              {error && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, marginBottom:12, background:'rgba(239,122,122,0.1)', border:'1px solid rgba(239,122,122,0.3)', color:'#ef7a7a' }}>{error}</div>}
               <div style={{ display:'flex', gap:8, paddingTop:16, borderTop:'1px solid var(--border)' }}>
                 <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, flex:2 }}>{saving ? 'Saving...' : 'Finalize & Save to Library'}</button>
                 <button onClick={() => { setCurriculum(null); setError('') }} style={{ ...btnSecondary, flex:1 }}>Regenerate</button>
@@ -268,39 +321,61 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
           {/* Builder form */}
           {!generating && !curriculum && (
             <>
-              {/* FILE MODE */}
+              {/* ── FILE MODE ── */}
               {mode === 'file' && (
                 <div style={{ marginBottom:20 }}>
-                  <input ref={fileRef} type='file' accept='.pdf,.docx,.txt' style={{ display:'none' }} onChange={e => { if(e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}/>
+                  <input ref={fileRef} type='file' accept='.pdf,.docx,.txt' style={{ display:'none' }} onChange={e => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}/>
                   {!pdfText ? (
                     <div onClick={() => fileRef.current?.click()} style={{ border:'2px dashed '+accentBorder, borderRadius:12, padding:'40px 24px', textAlign:'center' as const, cursor:'pointer', background:'var(--bg3)' }}>
                       {pdfLoading ? <div style={{ fontSize:13, color:'var(--text2)' }}>Reading file...</div> : <><div style={{ fontSize:28, marginBottom:8 }}>📁</div><div style={{ fontSize:13, color:'var(--text)' }}>Click to upload a file</div><div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>Supported: PDF, Word (.docx), Text (.txt)</div></>}
                     </div>
                   ) : (
-                    <div style={{ background:'var(--bg3)', border:'1px solid #3fb95044', borderRadius:8, padding:'12px 14px', marginBottom:12 }}>
-                      <div style={{ fontSize:12, color:'#3fb950', marginBottom:2 }}>File loaded: {pdfName}</div>
-                      <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{pdfText.length.toLocaleString()} characters</div>
-                    </div>
+                    <>
+                      <div style={{ background:'var(--bg3)', border:'1px solid rgba(63,185,80,0.3)', borderRadius:8, padding:'12px 14px', marginBottom:12 }}>
+                        <div style={{ fontSize:12, color:'#3fb950', marginBottom:2 }}>✓ File loaded: {pdfName}</div>
+                        <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{pdfText.length.toLocaleString()} characters</div>
+                      </div>
+                      <label style={lbl}>Topic name</label>
+                      <input style={{ ...inp, marginBottom:0 }} value={topic} onChange={e => setTopic(e.target.value)} />
+                      <DurationPicker />
+                      <div style={{ marginTop:12 }}>
+                        <label style={lbl}>Level</label>
+                        <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+                          {LEVEL_OPTS.map(l => <div key={l} onClick={()=>setLevel(l)} style={{ padding:'5px 12px', borderRadius:16, border:'1px solid '+(level===l?accentBorder:'var(--border2)'), background:level===l?accentBg:'var(--bg3)', color:level===l?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{l}</div>)}
+                        </div>
+                      </div>
+                    </>
                   )}
-                  {pdfText && <div style={{ marginTop:12 }}><label style={lbl}>Topic name</label><input style={inp} value={topic} onChange={e=>setTopic(e.target.value)} /></div>}
                 </div>
               )}
 
-              {/* YOUTUBE MODE */}
+              {/* ── YOUTUBE MODE ── */}
               {mode === 'youtube' && (
                 <div style={{ marginBottom:20 }}>
                   <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-                    <input style={{ ...inp, flex:1 }} placeholder='https://youtube.com/watch?v=...' value={youtubeUrl} onChange={e=>setYoutubeUrl(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') fetchYouTubeTranscript() }}/>
+                    <input style={{ ...inp, flex:1 }} placeholder='https://youtube.com/watch?v=...' value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') fetchYouTubeTranscript() }}/>
                     <button onClick={fetchYouTubeTranscript} disabled={youtubeLoading||!youtubeUrl.trim()} style={{ ...btnPrimary, whiteSpace:'nowrap' as const }}>{youtubeLoading ? 'Loading...' : 'Fetch'}</button>
                   </div>
-                  {youtubeTranscript && <><div style={{ fontSize:12, color:'#3fb950', marginBottom:12 }}>Transcript loaded · {youtubeTranscript.length.toLocaleString()} characters</div><label style={lbl}>Topic name</label><input style={inp} value={topic} onChange={e=>setTopic(e.target.value)} /></>}
+                  {youtubeTranscript && (
+                    <>
+                      <div style={{ fontSize:12, color:'#3fb950', marginBottom:12 }}>✓ Transcript loaded · {youtubeTranscript.length.toLocaleString()} characters</div>
+                      <label style={lbl}>Topic name</label>
+                      <input style={{ ...inp, marginBottom:0 }} value={topic} onChange={e => setTopic(e.target.value)} />
+                      <DurationPicker />
+                      <div style={{ marginTop:12 }}>
+                        <label style={lbl}>Level</label>
+                        <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+                          {LEVEL_OPTS.map(l => <div key={l} onClick={()=>setLevel(l)} style={{ padding:'5px 12px', borderRadius:16, border:'1px solid '+(level===l?accentBorder:'var(--border2)'), background:level===l?accentBg:'var(--bg3)', color:level===l?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{l}</div>)}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
-              {/* SCRATCH MODE - step wizard */}
+              {/* ── SCRATCH MODE — step wizard ── */}
               {mode === 'scratch' && (
                 <>
-                  {/* Step indicator */}
                   <div style={{ display:'flex', gap:4, marginBottom:20 }}>
                     {stepLabels.map((s,i) => (
                       <div key={i} style={{ flex:1, height:3, borderRadius:2, background: step>i?accent:step===i?accentBg:'var(--bg4)' }}/>
@@ -326,19 +401,56 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
 
                   {step===1 && (
                     <div>
-                      <label style={lbl}>Path Length</label>
-                      <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom:16 }}>
-                        {DUR_OPTS.map(d => <div key={d.weeks} onClick={()=>setDuration(d)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(duration.weeks===d.weeks?accentBorder:'var(--border2)'), background:duration.weeks===d.weeks?accentBg:'var(--bg3)', color:duration.weeks===d.weeks?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{d.label}</div>)}
+                      <label style={lbl}>Training Duration</label>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:16 }}>
+                        {TRAINING_MODES.filter(m => m.v !== 'auto').map(m => (
+                          <div key={m.v} onClick={() => setTrainingMode(m.v as any)} style={{ padding:'12px 8px', borderRadius:10, border:'1px solid '+(trainingMode===m.v?accentBorder:'var(--border2)'), background:trainingMode===m.v?accentBg:'var(--bg3)', cursor:'pointer', textAlign:'center' as const }}>
+                            <div style={{ fontSize:20, marginBottom:4 }}>{m.icon}</div>
+                            <div style={{ fontSize:13, fontWeight:600, color:trainingMode===m.v?accent:'var(--text)' }}>{m.label}</div>
+                            <div style={{ fontSize:10, color:'var(--text3)', marginTop:2 }}>{m.desc}</div>
+                          </div>
+                        ))}
                       </div>
-                      <label style={lbl}>Session Length</label>
-                      <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom:16 }}>
-                        {TIME_OPTS.map(t => <div key={t} onClick={()=>setSessionTime(t)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(sessionTime===t?accentBorder:'var(--border2)'), background:sessionTime===t?accentBg:'var(--bg3)', color:sessionTime===t?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{t}</div>)}
-                      </div>
-                      <label style={lbl}>Study Days</label>
-                      <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:5, marginBottom:8 }}>
-                        {DAY_LABELS.map((d,i) => <div key={i} onClick={()=>toggleDay(i)} style={{ aspectRatio:'1', borderRadius:7, border:'1px solid '+(activeDays.includes(i)?accentBorder:'var(--border2)'), background:activeDays.includes(i)?accentBg:'var(--bg3)', color:activeDays.includes(i)?accent:'var(--text3)', cursor:'pointer', fontSize:10, fontFamily:'var(--mono)', display:'flex', alignItems:'center', justifyContent:'center' }}>{d}</div>)}
-                      </div>
-                      <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{activeDays.length} days/week · {totalLessons} total sessions</div>
+
+                      {trainingMode === 'quick' && (
+                        <>
+                          <label style={lbl}>Total Training Time</label>
+                          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom:16 }}>
+                            {QUICK_OPTS.map(q => <div key={q} onClick={()=>setQuickDuration(q)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(quickDuration===q?accentBorder:'var(--border2)'), background:quickDuration===q?accentBg:'var(--bg3)', color:quickDuration===q?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{q}</div>)}
+                          </div>
+                        </>
+                      )}
+
+                      {trainingMode === 'multiday' && (
+                        <>
+                          <label style={lbl}>Number of Days</label>
+                          <div style={{ display:'flex', gap:6, marginBottom:16 }}>
+                            {MDAY_OPTS.map(d => <div key={d.label} onClick={()=>setMultiDayCount(d)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(multiDayCount.label===d.label?accentBorder:'var(--border2)'), background:multiDayCount.label===d.label?accentBg:'var(--bg3)', color:multiDayCount.label===d.label?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{d.label}</div>)}
+                          </div>
+                          <label style={lbl}>Session Length per Day</label>
+                          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+                            {TIME_OPTS.map(t => <div key={t} onClick={()=>setSessionTime(t)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(sessionTime===t?accentBorder:'var(--border2)'), background:sessionTime===t?accentBg:'var(--bg3)', color:sessionTime===t?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{t}</div>)}
+                          </div>
+                        </>
+                      )}
+
+                      {trainingMode === 'multiweek' && (
+                        <>
+                          <label style={lbl}>Program Length</label>
+                          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom:16 }}>
+                            {DUR_OPTS.map(d => <div key={d.weeks} onClick={()=>setDuration(d)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(duration.weeks===d.weeks?accentBorder:'var(--border2)'), background:duration.weeks===d.weeks?accentBg:'var(--bg3)', color:duration.weeks===d.weeks?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{d.label}</div>)}
+                          </div>
+                          <label style={lbl}>Session Length</label>
+                          <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6, marginBottom:16 }}>
+                            {TIME_OPTS.map(t => <div key={t} onClick={()=>setSessionTime(t)} style={{ padding:'6px 12px', borderRadius:16, border:'1px solid '+(sessionTime===t?accentBorder:'var(--border2)'), background:sessionTime===t?accentBg:'var(--bg3)', color:sessionTime===t?accent:'var(--text2)', fontSize:12, cursor:'pointer' }}>{t}</div>)}
+                          </div>
+                          <label style={lbl}>Study Days</label>
+                          <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:5, marginBottom:8 }}>
+                            {DAY_LABELS.map((d,i) => <div key={i} onClick={()=>toggleDay(i)} style={{ aspectRatio:'1', borderRadius:7, border:'1px solid '+(activeDays.includes(i)?accentBorder:'var(--border2)'), background:activeDays.includes(i)?accentBg:'var(--bg3)', color:activeDays.includes(i)?accent:'var(--text3)', cursor:'pointer', fontSize:10, fontFamily:'var(--mono)', display:'flex', alignItems:'center', justifyContent:'center' }}>{d}</div>)}
+                          </div>
+                          <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)' }}>{activeDays.length} days/week · {totalLessons} total sessions</div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -348,7 +460,7 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                       <div style={{ display:'flex', flexDirection:'column' as const, gap:8, marginBottom:16 }}>
                         {STYLE_OPTS.map(s => <div key={s.v} onClick={()=>toggleStyle(s.v)} style={{ padding:'10px 14px', borderRadius:8, border:'1px solid '+(styles.includes(s.v)?accentBorder:'var(--border2)'), background:styles.includes(s.v)?accentBg:'var(--bg3)', cursor:'pointer', display:'flex', alignItems:'center', gap:10 }}>
                           <div style={{ flex:1 }}><div style={{ fontSize:13, color:styles.includes(s.v)?accent:'var(--text)' }}>{s.label}</div><div style={{ fontSize:11, color:'var(--text3)' }}>{s.desc}</div></div>
-                          {styles.includes(s.v) && <span style={{ color:accent }}>+</span>}
+                          {styles.includes(s.v) && <span style={{ color:accent }}>✓</span>}
                         </div>)}
                       </div>
                       <label style={lbl}>Additional Notes (optional)</label>
@@ -360,7 +472,12 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                     <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:'16px 18px' }}>
                       <div style={{ fontFamily:'var(--serif)', fontSize:16, color:'var(--text)', marginBottom:12 }}>{topic || 'Your Team Path'}</div>
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                        {[{label:'Level',value:level},{label:'Duration',value: trainingMode==='quick' ? quickDuration : trainingMode==='multiday' ? multiDayCount.label : duration.label},{label:'Per session',value:sessionTime},{label:'Days/week',value:activeDays.length+' ('+daysLabel+')'},{label:'Total sessions',value:String(totalLessons)},{label:'Style',value:styles.join(', ')}].map((r,i) => (
+                        {[
+                          { label:'Level', value:level },
+                          { label:'Duration', value:durLabel() },
+                          { label:'Per session', value: trainingMode==='quick' ? quickDuration : sessionTime },
+                          { label:'Style', value:styles.join(', ') },
+                        ].map((r,i) => (
                           <div key={i} style={{ padding:'8px 10px', background:'var(--bg2)', borderRadius:7 }}>
                             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', textTransform:'uppercase', letterSpacing:'0.06em' }}>{r.label}</div>
                             <div style={{ fontSize:12, color:'var(--text)', fontWeight:500, marginTop:2 }}>{r.value}</div>
@@ -405,17 +522,17 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
                 </>
               )}
 
-              {error && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, marginTop:12, background:'var(--red-bg)', border:'1px solid var(--red-border)', color:'var(--red-text)' }}>{error}</div>}
+              {error && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, marginTop:12, background:'rgba(239,122,122,0.1)', border:'1px solid rgba(239,122,122,0.3)', color:'#ef7a7a' }}>{error}</div>}
 
               {/* Footer buttons */}
               <div style={{ display:'flex', justifyContent:'space-between', marginTop:24, paddingTop:16, borderTop:'1px solid var(--border)' }}>
-                <button onClick={() => { if(mode !== 'scratch' || step === 0) onClose(); else setStep(s => s-1) }} style={btnSecondary}>
+                <button onClick={() => { if (mode !== 'scratch' || step === 0) onClose(); else setStep(s => s-1) }} style={btnSecondary}>
                   {mode !== 'scratch' || step === 0 ? 'Cancel' : 'Back'}
                 </button>
                 {mode === 'scratch' && step < 4 && (
                   <button onClick={() => {
-                    if(step===0 && !topic.trim()) { setError('Enter a topic'); return }
-                    if(step===1 && activeDays.length===0) { setError('Pick at least one day'); return }
+                    if (step===0 && !topic.trim()) { setError('Enter a topic'); return }
+                    if (step===1 && trainingMode==='multiweek' && activeDays.length===0) { setError('Pick at least one day'); return }
                     setError(''); setStep(s => s+1)
                   }} style={btnPrimary}>Next</button>
                 )}
