@@ -152,19 +152,23 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
       }
       const match = full.match(/\{[\s\S]*\}/); if (!match) throw new Error('Could not parse curriculum - raw: ' + full.slice(0,200))
       const parsed = JSON.parse(match[0]); setCurriculum(parsed)
-      setSaving(true)
-      try {
-        const topicLabel = mode === 'file' ? (pdfName || topic) : topic
-        const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel: trainingMode === 'quick' ? quickDuration : trainingMode === 'multiday' ? multiDayCount.label : duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum:parsed })
-        setSavedId(saved.id)
-        onSaved(saved)
-      } catch(e: any) { console.error('Save failed:', e.message) }
-      finally { setSaving(false) }
     } catch(e: any) { setError(e.message) }
     finally { setGenerating(false); setStreamText('') }
   }
 
   const stepLabels = ['Topic','Schedule','Style','Review','Assessment']
+
+  const handleSave = async () => {
+    if (!curriculum) return
+    setSaving(true); setError('')
+    try {
+      const topicLabel = mode === 'file' ? (pdfName || topic) : topic
+      const saved = await saveTeamCurriculum(userId, teamId, { topic:topicLabel, level, durLabel: trainingMode === 'quick' ? quickDuration : trainingMode === 'multiday' ? multiDayCount.label : duration.label, days:activeDays.length, time:sessionTime, style:styles.join(', '), curriculum })
+      setSavedId(saved.id)
+      onSaved(saved)
+    } catch(e: any) { setError('Save failed — please try again.'); console.error(e) }
+    finally { setSaving(false) }
+  }
 
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.8)', zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} onClick={onClose}>
@@ -200,17 +204,49 @@ export default function TeamCurriculumBuilder({ userId, teamId, onClose, onSaved
             </div>
           )}
 
-          {/* Success state */}
-          {!generating && curriculum && (
-            <div style={{ textAlign:'center' as const, padding:'32px 0' }}>
-              <div style={{ fontSize:40, marginBottom:12 }}>✓</div>
-              <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:6 }}>{curriculum.title}</div>
-              <div style={{ fontSize:13, color:'var(--text2)', marginBottom:6 }}>{curriculum.totalWeeks} weeks · {curriculum.daysPerWeek} days/week</div>
-              {saving && <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:16 }}>Saving to team library...</div>}
-              {savedId && <div style={{ fontSize:11, fontFamily:'var(--mono)', color:'#3fb950', marginBottom:24 }}>Saved to team library</div>}
-              <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
-                <button onClick={onClose} style={btnPrimary}>View in Library</button>
-                <button onClick={() => { setCurriculum(null); setSavedId(null); setStep(0); setPdfText(''); setPdfName(''); setYoutubeTranscript(''); setYoutubeUrl(''); setTopic('') }} style={btnSecondary}>Build Another</button>
+          {/* Review state — full curriculum tree shown before finalizing */}
+          {!generating && curriculum && !savedId && (
+            <div>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:accent, textTransform:'uppercase', letterSpacing:'0.14em', marginBottom:8 }}>Review before saving</div>
+                <div style={{ fontFamily:'var(--serif)', fontSize:20, color:'var(--text)', marginBottom:4 }}>{curriculum.title}</div>
+                {curriculum.overview && <div style={{ fontSize:13, color:'var(--text2)', lineHeight:1.6, marginBottom:12 }}>{curriculum.overview}</div>}
+                <div style={{ display:'flex', flexWrap:'wrap' as const, gap:6 }}>
+                  {[`${curriculum.totalWeeks} weeks`,`${curriculum.daysPerWeek} days/week`,`${curriculum.sessionTime}/session`].map((chip:string,i:number) => (
+                    <span key={i} style={{ fontSize:10, fontFamily:'var(--mono)', padding:'3px 9px', borderRadius:4, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text3)' }}>{chip}</span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column' as const, gap:8, marginBottom:24, maxHeight:340, overflowY:'auto' as const }}>
+                {(curriculum.weeks||[]).map((wk:any, wi:number) => (
+                  <div key={wi} style={{ background:'var(--bg3)', border:`1px solid ${wi===0?accentBorder:'var(--border)'}`, borderRadius:10, overflow:'hidden' }}>
+                    <div style={{ padding:'11px 14px', display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:28, height:28, borderRadius:6, background:accentBg, border:'1px solid '+accentBorder, fontFamily:'var(--mono)', fontSize:10, color:accent, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>W{wi+1}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:500, color:'var(--text)' }}>{wk.theme}</div>
+                        <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1 }}>{(wk.days||[]).length} sessions</div>
+                      </div>
+                    </div>
+                    <div style={{ borderTop:'1px solid var(--border)', padding:'8px 12px', display:'flex', flexDirection:'column' as const, gap:5 }}>
+                      {(wk.days||[]).map((d:any, di:number) => (
+                        <div key={di} style={{ display:'flex', alignItems:'flex-start', gap:8, padding:'7px 10px', background:'var(--bg2)', borderRadius:7 }}>
+                          <div style={{ width:18, height:18, borderRadius:4, background:'var(--bg4)', fontFamily:'var(--mono)', fontSize:8, color:'var(--text3)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>D{di+1}</div>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:12, fontWeight:500, color:'var(--text)', marginBottom:1 }}>{d.title}</div>
+                            <div style={{ fontSize:11, color:'var(--text2)', lineHeight:1.5 }}>{d.description}</div>
+                          </div>
+                          <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', flexShrink:0 }}>{d.duration}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {error && <div style={{ padding:'8px 12px', borderRadius:7, fontSize:12, marginBottom:12, background:'var(--red-bg)', border:'1px solid var(--red-border)', color:'var(--red-text)' }}>{error}</div>}
+              <div style={{ display:'flex', gap:8, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+                <button onClick={handleSave} disabled={saving} style={{ ...btnPrimary, flex:2 }}>{saving ? 'Saving...' : 'Finalize & Save to Library'}</button>
+                <button onClick={() => { setCurriculum(null); setError('') }} style={{ ...btnSecondary, flex:1 }}>Regenerate</button>
+                <button onClick={onClose} style={{ ...btnSecondary, flex:1 }}>Cancel</button>
               </div>
             </div>
           )}
