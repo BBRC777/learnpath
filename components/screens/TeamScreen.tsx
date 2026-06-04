@@ -150,7 +150,7 @@ export default function TeamScreen() {
           userId={userId}
           teamId={team.id}
           onClose={() => setShowBuilder(false)}
-          onSaved={(curr) => { setTeamCurricula(prev => [curr, ...prev]); setShowBuilder(false) }}
+          onSaved={(curr) => { setTeamCurricula(prev => [curr, ...prev]); setShowBuilder(false); setTab('library') }}
         />
       )}
     <div style={{ overflowY:'auto', height:'100%' }}>
@@ -248,7 +248,7 @@ export default function TeamScreen() {
           <div>
             {/* Actions */}
             <div style={{ display:'flex', gap:8, marginBottom:16 }}>
-              <button onClick={() => setShowBuilder(true)} style={btnPrimary}>+ Build Team Path</button>
+              <button onClick={() => setShowBuilder(true)} style={btnPrimary}>Generate Training</button>
               <button onClick={() => setShowImport(o => !o)} style={{ ...btnSecondary, background: showImport ? accentBg : 'var(--bg3)', color: showImport ? accent : 'var(--text2)', border: showImport ? '1px solid '+accentBorder : '1px solid var(--border2)' }}>
                 {showImport ? 'Hide Import' : 'Import from My Paths'}
               </button>
