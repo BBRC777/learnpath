@@ -4,6 +4,16 @@ import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
 import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
+import WeekQuizOverlay from '@/components/screens/WeekQuizOverlay'
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 async function fetchPexelsImage(query: string): Promise<string|null> {
   try {
@@ -156,6 +166,7 @@ export default function LessonScreen() {
   const [isPro, setIsPro] = useState(false)
   const [showUpsell, setShowUpsell] = useState(false)
   const [showProGate, setShowProGate] = useState(false)
+  const [weekQuiz, setWeekQuiz] = useState<{ wi: number; isFinal: boolean; questions: any[] } | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -404,6 +415,7 @@ export default function LessonScreen() {
       }
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
       fetchRelatedTopics()
+      await checkAndTriggerQuiz(progress, selectedLesson!.wi)
     } catch(e) { console.error(e) }
     finally { setMarking(false) }
   }
@@ -443,6 +455,43 @@ export default function LessonScreen() {
     if (di + 1 < (weeks[wi]?.days?.length || 0)) return { wi, di: di + 1 }
     if (wi + 1 < weeks.length && (weeks[wi + 1]?.days?.length || 0) > 0) return { wi: wi + 1, di: 0 }
     return null
+  }
+
+  const checkAndTriggerQuiz = async (progress: Record<string, boolean>, wi: number) => {
+    const weeks = activeCurr?.curriculum?.weeks || []
+    const week = weeks[wi]
+    if (!week || !activeCurrId) return
+    // Only fire when every day in this week is now complete
+    const allDone = (week.days || []).every((_: any, di: number) => progress[`${wi}-${di}`])
+    if (!allDone) return
+    // Load lesson cache to collect quiz questions
+    const supabase = createClient()
+    const { data } = await (supabase as any).from('curricula')
+      .select('lesson_cache').eq('id', activeCurrId).single()
+    const cache: Record<string, any> = data?.lesson_cache || {}
+    const isFinal = wi === weeks.length - 1
+    let questions: any[] = []
+    if (isFinal) {
+      // Final exam: up to 3 random questions per week from all weeks, max 15
+      for (let w = 0; w < weeks.length; w++) {
+        const wDays = weeks[w]?.days || []
+        const wQs: any[] = []
+        for (let d = 0; d < wDays.length; d++) {
+          const ld = cache[`${w}-${d}`]
+          if (ld?.quiz) wQs.push(...ld.quiz.map((q: any) => ({ ...q, lessonTitle: ld.title })))
+        }
+        questions.push(...shuffle(wQs).slice(0, 3))
+      }
+    } else {
+      // Pop quiz: all questions from this week's lessons, shuffled, max 10
+      for (let d = 0; d < (week.days || []).length; d++) {
+        const ld = cache[`${wi}-${d}`]
+        if (ld?.quiz) questions.push(...ld.quiz.map((q: any) => ({ ...q, lessonTitle: ld.title })))
+      }
+      questions = shuffle(questions).slice(0, 10)
+    }
+    if (questions.length === 0) return // No cached questions yet — skip
+    setWeekQuiz({ wi, isFinal, questions })
   }
 
   const regenLesson = async () => {
@@ -616,9 +665,27 @@ export default function LessonScreen() {
         <div onClick={() => setMobileSidebarOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:200 }} />
       )}
       {/* Floating Mark Complete button */}
+      {weekQuiz && activeCurr && (
+        <WeekQuizOverlay
+          title={weekQuiz.isFinal ? 'Final Exam' : `Week ${weekQuiz.wi + 1} Pop Quiz`}
+          topic={activeCurr.topic}
+          questions={weekQuiz.questions}
+          isFinal={weekQuiz.isFinal}
+          onContinue={() => {
+            setWeekQuiz(null)
+            if (weekQuiz.isFinal) { router.push('/app/paths') }
+            else { const next = getNextLesson(); if (next) setSelectedLesson(next) }
+          }}
+          onSkip={() => {
+            setWeekQuiz(null)
+            if (weekQuiz.isFinal) { router.push('/app/paths') }
+            else { const next = getNextLesson(); if (next) setSelectedLesson(next) }
+          }}
+        />
+      )}
       {lessonData && !readingMode && (
         <div style={{ position:'fixed', bottom:20, right:20, zIndex:300, display:'flex', flexDirection:'column', gap:8, alignItems:'flex-end' }}>
-          {isComplete && (() => { const next = getNextLesson(); return next ? (
+          {isComplete && !weekQuiz && (() => { const next = getNextLesson(); return next ? (
             <button onClick={() => setSelectedLesson(next)} style={{ padding:'12px 22px', borderRadius:28, border:'none', background:'var(--amber)', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:13, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(0,0,0,0.35)', whiteSpace:'nowrap' }}>
               Next Lesson →
             </button>
