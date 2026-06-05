@@ -152,6 +152,14 @@ function CertificateModal({ curr, displayName, onClose }: { curr: any; displayNa
     ctx.font = '22px Playfair Display, Georgia, serif'
     ctx.fillText('LP', W/2, 548)
 
+    // Watermark
+    ctx.fillStyle = '#5a5856'
+    ctx.font = '10px DM Sans, sans-serif'
+    ctx.letterSpacing = '0.5px'
+    ctx.textAlign = 'right'
+    ctx.fillText('Made with ◆ Learnpath · learnpathnow.com', W - 32, H - 24)
+    ctx.textAlign = 'center'
+
     setReady(true)
   }, [curr, displayName])
 

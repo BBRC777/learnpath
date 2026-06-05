@@ -92,6 +92,13 @@ export default async function SharePage({ params }: { params: { id: string } }) 
           <a href="/auth" style={{ padding:'10px 24px', borderRadius:8, background:'#d4853a', color:'#0a0b0f', fontFamily:'DM Sans, sans-serif', fontSize:13, fontWeight:500, textDecoration:'none' }}>Start learning free</a>
         </div>
       </div>
+
+      {/* Sticky watermark badge — visible on mobile screenshots */}
+      <div style={{ position:'fixed', bottom:16, right:16, background:'rgba(10,11,15,0.92)', border:'1px solid #22252f', borderRadius:20, padding:'6px 12px', display:'flex', alignItems:'center', gap:6, backdropFilter:'blur(8px)', zIndex:50 }}>
+        <span style={{ color:'#d4853a', fontSize:11, fontFamily:'DM Sans, sans-serif', fontWeight:500 }}>◆</span>
+        <span style={{ color:'#9a9790', fontSize:11, fontFamily:'DM Sans, sans-serif' }}>Made with</span>
+        <a href="https://www.learnpathnow.com" style={{ color:'#d4853a', fontSize:11, fontFamily:'DM Sans, sans-serif', fontWeight:600, textDecoration:'none' }}>Learnpath</a>
+      </div>
     </div>
   )
 }
