@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
-import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, loadCurricula, buyStreakFreeze, type Profile } from '@/lib/db'
+import { getProfile, getLevelInfo, xpProgress, xpToNextLevel, loadFlashcardsDueCount, loadCurricula, buyStreakFreeze, isProActive, type Profile } from '@/lib/db'
 
 const NEXT_LEVEL: Record<number,string> = { 1:'Scholar', 2:'Expert', 3:'Master' }
 
@@ -161,7 +161,8 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   const sidebarW = isMobile ? (sidebarOpen ? 252 : 0) : (sidebarOpen ? 252 : 48)
-  const locked   = (item: typeof NAV[0]) => item.pro && !profile?.is_pro
+  const isPro     = isProActive(profile)
+  const locked    = (item: typeof NAV[0]) => item.pro && !isPro
   const freezes  = (profile as any)?.streak_freezes ?? 0
   const canBuy   = freezes < 3 && (profile?.xp ?? 0) >= 50
 
@@ -221,7 +222,7 @@ export default function AppShell({ children }: AppShellProps) {
                   <span style={{ fontSize:13, width:16, textAlign:'center', flexShrink:0 }}>{item.icon}</span>
                   <span style={{ flex:1 }}>{item.label}</span>
                   {badgeVal && <span style={{ fontFamily:'var(--mono)', fontSize:10, padding:'1px 6px', borderRadius:8, background:'var(--bg4)', color:'var(--text3)', border:'1px solid var(--border2)' }}>{badgeVal}</span>}
-                  {item.pro && <span style={{ fontFamily:'var(--mono)', fontSize:9, padding:'1px 6px', borderRadius:4, background:profile?.is_pro?'var(--amber-bg)':'var(--bg4)', color:profile?.is_pro?'var(--amber)':'var(--text3)', border:`1px solid ${profile?.is_pro?'rgba(212,133,58,0.4)':'var(--border2)'}` }}>PRO</span>}
+                  {item.pro && <span style={{ fontFamily:'var(--mono)', fontSize:9, padding:'1px 6px', borderRadius:4, background:isPro?'var(--amber-bg)':'var(--bg4)', color:isPro?'var(--amber)':'var(--text3)', border:`1px solid ${isPro?'rgba(212,133,58,0.4)':'var(--border2)'}` }}>PRO</span>}
                 </div>
               )
             })}
@@ -278,7 +279,7 @@ export default function AppShell({ children }: AppShellProps) {
               </div>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ fontSize:13, fontWeight:500, color:'var(--text)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{profile?.display_name||'...'}</div>
-                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>{profile?.is_pro?'Pro':'Free'} · {curricula.length}{profile?.is_pro?'':'/2'} paths</div>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:1, whiteSpace:'nowrap' }}>{isPro?'Pro':'Free'} · {curricula.length}{isPro?'':'/2'} paths</div>
               </div>
               <span style={{ fontSize:11, color:'var(--text3)', whiteSpace:'nowrap' }}>Settings</span>
             </div>
@@ -381,7 +382,7 @@ export default function AppShell({ children }: AppShellProps) {
                 {label:'Streak',   v: profile?.streak ?? 0},
                 {label:'XP',       v: profile?.xp ?? 0},
                 {label:'Level',    v: getLevelInfo(profile?.xp ?? 0).title},
-                {label:'Plan',     v: profile?.is_pro ? 'Pro' : 'Free'},
+                {label:'Plan',     v: isPro ? 'Pro' : 'Free'},
                 {label:'Freezes',  v: `❄ ${freezes}/3`},
               ].map((s,i) => (
                 <div key={i} style={{ background:'var(--bg3)', borderRadius:8, padding:'10px 12px' }}>
@@ -403,7 +404,7 @@ export default function AppShell({ children }: AppShellProps) {
                 {buyingFreeze ? 'Buying...' : freezes >= 3 ? 'Full' : '50 XP'}
               </button>
             </div>
-            {!profile?.is_pro && (
+            {!isPro && (
               <div style={{ background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.3)', borderRadius:8, padding:'12px 14px', marginBottom:14 }}>
                 <div style={{ fontSize:12, fontWeight:500, color:'var(--amber)', marginBottom:2 }}>Upgrade to Pro</div>
                 <div style={{ fontSize:11, color:'var(--text2)', marginBottom:10 }}>Unlimited paths · Study Mode · AI Tutor</div>

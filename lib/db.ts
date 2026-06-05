@@ -54,7 +54,7 @@ export function xpToNextLevel(xp: number): number | null {
 
 // ── TYPES ─────────────────────────────────────────────────────
 export interface Profile {
-  id: string; email: string; display_name: string; is_pro: boolean
+  id: string; email: string; display_name: string; is_pro: boolean; pro_trial_until?: string | null
   xp: number; level: number; streak: number; last_study: string
   total_days: number; cards_reviewed: number; created_at: string; updated_at: string
 }
@@ -81,6 +81,16 @@ export async function getProfile() {
   if (!user) return null
   const { data } = await (supabase.from('profiles') as any).select('*').eq('id', user.id).single()
   return data
+}
+
+// Returns true if user has paid Pro OR an active trial
+export function isProActive(profile: any): boolean {
+  if (!profile) return false
+  if (profile.is_pro) return true
+  if (profile.pro_trial_until) {
+    return new Date(profile.pro_trial_until) > new Date()
+  }
+  return false
 }
 
 // ── CURRICULA ─────────────────────────────────────────────────

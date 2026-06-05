@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult, isProActive } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WeekQuizOverlay from '@/components/screens/WeekQuizOverlay'
 
@@ -190,7 +190,7 @@ export default function LessonScreen() {
       const { data: { user } } = await createClient().auth.getUser()
       if (!user) return
       setUserId(user.id)
-      getProfile().then(p => setIsPro(p?.is_pro || false)).catch(() => {})
+      getProfile().then(p => setIsPro(isProActive(p))).catch(() => {})
       loadStreak(user.id).then(s => setStreak(s?.current_streak || 0)).catch(() => {})
       const currs = await loadCurricula(user.id)
       setCurricula(currs)

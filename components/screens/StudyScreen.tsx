@@ -88,10 +88,11 @@ export default function StudyScreen() {
       if (!user) { setPhase('locked'); return }
       setUserId(user.id)
       const { data: profile } = await (createClient().from('profiles') as any)
-        .select('is_pro')
+        .select('is_pro, pro_trial_until')
         .eq('id', user.id)
         .single()
-      if (profile?.is_pro) {
+      const proActive = (profile?.is_pro || false) || (profile?.pro_trial_until ? new Date(profile.pro_trial_until) > new Date() : false)
+      if (proActive) {
         setIsPro(true)
         setPhase('launcher')
       } else {

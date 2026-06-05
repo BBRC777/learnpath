@@ -106,10 +106,10 @@ export default function CurriculumScreen() {
         setUserId(data.user.id)
         const supabase = createClient()
         const [profileRes, currRes] = await Promise.all([
-          (supabase.from('profiles') as any).select('is_pro').eq('id', data.user.id).single(),
+          (supabase.from('profiles') as any).select('is_pro, pro_trial_until').eq('id', data.user.id).single(),
           (supabase.from('curricula') as any).select('id').eq('user_id', data.user.id)
         ])
-        setIsPro(profileRes.data?.is_pro || false)
+        setIsPro((profileRes.data?.is_pro || false) || (profileRes.data?.pro_trial_until ? new Date(profileRes.data.pro_trial_until) > new Date() : false))
         setPathCount(currRes.data?.length || 0)
       }
     })

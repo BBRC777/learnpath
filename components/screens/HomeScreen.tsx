@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { loadCurricula, loadStreak, loadWeekActivity } from '@/lib/db'
+import { loadCurricula, loadStreak, loadWeekActivity, isProActive } from '@/lib/db'
 import { useRouter } from 'next/navigation'
 
 const DAY_LABELS = ['M','T','W','T','F','S','S']
@@ -54,7 +54,7 @@ export default function HomeScreen({ profile }: { profile: any }) {
   }, [])
 
   const name = getDisplayName(profile)
-  const isPro = profile?.is_pro ?? false
+  const isPro = isProActive(profile)
   const maxAct = Math.max(...activityData, 1)
   const totalMins = activityData.reduce((a,b)=>a+b,0)
   const activeCurr = curricula[0]
@@ -235,14 +235,3 @@ export default function HomeScreen({ profile }: { profile: any }) {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
