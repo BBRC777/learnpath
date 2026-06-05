@@ -87,6 +87,7 @@ export default function AppShell({ children }: AppShellProps) {
   }, [])
   const [flashcardsDue, setFlashcardsDue] = useState<number>(0)
   const [buyingFreeze, setBuyingFreeze]   = useState(false)
+  const [referralCopied, setReferralCopied] = useState(false)
   const [theme, setTheme]                 = useState<'dark'|'light'>('dark')
   const [searchQuery, setSearchQuery]     = useState('')
   const [searchOpen, setSearchOpen]       = useState(false)
@@ -252,6 +253,24 @@ export default function AppShell({ children }: AppShellProps) {
 
           {/* User footer */}
           <div style={{ padding:'10px 8px 12px', borderTop:'1px solid var(--border)', marginTop:8, flexShrink:0 }}>
+            {/* Referral button */}
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/referral/code')
+                  const { code } = await res.json()
+                  const url = `${window.location.origin}/ref/${code}`
+                  await navigator.clipboard.writeText(url)
+                  setReferralCopied(true)
+                  setTimeout(() => setReferralCopied(false), 2500)
+                } catch (e) {
+                  console.error('Referral copy failed:', e)
+                }
+              }}
+              style={{ width:'100%', marginBottom:8, padding:'8px 10px', borderRadius:8, background:'rgba(212,133,58,0.08)', border:'1px solid rgba(212,133,58,0.25)', color: referralCopied ? 'var(--amber)' : 'var(--text2)', fontFamily:'var(--sans)', fontSize:12, cursor:'pointer', textAlign:'left', display:'flex', alignItems:'center', gap:8, transition:'all 0.15s' }}>
+              <span style={{ fontSize:14 }}>{referralCopied ? '✓' : '🎁'}</span>
+              <span>{referralCopied ? 'Link copied!' : 'Share & earn a free week'}</span>
+            </button>
             <div onClick={() => { setShowSettings(true); setEditName(profile?.display_name||'') }}
               style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:8, cursor:'pointer', background:'var(--bg3)', border:'1px solid var(--border)', transition:'background 0.15s' }}>
               <div style={{ width:32, height:32, borderRadius:'50%', background:'var(--amber-bg)', border:'1px solid rgba(212,133,58,0.4)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--serif)', fontSize:13, color:'var(--amber)', flexShrink:0 }}>

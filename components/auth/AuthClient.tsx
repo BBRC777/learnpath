@@ -83,6 +83,21 @@ export default function AuthClient() {
             streak: 0, total_days: 0, cards_reviewed: 0, is_pro: false,
             created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
           }, { onConflict: 'id' })
+          // Redeem referral code if one was stored from a /ref/[code] visit
+          const refCode = localStorage.getItem('lp-referral-code')
+          if (refCode) {
+            try {
+              await fetch('/api/referral/grant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: refCode, referred_id: data.user.id }),
+              })
+            } catch (e) {
+              console.error('Referral grant failed:', e)
+            } finally {
+              localStorage.removeItem('lp-referral-code')
+            }
+          }
         }
         if (data.user && !data.user.email_confirmed_at) {
           setTab('verify')
