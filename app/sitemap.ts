@@ -1,44 +1,22 @@
 import { MetadataRoute } from 'next'
+import { TOPICS } from './learn/topics'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://www.learnpathnow.com'
+  const now = new Date()
 
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/business`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/learn/mcat`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/learn/python`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/learn/spanish-conversational`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.9,
-    },
+  const staticPages: MetadataRoute.Sitemap = [
+    { url: baseUrl, lastModified: now, changeFrequency: 'weekly', priority: 1 },
+    { url: `${baseUrl}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/business`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
   ]
+
+  const learnPages: MetadataRoute.Sitemap = Object.keys(TOPICS).map(slug => ({
+    url: `${baseUrl}/learn/${slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly',
+    priority: 0.9,
+  }))
+
+  return [...staticPages, ...learnPages]
 }
