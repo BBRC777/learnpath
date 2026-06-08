@@ -5,8 +5,10 @@ export * from './types'
 import type { TopicData } from './types'
 import { coreTopics } from './core'
 import { apTopics } from './ap'
+import { highSchoolTopics } from './highschool'
 
 export const TOPICS: Record<string, TopicData> = {
   ...coreTopics,
   ...apTopics,
+  ...highSchoolTopics,
 }
