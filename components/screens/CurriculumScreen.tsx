@@ -1,4 +1,5 @@
 'use client'
+import { getUpgradeUrl } from '@/lib/upgrade'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { saveCurriculum } from '@/lib/db'
@@ -245,7 +246,7 @@ export default function CurriculumScreen() {
             <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
           </div>
         </div>
-        <button onClick={()=>window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`,`_blank`)} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>{selectedPlan === 'annual' ? 'Start Annual Pro — $6.67/mo →' : 'Start Monthly Pro — $9.99/mo →'}</button>        <button onClick={() => setShowPaywall(false)} style={{ width:'100%', padding:'11px', borderRadius:10, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back</button>
+        <button onClick={()=>window.open(getUpgradeUrl(userId),`_blank`)} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>{selectedPlan === 'annual' ? 'Start Annual Pro — $6.67/mo →' : 'Start Monthly Pro — $9.99/mo →'}</button>        <button onClick={() => setShowPaywall(false)} style={{ width:'100%', padding:'11px', borderRadius:10, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back</button>
       </div>
     </div>
   )
@@ -348,7 +349,7 @@ export default function CurriculumScreen() {
         {!isPro && (
           <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 14px', marginBottom:20, display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
             <div style={{ fontSize:12, color:'var(--text2)' }}>Free plan: <span style={{ color:'var(--amber)', fontFamily:'var(--mono)' }}>{pathCount}/{FREE_MAX_PATHS}</span> paths · Max {FREE_MAX_WEEKS} weeks</div>
-            <button onClick={()=>window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(userId||''),'_blank')} style={{ padding:'4px 10px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11, fontFamily:'var(--sans)', fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const }}>Upgrade</button>
+            <button onClick={()=>window.open(getUpgradeUrl(userId),'_blank')} style={{ padding:'4px 10px', borderRadius:5, background:'var(--amber)', border:'none', color:'#0a0b0f', fontSize:11, fontFamily:'var(--sans)', fontWeight:500, cursor:'pointer', whiteSpace:'nowrap' as const }}>Upgrade</button>
           </div>
         )}
 
@@ -595,7 +596,7 @@ export default function CurriculumScreen() {
             <div style={{ fontFamily:'var(--serif)', fontSize:22, color:'var(--text)', marginBottom:8 }}>Pro Feature</div>
             <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.7, marginBottom:28 }}>PDF and YouTube curriculum generation is a Learnpath Pro feature. Upgrade to unlock unlimited paths, AI Tutor, Study Mode, and more.</div>
             <div style={{ display:'flex', flexDirection:'column' as const, gap:10 }}>
-              <button onClick={() => window.open('https://pay.rev.cat/sffmwnoklfherqwk/'+(userId||''), '_blank')} style={{ padding:'12px', borderRadius:9, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Upgrade to Pro</button>
+              <button onClick={() => window.open(getUpgradeUrl(userId), '_blank')} style={{ padding:'12px', borderRadius:9, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Upgrade to Pro</button>
               <button onClick={() => setShowProTab(false)} style={{ padding:'11px', borderRadius:9, border:'1px solid var(--border2)', background:'var(--bg3)', color:'var(--text2)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Back to builder</button>
             </div>
           </div>

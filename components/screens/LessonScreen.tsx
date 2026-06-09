@@ -1,4 +1,5 @@
 'use client'
+import { getUpgradeUrl } from '@/lib/upgrade'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
@@ -1090,7 +1091,7 @@ export default function LessonScreen() {
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
               </div>
             </div>
-            <button onClick={() => { setShowUpsell(false); window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`, '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
+            <button onClick={() => { setShowUpsell(false); window.open(getUpgradeUrl(userId), '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
             <button onClick={() => setShowUpsell(false)} style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:'transparent', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Continue for free</button>
           </div>
         </div>
@@ -1114,7 +1115,7 @@ export default function LessonScreen() {
                 <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
               </div>
             </div>
-            <button onClick={() => { setShowProGate(false); window.open(`https://pay.rev.cat/sffmwnoklfherqwk/${userId||''}`, '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
+            <button onClick={() => { setShowProGate(false); window.open(getUpgradeUrl(userId), '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Start Annual Pro — $6.67/mo →</button>
             <button onClick={() => setShowProGate(false)} style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:'transparent', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Maybe later</button>
           </div>
         </div>
