@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@supabase/supabase-js"
+import { normalizeTopic } from "@/lib/normalize-topic"
+import { logTopicDemand } from "@/lib/topic-popularity"
 
 export const maxDuration = 30
 
@@ -25,18 +27,8 @@ const encoder = new TextEncoder()
 const sse = (obj: unknown) => encoder.encode(`data: ${JSON.stringify(obj)}\n\n`)
 const DONE = encoder.encode("data: [DONE]\n\n")
 
-// Strip lead-ins, schedule phrases, and punctuation so semantically-equal prompts share one cache key.
-//   "Teach me Python in 3 weeks, 20 min a day"    -> "python"
-//   "I want to learn python 4 weeks 15 min a day" -> "python"
-function normalizeTopic(raw: string): string {
-  let t = raw.toLowerCase().trim()
-  t = t.replace(/^(please\s+)?(can you\s+)?(help me\s+)?(teach me|i want to learn|i wanna learn|i'd like to learn|learn|how to|study|master)\s+/i, "")
-  t = t.replace(/\b(in\s+)?\d+\s*(weeks?|days?|months?)\b/g, "")
-  t = t.replace(/\b\d+\s*(min(ute)?s?|hours?|hrs?)\b(\s*(a|per)\s*day)?/g, "")
-  t = t.replace(/\b(a|per)\s+day\b/g, "")
-  t = t.replace(/[.,;:!?]+/g, " ").replace(/\s+/g, " ").trim()
-  return t
-}
+// Topic normalization lives in lib/normalize-topic.ts so the suggestions endpoint
+// computes the exact same cache key (otherwise "instant" suggestions could miss).
 
 function getIp(request: Request): string {
   const fwd = request.headers.get("x-forwarded-for")
@@ -79,6 +71,10 @@ export async function POST(request: Request) {
 
     const topicKey = normalizeTopic(raw)
     if (!topicKey) return Response.json({ error: "Tell me what you'd like to learn." }, { status: 400 })
+
+    // Record demand (fire-and-forget) so cache-aware suggestions can rank by real
+    // popularity. Bounded by the per-IP daily limit below; never blocks the response.
+    logTopicDemand(topicKey)
 
     // 1) Cache hit -> serve instantly, no Claude call, no rate-limit consumption.
     //    Cache failures are non-fatal: fall through to generation.

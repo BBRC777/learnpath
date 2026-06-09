@@ -1,6 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import posthog from 'posthog-js'
+import { useTopicSuggestions } from '@/hooks/useTopicSuggestions'
+import TopicSuggestions from '@/components/TopicSuggestions'
+import type { Suggestion } from '@/app/api/topics/suggest/route'
 
 // Where the "Sign up" buttons send visitors. Confirmed: your auth page is at /auth.
 const SIGNUP_URL = '/auth'
@@ -38,6 +41,34 @@ export default function DemoBox() {
   const [emailSent, setEmailSent]     = useState(false)
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailError, setEmailError]   = useState('')
+
+  // ---- Cache-aware topic suggestions (typeahead) ----
+  const [showSug, setShowSug]   = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Don't fetch suggestions while a plan is generating or already shown.
+  const { suggestions } = useTopicSuggestions(generating || curriculum ? '' : topic)
+
+  const pickSuggestion = (s: Suggestion) => {
+    if (blurTimer.current) clearTimeout(blurTimer.current)
+    setShowSug(false); setActiveIdx(-1)
+    posthog.capture('topic-suggestion-picked', { query: s.query, cached: s.cached, slug: s.slug || null })
+    generate(s.display)
+  }
+
+  const onInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showSug && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => (i + 1) % suggestions.length); return }
+      if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIdx(i => (i <= 0 ? suggestions.length - 1 : i - 1)); return }
+      if (e.key === 'Escape')    { setShowSug(false); setActiveIdx(-1); return }
+      if (e.key === 'Enter') {
+        if (activeIdx >= 0 && activeIdx < suggestions.length) { e.preventDefault(); pickSuggestion(suggestions[activeIdx]); return }
+        setShowSug(false); generate(); return
+      }
+    } else if (e.key === 'Enter') {
+      generate()
+    }
+  }
 
   const generate = async (override?: string) => {
     const t = (override ?? topic).trim()
@@ -251,16 +282,25 @@ export default function DemoBox() {
       <div style={{ ...card, padding: '28px 26px' }}>
         <div style={{ fontFamily: C.serif, fontSize: 22, color: C.text, marginBottom: 6, lineHeight: 1.25 }}>See it in action — free, no signup</div>
         <div style={{ fontSize: 13, color: C.text2, marginBottom: 18 }}>Type anything you want to learn and watch Claude build a real curriculum in seconds.</div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, position: 'relative' }}>
           <input
             value={topic}
-            onChange={e => setTopic(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') generate() }}
+            onChange={e => { setTopic(e.target.value); setShowSug(true); setActiveIdx(-1) }}
+            onKeyDown={onInputKeyDown}
+            onFocus={() => setShowSug(true)}
+            onBlur={() => { blurTimer.current = setTimeout(() => setShowSug(false), 120) }}
             placeholder="e.g. Python, conversational Spanish, the French Revolution…"
             maxLength={200}
+            autoComplete="off"
+            role="combobox"
+            aria-expanded={showSug && suggestions.length > 0}
+            aria-autocomplete="list"
             style={{ flex: 1, padding: '12px 14px', background: C.bg3, border: `1px solid ${C.border2}`, borderRadius: 9, color: C.text, fontFamily: C.sans, fontSize: 14, outline: 'none' }}
           />
           <button onClick={() => generate()} style={{ padding: '12px 20px', borderRadius: 9, border: 'none', background: C.amber, color: '#0a0b0f', fontFamily: C.sans, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>Build it →</button>
+          {showSug && suggestions.length > 0 && (
+            <TopicSuggestions items={suggestions} activeIndex={activeIdx} onPick={pickSuggestion} onHover={setActiveIdx} />
+          )}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {EXAMPLE_TOPICS.map(t => (
