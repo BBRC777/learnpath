@@ -3,7 +3,7 @@ import { getUpgradeUrl } from '@/lib/upgrade'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult, isProActive, markUpsellShown } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult, isProActive, markUpsellShown, getLessonUsageToday, incrementLessonUsage, FREE_DAILY_LESSONS } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WeekQuizOverlay from '@/components/screens/WeekQuizOverlay'
 
@@ -166,6 +166,8 @@ export default function LessonScreen() {
   const [readingMode, setReadingMode] = useState(false)
   const [isPro, setIsPro] = useState(false)
   const [upsellShown, setUpsellShown] = useState(false)
+  const [lessonUsageToday, setLessonUsageToday] = useState(0)
+  const [showDailyLimit, setShowDailyLimit] = useState(false)
   const [showUpsell, setShowUpsell] = useState(false)
   const [showProGate, setShowProGate] = useState(false)
   const [weekQuiz, setWeekQuiz] = useState<{ wi: number; isFinal: boolean; questions: any[] } | null>(null)
@@ -193,6 +195,7 @@ export default function LessonScreen() {
       if (!user) return
       setUserId(user.id)
       getProfile().then(p => { setIsPro(isProActive(p)); setUpsellShown(!!(p as any)?.upsell_shown) }).catch(() => {})
+      getLessonUsageToday(user.id).then(setLessonUsageToday).catch(() => {})
       loadStreak(user.id).then(s => setStreak(s?.current_streak || 0)).catch(() => {})
       const currs = await loadCurricula(user.id)
       setCurricula(currs)
@@ -263,6 +266,14 @@ export default function LessonScreen() {
       setTimeout(() => backgroundGenerateAll(curr, wi, di), 2000)
       return
     }
+    // Free-tier daily lesson cap — only fires when all caches miss (real generation).
+    // Cached lessons (popular topics) are always free; this only gates uncached ones.
+    // Pro users are exempt. Resets at midnight UTC.
+    if (!isPro && userId && lessonUsageToday >= FREE_DAILY_LESSONS) {
+      posthog.capture('lesson-daily-limit-hit')
+      setShowDailyLimit(true)
+      return
+    }
     setGenerating(true)
     setStreamText('')
     const prompt = "You are an expert educator. Generate a complete, engaging lesson as a single valid JSON object. Return ONLY the JSON, no markdown, no explanation.\n\nTopic: " + curr.topic + "\nLevel: " + curr.level + "\nWeek " + (wi+1) + " Theme: " + week.theme + "\nSession: " + day.title + "\nType: " + day.type + "\nDuration: " + day.duration + "\nDescription: " + day.description + "\n\nGenerate this JSON:\n{\n  \"title\": \"Engaging lesson title\",\n  \"subject\": \"" + curr.topic + "\",\n  \"level\": \"" + curr.level + "\",\n  \"duration\": \"" + day.duration + "\",\n  \"eyebrow\": \"Week " + (wi+1) + " - Day " + (di+1) + "\",\n  \"intro\": \"2-3 sentence introduction.\",\n  \"content\": \"Full lesson in markdown, 600-900 words. Use ## headers and > for insights.\",\n  \"keyPoints\": [\"Point 1\", \"Point 2\", \"Point 3\"],\n  \"vocab\": [{\"word\": \"term\", \"reading\": \"type\", \"example\": \"usage\"}],\n  \"exercises\": [{\"type\": \"Multiple Choice\", \"question\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}],\n  \"quiz\": [{\"q\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}]\n}\nRules: vocab 4-8 terms, exercises 2-3 mixed types, quiz 3 questions, content rich and specific. CRITICAL MEDIA: Embed media tags in the content field, each on its own line. IMAGE TAGS: [IMG:specific query matched to the exact concept on surrounding lines] — add 3-5 per lesson. Each image must illustrate the specific idea being explained, not the topic in general. Match the query to the content type: for a diagram use [IMG:amino acid zwitterion structure labeled diagram], for a process use [IMG:glycolysis pathway ATP production steps], for a real-world scene use [IMG:Spanish cafe menu ordering food scene], for code use [IMG:Python dictionary comprehension syntax example], for anatomy use [IMG:neuron synapse structure labeled cross section]. Never use generic queries — every query must be specific to this lesson. VIDEO TAGS: [VID:specific youtube search] — add 1-2 for demonstrations e.g. [VID:enzyme active site lock and key mechanism animation]. Both tags replaced with real media."
@@ -297,6 +308,8 @@ export default function LessonScreen() {
       setGlobalCachedLesson(curr.topic, curr.level, wi + 1, di + 1, week.theme, day.title, day.type, parsed)
       setTimeout(() => backgroundGenerateAll(curr, wi, di), 2000)
       try { localStorage.setItem(lsKey, JSON.stringify(parsed)) } catch {}
+      // Count this real generation against the daily free limit
+      if (!isPro && userId) { incrementLessonUsage(); setLessonUsageToday(n => n + 1) }
     } catch(e: any) {
       console.error('Lesson generation failed:', e)
       setLessonData({ error: e.message })
@@ -1072,6 +1085,30 @@ export default function LessonScreen() {
             <div style={{ fontFamily:'var(--mono)', fontSize:22, color:'var(--amber2)', fontWeight:700, marginBottom:20 }}>{showLevelUp?.title}</div>
             <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>Keep learning to reach the next level.</div>
             <button onClick={() => setShowLevelUp(null)} style={{ padding:'10px 28px', borderRadius:8, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer' }}>Continue</button>
+          </div>
+        </div>
+      )}
+      {showDailyLimit && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 }} onClick={() => setShowDailyLimit(false)}>
+          <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:18, padding:'36px 32px', textAlign:'center' as const, maxWidth:400, width:'90%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width:52, height:52, borderRadius:14, background:'var(--amber-bg2)', border:'1px solid rgba(212,133,58,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px', fontSize:22 }}>⏱</div>
+            <div style={{ fontFamily:'var(--serif)', fontSize:24, color:'var(--text)', marginBottom:8 }}>Daily limit reached</div>
+            <div style={{ fontSize:13.5, color:'var(--text2)', lineHeight:1.65, marginBottom:24 }}>You've generated your {FREE_DAILY_LESSONS} free lessons for today. Upgrade to Pro for unlimited lessons, the AI Tutor, and spaced review that sticks.</div>
+            <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+              <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'rgba(212,133,58,0.15)', border:'2px solid var(--amber)', textAlign:'center' as const, position:'relative' as const }}>
+                <div style={{ position:'absolute' as const, top:-10, left:'50%', transform:'translateX(-50%)', background:'var(--amber)', color:'#0a0b0f', fontSize:8, fontFamily:'var(--mono)', fontWeight:700, padding:'2px 10px', borderRadius:10, textTransform:'uppercase' as const, letterSpacing:'0.08em', whiteSpace:'nowrap' as const }}>Best value</div>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--amber)', marginBottom:4 }}>Annual</div>
+                <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$6.67<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>$79.99/yr · save 33%</div>
+              </div>
+              <div style={{ flex:1, padding:'12px 10px', borderRadius:10, background:'var(--bg3)', border:'1px solid var(--border)', textAlign:'center' as const }}>
+                <div style={{ fontSize:10, fontFamily:'var(--mono)', color:'var(--text3)', marginBottom:4 }}>Monthly</div>
+                <div style={{ fontSize:19, fontWeight:600, color:'var(--text)' }}>$9.99<span style={{ fontSize:11, color:'var(--text2)', fontWeight:400 }}>/mo</span></div>
+                <div style={{ fontSize:9, fontFamily:'var(--mono)', color:'var(--text3)', marginTop:2 }}>billed monthly</div>
+              </div>
+            </div>
+            <button onClick={() => { setShowDailyLimit(false); window.open(getUpgradeUrl(userId), '_blank') }} style={{ width:'100%', padding:'13px', borderRadius:10, background:'var(--amber)', border:'none', color:'#0a0b0f', fontFamily:'var(--sans)', fontSize:14, fontWeight:500, cursor:'pointer', marginBottom:10 }}>Unlock unlimited lessons →</button>
+            <button onClick={() => setShowDailyLimit(false)} style={{ width:'100%', padding:'10px', borderRadius:10, border:'none', background:'transparent', color:'var(--text3)', fontFamily:'var(--sans)', fontSize:13, cursor:'pointer' }}>Come back tomorrow</button>
           </div>
         </div>
       )}

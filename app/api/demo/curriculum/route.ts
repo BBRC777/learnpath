@@ -21,7 +21,7 @@ const DEMO_DAYS = 5
 const DEMO_TIME = "20 min"
 const DEMO_LEVEL = "Beginner"
 const MAX_INPUT_CHARS = 200
-const DAILY_IP_LIMIT = 20
+const DAILY_IP_LIMIT = 6  // per IP per UTC day — enough to evaluate the product, stops bots/bulk scraping
 
 const encoder = new TextEncoder()
 const sse = (obj: unknown) => encoder.encode(`data: ${JSON.stringify(obj)}\n\n`)

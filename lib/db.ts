@@ -104,6 +104,45 @@ export async function markUpsellShown(userId: string): Promise<void> {
   }
 }
 
+// ── FREE-TIER LESSON CAP ───────────────────────────────────────
+// Applies only to real (uncached) lesson generation. Pro users exempt.
+// Resets at midnight UTC. Change this value to tune the free tier.
+export const FREE_DAILY_LESSONS = 5
+
+/** How many uncached lessons has this free user generated today? */
+export async function getLessonUsageToday(userId: string): Promise<number> {
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    const { data } = await (supabase.from('lesson_daily_usage') as any)
+      .select('count').eq('user_id', userId).eq('day', today).maybeSingle()
+    return data?.count ?? 0
+  } catch { return 0 }
+}
+
+/**
+ * Increment today's lesson count for the current user.
+ * Uses the `increment_lesson_usage()` DB function (auth.uid() inside, so it's
+ * tamper-proof). Falls back to a plain upsert if the function isn't deployed yet.
+ * Fire-and-forget — never awaited in the hot path.
+ */
+export async function incrementLessonUsage(): Promise<void> {
+  try {
+    const { error } = await (supabase as any).rpc('increment_lesson_usage')
+    if (!error) return
+    // Fallback: direct upsert (used before the DB function is deployed)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const today = new Date().toISOString().slice(0, 10)
+    const { data } = await (supabase.from('lesson_daily_usage') as any)
+      .select('count').eq('user_id', user.id).eq('day', today).maybeSingle()
+    const next = (data?.count ?? 0) + 1
+    await (supabase.from('lesson_daily_usage') as any)
+      .upsert({ user_id: user.id, day: today, count: next }, { onConflict: 'user_id,day' })
+  } catch (e) {
+    console.error('incrementLessonUsage failed (non-fatal):', e)
+  }
+}
+
 // ── CURRICULA ─────────────────────────────────────────────────
 export async function saveCurriculum(userId: string, params: any) {
   const id = `curr_${Date.now()}_${Math.random().toString(36).slice(2,7)}`
