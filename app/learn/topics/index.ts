@@ -6,9 +6,19 @@ import type { TopicData } from './types'
 import { coreTopics } from './core'
 import { apTopics } from './ap'
 import { highSchoolTopics } from './highschool'
+import { collegeTopics } from './college'
+import { skillsTopics } from './skills'
+import { examTopics } from './exams'
+import { programmingTopics } from './programming'
+import { languageTopics } from './languages'
 
 export const TOPICS: Record<string, TopicData> = {
   ...coreTopics,
   ...apTopics,
   ...highSchoolTopics,
+  ...collegeTopics,
+  ...skillsTopics,
+  ...examTopics,
+  ...programmingTopics,
+  ...languageTopics,
 }
