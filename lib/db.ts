@@ -57,6 +57,7 @@ export interface Profile {
   id: string; email: string; display_name: string; is_pro: boolean; pro_trial_until?: string | null
   xp: number; level: number; streak: number; last_study: string
   total_days: number; cards_reviewed: number; created_at: string; updated_at: string
+  upsell_shown?: boolean
 }
 
 export interface Flashcard {
@@ -91,6 +92,16 @@ export function isProActive(profile: any): boolean {
     return new Date(profile.pro_trial_until) > new Date()
   }
   return false
+}
+
+/** Persist that this user has seen the first-lesson upsell so it never repeats,
+ *  even if they clear browser storage or switch devices. Fire-and-forget. */
+export async function markUpsellShown(userId: string): Promise<void> {
+  try {
+    await (supabase.from('profiles') as any).update({ upsell_shown: true }).eq('id', userId)
+  } catch (e) {
+    console.error('markUpsellShown failed (non-fatal):', e)
+  }
 }
 
 // ── CURRICULA ─────────────────────────────────────────────────

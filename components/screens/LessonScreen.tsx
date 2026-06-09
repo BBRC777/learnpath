@@ -3,7 +3,7 @@ import { getUpgradeUrl } from '@/lib/upgrade'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import posthog from 'posthog-js'
-import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult, isProActive } from '@/lib/db'
+import { BADGES, loadCurricula, updateCurriculumProgress, updateStreak, logActivity, getCachedLesson, cacheLesson, clearCachedLesson, completeLessonAndAwardXP, loadStreak, checkAndAwardBadges, getGlobalCachedLesson, setGlobalCachedLesson, getProfile, getAssessment, saveAssessmentResult, isProActive, markUpsellShown } from '@/lib/db'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WeekQuizOverlay from '@/components/screens/WeekQuizOverlay'
 
@@ -165,6 +165,7 @@ export default function LessonScreen() {
   const [isMobile, setIsMobile] = useState(false)
   const [readingMode, setReadingMode] = useState(false)
   const [isPro, setIsPro] = useState(false)
+  const [upsellShown, setUpsellShown] = useState(false)
   const [showUpsell, setShowUpsell] = useState(false)
   const [showProGate, setShowProGate] = useState(false)
   const [weekQuiz, setWeekQuiz] = useState<{ wi: number; isFinal: boolean; questions: any[] } | null>(null)
@@ -191,7 +192,7 @@ export default function LessonScreen() {
       const { data: { user } } = await createClient().auth.getUser()
       if (!user) return
       setUserId(user.id)
-      getProfile().then(p => setIsPro(isProActive(p))).catch(() => {})
+      getProfile().then(p => { setIsPro(isProActive(p)); setUpsellShown(!!(p as any)?.upsell_shown) }).catch(() => {})
       loadStreak(user.id).then(s => setStreak(s?.current_streak || 0)).catch(() => {})
       const currs = await loadCurricula(user.id)
       setCurricula(currs)
@@ -428,8 +429,10 @@ export default function LessonScreen() {
       ;(window as any).__learnpath_refreshProfile?.()
       setIsComplete(true)
       const totalDoneBeforeThis = currs.reduce((n: number, c: any) => n + Object.values(c.progress || {}).filter(Boolean).length, 0)
-      if (totalDoneBeforeThis === 0 && !isPro && !localStorage.getItem('lp-upsell-shown')) {
-        localStorage.setItem('lp-upsell-shown', '1')
+      if (totalDoneBeforeThis === 0 && !isPro && !upsellShown) {
+        setUpsellShown(true)         // optimistic — prevents double-fire this session
+        markUpsellShown(userId!)     // persist to DB — survives device/browser change
+        posthog.capture('upsell-shown', { trigger: 'first_lesson' })
         setShowUpsell(true)
       }
       setCurricula(cs => cs.map(c => c.id === activeCurrId ? { ...c, progress } : c))
