@@ -2,7 +2,13 @@ import Anthropic from "@anthropic-ai/sdk"
 import { createClient } from "@/lib/supabase/server"
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-const MODEL = "claude-sonnet-4-5"
+const MODEL = "claude-sonnet-4-6"
+const CHEAP_MODEL = "claude-haiku-4-5"
+function pickModel(body: any): string {
+  if (body?.model) return body.model
+  if (body?.tier === 'cheap') return CHEAP_MODEL
+  return MODEL
+}
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +37,7 @@ export async function POST(request: Request) {
         async start(controller) {
           try {
             const streamResponse = client.messages.stream({
-              model: MODEL,
+              model: pickModel(body),
               max_tokens: params.max_tokens || 8000,
               messages: params.messages,
               ...(params.system ? { system: params.system } : {}),
@@ -57,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     const response = await client.messages.create({
-      model: MODEL,
+      model: pickModel(body),
       max_tokens: params.max_tokens || 2000,
       messages: params.messages,
       ...(params.system ? { system: params.system } : {}),

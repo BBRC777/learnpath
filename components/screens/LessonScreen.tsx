@@ -44,11 +44,24 @@ async function fetchUnsplashImage(query: string): Promise<string|null> {
   } catch { return null }
 }
 
+async function fetchGeneratedImage(query: string): Promise<string|null> {
+  try {
+    const res = await fetch('/api/lesson-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data?.url || null
+  } catch { return null }
+}
+
 async function fetchBestImage(query: string): Promise<string|null> {
-  // Try Pexels first - better instructional photography
+  const gen = await fetchGeneratedImage(query)
+  if (gen) return gen
   const pexels = await fetchPexelsImage(query)
   if (pexels) return pexels
-  // Fall back to Unsplash
   return fetchUnsplashImage(query)
 }
 
@@ -87,7 +100,7 @@ function InlineImage({ query }: { query: string }) {
   return (
     <div style={{ marginBottom:16, borderRadius:10, overflow:'hidden', position:'relative' as const }}>
       <img src={src} alt={query} style={{ width:'100%', height:220, objectFit:'cover' as const, display:'block' }} />
-      <div style={{ position:'absolute' as const, bottom:6, right:10, fontSize:9, color:'rgba(255,255,255,0.7)', fontFamily:'var(--mono)', background:'rgba(0,0,0,0.4)', padding:'2px 6px', borderRadius:4 }}>{query} · Unsplash</div>
+      <div style={{ position:'absolute' as const, bottom:6, right:10, fontSize:9, color:'rgba(255,255,255,0.7)', fontFamily:'var(--mono)', background:'rgba(0,0,0,0.4)', padding:'2px 6px', borderRadius:4 }}>{query}</div>
     </div>
   )
 }
@@ -403,21 +416,26 @@ export default function LessonScreen() {
     }
   }, [])
 
-  // Background pre-generation: as soon as the current lesson finishes loading, silently
-  // kick off generation of the next one. loadLesson checks all caches first, so this is
-  // a no-op if it's already warm — only triggers an AI call if the next lesson isn't
-  // cached yet. Fire-and-forget: no await, no state updates, no UI impact.
+  const PREFETCH_WINDOW = 3
   useEffect(() => {
     if (!lessonData || !activeCurr || !selectedLesson) return
+    let cancelled = false
     const weeks = activeCurr.curriculum?.weeks || []
-    const { wi, di } = selectedLesson
-    const next = di + 1 < (weeks[wi]?.days?.length || 0)
-      ? { wi, di: di + 1 }
-      : wi + 1 < weeks.length && (weeks[wi + 1]?.days?.length || 0) > 0
-      ? { wi: wi + 1, di: 0 }
-      : null
-    if (!next) return
-    loadLesson(activeCurr, next.wi, next.di).catch(() => {})
+    const flat: { wi: number; di: number }[] = []
+    for (let wi = 0; wi < weeks.length; wi++) {
+      for (let di = 0; di < (weeks[wi]?.days?.length || 0); di++) flat.push({ wi, di })
+    }
+    const curIdx = flat.findIndex(p => p.wi === selectedLesson.wi && p.di === selectedLesson.di)
+    if (curIdx === -1) return
+    const ahead = flat.slice(curIdx + 1, curIdx + 1 + PREFETCH_WINDOW)
+    ;(async () => {
+      for (const { wi, di } of ahead) {
+        if (cancelled) return
+        await generateLessonSilent(activeCurr, wi, di)
+        await new Promise(r => setTimeout(r, 300))
+      }
+    })()
+    return () => { cancelled = true }
   }, [lessonData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const markComplete = async () => {
@@ -915,7 +933,6 @@ export default function LessonScreen() {
               {heroImage && (
                 <div style={{ width:'100%', height:200, borderRadius:12, overflow:'hidden', marginBottom:20, position:'relative' as const }}>
                   <img src={heroImage} alt={lessonData?.title||''} style={{ width:'100%', height:'100%', objectFit:'cover' as const }} />
-                  <div style={{ position:'absolute' as const, bottom:6, right:10, fontSize:9, color:'rgba(255,255,255,0.7)', fontFamily:'var(--mono)' }}>Photo via Unsplash</div>
                 </div>
               )}
               {/* Lesson content */}
