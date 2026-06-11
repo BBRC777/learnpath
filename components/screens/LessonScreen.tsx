@@ -260,7 +260,7 @@ export default function LessonScreen() {
   const loadLesson = async (curr: any, wi: number, di: number) => {
     const key = wi + '-' + di
     const lsKey = 'lp_lesson_' + curr.id + '_' + key
-    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); setFromCache('local'); const lsParsed = JSON.parse(lsCached); fetchUnsplashImage((lsParsed?.title||'') + ' ' + (curr?.topic||'')).then(url => { if (url) setHeroImage(url) }); setTimeout(() => backgroundGenerateAll(curr, wi, di), 2000); return } } catch {}
+    try { const lsCached = localStorage.getItem(lsKey); if (lsCached) { setLessonData(JSON.parse(lsCached)); setFromCache('local'); const lsParsed = JSON.parse(lsCached); fetchUnsplashImage((lsParsed?.title||'') + ' ' + (curr?.topic||'')).then(url => { if (url) setHeroImage(url) }); return } } catch {}
     const cached = await getCachedLesson(curr.id, key)
     if (cached) {
       setLessonData(cached)
@@ -276,7 +276,6 @@ export default function LessonScreen() {
       setLessonData(gcached)
       try { localStorage.setItem(lsKey, JSON.stringify(gcached)) } catch {}
       fetchBestImage(curr?.topic || '').then(url => { if (url) setHeroImage(url) })
-      setTimeout(() => backgroundGenerateAll(curr, wi, di), 2000)
       return
     }
     // Free-tier daily lesson cap — only fires when all caches miss (real generation).
@@ -319,7 +318,6 @@ export default function LessonScreen() {
       fetchUnsplashImage((parsed?.title || '') + ' ' + (curr?.topic || '')).then(url => { if (url) setHeroImage(url) })
       if (activeCurrId) await cacheLesson(activeCurrId, key, parsed)
       setGlobalCachedLesson(curr.topic, curr.level, wi + 1, di + 1, week.theme, day.title, day.type, parsed)
-      setTimeout(() => backgroundGenerateAll(curr, wi, di), 2000)
       try { localStorage.setItem(lsKey, JSON.stringify(parsed)) } catch {}
       // Count this real generation against the daily free limit
       if (!isPro && userId) { incrementLessonUsage(); setLessonUsageToday(n => n + 1) }
@@ -351,7 +349,7 @@ export default function LessonScreen() {
     }
     try {
       const prompt = "You are an expert educator. Generate a complete, engaging lesson as a single valid JSON object. Return ONLY the JSON, no markdown, no explanation.\n\nTopic: " + curr.topic + "\nLevel: " + curr.level + "\nWeek " + (wi+1) + " Theme: " + week.theme + "\nSession: " + day.title + "\nType: " + day.type + "\nDuration: " + day.duration + "\nDescription: " + day.description + "\n\nGenerate this JSON:\n{\n  \"title\": \"Engaging lesson title\",\n  \"subject\": \"" + curr.topic + "\",\n  \"level\": \"" + curr.level + "\",\n  \"duration\": \"" + day.duration + "\",\n  \"eyebrow\": \"Week " + (wi+1) + " - Day " + (di+1) + "\",\n  \"intro\": \"2-3 sentence introduction.\",\n  \"content\": \"Full lesson in markdown, 600-900 words. Use ## headers and > for insights.\",\n  \"keyPoints\": [\"Point 1\", \"Point 2\", \"Point 3\"],\n  \"vocab\": [{\"word\": \"term\", \"reading\": \"type\", \"example\": \"usage\"}],\n  \"exercises\": [{\"type\": \"Multiple Choice\", \"question\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}],\n  \"quiz\": [{\"q\": \"Question?\", \"opts\": [\"A\",\"B\",\"C\",\"D\"], \"correct\": 0, \"explanation\": \"Why.\"}]\n}\nRules: vocab 4-8 terms, exercises 2-3 mixed types, quiz 3 questions, content rich and specific."
-      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ stream: false, messages: [{ role:'user', content: prompt }] }) })
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ stream: false, tier: 'cheap', max_tokens: 8000, messages: [{ role:'user', content: prompt }] }) })
       if (!res.ok) return false
       const data = await res.json()
       const text = data.content?.[0]?.text || ''
