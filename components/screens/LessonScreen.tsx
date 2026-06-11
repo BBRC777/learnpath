@@ -572,7 +572,7 @@ export default function LessonScreen() {
     setMnemonicLoading(p => ({...p,[idx]:true}))
     const prompt = 'Create a single vivid, memorable mnemonic or memory trick to remember this vocabulary word. Be creative, funny, or surprising. Keep it to 1-2 sentences.\n\nWord: ' + word + '\nUsage example: ' + example
     try {
-      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, tier:'cheap', messages:[{ role:'user', content:prompt }] }) })
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
       while (true) {
         const { done, value } = await reader.read(); if (done) break
@@ -594,7 +594,7 @@ export default function LessonScreen() {
       : 'The student aced this lesson (100% score). Create an advanced follow-up lesson that goes deeper, adds complexity, and challenges them further on this topic.'
     const prompt = modePrompt + '\n\nOriginal lesson title: ' + (lessonData.title||'') + '\n\nOriginal lesson content:\n' + (lessonData.content||'')
     try {
-      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, tier:'cheap', messages:[{ role:'user', content:prompt }] }) })
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
       while (true) {
         const { done, value } = await reader.read(); if (done) break
@@ -613,7 +613,7 @@ export default function LessonScreen() {
     setRelatedLoading(true)
     const prompt = 'Based on this lesson, suggest exactly 3 related topics the student could explore next. Return ONLY a JSON array of 3 short topic strings, no explanation.\n\nLesson: ' + (lessonData.title||'')
     try {
-      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:false, messages:[{ role:'user', content:prompt }] }) })
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:false, tier:'cheap', messages:[{ role:'user', content:prompt }] }) })
       const data = await res.json()
       const text = data.content?.[0]?.text || ''
       const match = text.match(/\[[\s\S]*\]/)
@@ -627,7 +627,7 @@ export default function LessonScreen() {
     setEliMode('eli5'); setEliLoading(true); setEliContent('')
     const prompt = 'Explain this lesson like I am 5 years old. Use simple words, analogies, and short sentences. No jargon.' + '\n\nLesson title: ' + (lessonData.title||'') + '\n\nLesson content:\n' + (lessonData.content||'')
     try {
-      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, messages:[{ role:'user', content:prompt }] }) })
+      const res = await fetch('/api/claude', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ stream:true, tier:'cheap', messages:[{ role:'user', content:prompt }] }) })
       const reader = res.body!.getReader(); const decoder = new TextDecoder(); let full = ''
       while (true) {
         const { done, value } = await reader.read(); if (done) break
