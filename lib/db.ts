@@ -645,7 +645,9 @@ export async function getAssessmentResults(teamId: string) {
 // -- GLOBAL LESSON CACHE --------------------------------------------------
 
 function makeGlobalCacheId(topic: string, level: string, weekNum: number, dayNum: number, dayTitle: string = ''): string {
-  return [topic.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40), level.toLowerCase().replace(/[^a-z0-9]/g,'_'), weekNum, dayNum, dayTitle.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40)].join('__')
+  // dayTitle intentionally excluded from the key: model-generated titles vary run-to-run,
+  // so keying on them fragments the cache. Topic+level+position is the stable identity. (M3a)
+  return [topic.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,40), level.toLowerCase().replace(/[^a-z0-9]/g,'_'), weekNum, dayNum].join('__')
 }
 
 export async function getGlobalCachedLesson(topic: string, level: string, weekNum: number, dayNum: number, dayTitle: string) {

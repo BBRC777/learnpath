@@ -86,11 +86,11 @@ function normalizeTopic(raw) {
 
 // lib/db.ts → makeGlobalCacheId (title-keyed)
 function makeGlobalCacheId(topic, level, weekNum, dayNum, dayTitle = '') {
+  // Keep in sync with lib/db.ts. dayTitle excluded from key by design. (M3a)
   return [
     topic.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 40),
     level.toLowerCase().replace(/[^a-z0-9]/g, '_'),
     weekNum, dayNum,
-    dayTitle.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 40),
   ].join('__')
 }
 
